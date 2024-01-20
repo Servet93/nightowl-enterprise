@@ -28,6 +28,6 @@ jobs:
             #sudo export ASPNETCORE_URLS="${{ vars.EC2_URL }}"
             # Daha fazla komut ekleyebilirsiniz
             
-            echo -e "$service_definition_content_on_ec2" | sudo tee /etc/systemd/system/nightowl-enterprise2.service
+            echo -e $service_definition_content_on_ec2 | sudo tee /etc/systemd/system/nightowl-enterprise2.service
           EOF
           
