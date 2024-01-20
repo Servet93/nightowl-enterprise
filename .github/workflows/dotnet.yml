@@ -19,5 +19,7 @@ jobs:
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 7.0.x
+    - name: Restore dependencies
+      run: cd NightOwlEnterprise && dotnet restore
     - name: Build
-      run: dotnet build --project NightOwlEnterprise/src/NightOwlEnterprise.Api/NightOwlEnterprise.Api.csproj --configuration Release
+      run: cd NightOwlEnterprise && dotnet build --configuration Release --no-restore
