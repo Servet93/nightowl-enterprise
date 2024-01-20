@@ -19,4 +19,4 @@ jobs:
 
     - name: Deploy to EC2
       run: |
-        ssh -o StrictHostKeyChecking=no -i ${{ secrets.EC2_SSH_PRIVATE_KEY }} ec2-user@${{ secrets.EC2_IP }} "cd nightowl-enterprise/ && git pull origin main && dotnet publish -c Release"
+        ssh -o StrictHostKeyChecking=no -i <(echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}") ec2-user@${{ secrets.EC2_IP }} "cd nightowl-enterprise/ && git pull origin main && dotnet publish -c Release"
