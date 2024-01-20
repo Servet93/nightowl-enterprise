@@ -22,4 +22,4 @@ jobs:
     - name: Restore dependencies
       run: cd NightOwlEnterprise && dotnet restore
     - name: Build
-      run: dotnet build --configuration Release --no-restore
+      run: cd NightOwlEnterprise && dotnet build --configuration Release --no-restore
