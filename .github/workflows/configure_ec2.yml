@@ -19,9 +19,10 @@ jobs:
 
     - name: Creating env variables and service file
       run: |
+          echo ${{ vars.EC2_URL }}
           ssh -i ~/.ssh/id_rsa ec2-user@${{ secrets.EC2_IP }} 'bash -s' << 'EOF'
             # Buraya inline komutlarınızı ekleyin
-            export ASPNETCORE_URLS="${{ secrets.EC2_URL }}"
+            export ASPNETCORE_URLS="${{ vars.EC2_URL }}"
             # Daha fazla komut ekleyebilirsiniz
             echo -e "${{ vars.SERVICE_DEFINITON_CONTENT_ON_EC2 }}" | sudo tee /etc/systemd/system/nightowl-enterprise.service
           EOF
