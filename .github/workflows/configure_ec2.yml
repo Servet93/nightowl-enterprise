@@ -22,6 +22,7 @@ jobs:
           echo ${{ vars.EC2_URL }}
           SERVICE_DEFINITON_CONTENT_ON_EC2_RUNNER_SCOPE=$(echo "${{ vars.SERVICE_DEFINITON_CONTENT_ON_EC2 }}" | sed 's@EC2_URL_PLACEHOLDER@${{ vars.EC2_URL }}@g')
           echo $SERVICE_DEFINITON_CONTENT_ON_EC2_RUNNER_SCOPE >> $GITHUB_ENV
+          echo ${{ env.SERVICE_DEFINITON_CONTENT_ON_EC2_RUNNER_SCOPE }
           ssh -i ~/.ssh/id_rsa ec2-user@${{ secrets.EC2_IP }} 'bash -s' << 'EOF'
             # Buraya inline komutlarınızı ekleyin
             # ssh üzerinden export çalışmıyor güvenlikten ötürü
