@@ -5,9 +5,11 @@ VisualStudioVersion = 17.8.34408.163
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{F27356A5-F1D3-41B0-91A5-99783BBD28B4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NightOwlEnterprise.Api", "src\NightOwlEnterprise.Api\NightOwlEnterprise.Api.csproj", "{14428ACB-6459-4F54-9D0F-DA9235210BF8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NightOwlEnterprise.Api", "src\NightOwlEnterprise.Api\NightOwlEnterprise.Api.csproj", "{14428ACB-6459-4F54-9D0F-DA9235210BF8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NightOwlEnterprise.Api.Tests", "test\NightOwlEnterprise.Api.Tests\NightOwlEnterprise.Api.Tests.csproj", "{BC78A6F3-D356-409B-93D2-B532D347FBCE}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{D5991D36-C61E-4D9E-8122-55EA9C35711C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NightOwlEnterprise.Api.Tests", "test\NightOwlEnterprise.Api.Tests\NightOwlEnterprise.Api.Tests.csproj", "{3EBA3DDB-34D6-4117-8B18-EAF5E76FE75A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,16 +21,17 @@ Global
 		{14428ACB-6459-4F54-9D0F-DA9235210BF8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{14428ACB-6459-4F54-9D0F-DA9235210BF8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{14428ACB-6459-4F54-9D0F-DA9235210BF8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BC78A6F3-D356-409B-93D2-B532D347FBCE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BC78A6F3-D356-409B-93D2-B532D347FBCE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BC78A6F3-D356-409B-93D2-B532D347FBCE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BC78A6F3-D356-409B-93D2-B532D347FBCE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3EBA3DDB-34D6-4117-8B18-EAF5E76FE75A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3EBA3DDB-34D6-4117-8B18-EAF5E76FE75A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3EBA3DDB-34D6-4117-8B18-EAF5E76FE75A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3EBA3DDB-34D6-4117-8B18-EAF5E76FE75A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{14428ACB-6459-4F54-9D0F-DA9235210BF8} = {F27356A5-F1D3-41B0-91A5-99783BBD28B4}
+		{3EBA3DDB-34D6-4117-8B18-EAF5E76FE75A} = {D5991D36-C61E-4D9E-8122-55EA9C35711C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BC1963CB-8188-434A-8ECA-5EB4A9FD7F2D}
