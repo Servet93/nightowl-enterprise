@@ -23,3 +23,5 @@ jobs:
       run: cd NightOwlEnterprise && dotnet restore
     - name: Build
       run: cd NightOwlEnterprise && dotnet build --configuration Release --no-restore
+    - name: Test
+      run: cd NightOwlEnterprise && dotnet test --verbosity normal
