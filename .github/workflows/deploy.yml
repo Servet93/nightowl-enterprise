@@ -18,12 +18,12 @@ jobs:
     - name: Set up SSH
       run: |
         mkdir -p ~/.ssh/
-        echo "EC2IP -> ${{ vars.EC2_IP }}"
-        echo "SSH_PRIVATE_KEY ->  ${{ vars.EC2_SSH_PRIVATE_KEY }}"
-        echo "${{ vars.EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        echo "EC2IP -> ${{ secrets.EC2_IP }}"
+        echo "SSH_PRIVATE_KEY ->  ${{ secrets.EC2_SSH_PRIVATE_KEY }}"
+        echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H ${{ vars.EC2_IP }} >> ~/.ssh/known_hosts
+        ssh-keyscan -H ${{ secrets.EC2_IP }} >> ~/.ssh/known_hosts
 
     - name: Copy Files to EC2
-      run: scp -r ./publish ec2-user@${{ vars.EC2_IP }}:nightowl-enterprise/
-      working-directory: NightOwlEnterprise/src/NightOwlEnterprise.Api/bin/Release/net7.0/
+      run: scp -r ./* ec2-user@${{ secrets.EC2_IP }}:nightowl-enterprise/
+      working-directory: NightOwlEnterprise/src/NightOwlEnterprise.Api/bin/Release/net7.0/publish
