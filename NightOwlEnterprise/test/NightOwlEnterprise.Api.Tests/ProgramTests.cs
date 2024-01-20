@@ -7,11 +7,5 @@ namespace NightOwlEnterprise.Api.Tests
         {
             Assert.True(true);
         }
-
-        [Fact]
-        public void HelloWorld2()
-        {
-            Assert.True(false);
-        }
     }
 }
