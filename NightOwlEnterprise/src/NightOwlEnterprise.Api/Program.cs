@@ -10,4 +10,6 @@ var app = builder.Build();
 
 app.MapGet("/", () => "Hello World!");
 
+app.MapGet("/by", () => "Servet ÞEKER");
+
 app.Run();
