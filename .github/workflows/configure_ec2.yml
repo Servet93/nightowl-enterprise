@@ -33,7 +33,7 @@ jobs:
             echo -e "${{ vars.SERVICE_DEFINITON_CONTENT_ON_EC2 }}" | sed 's@EC2_URL_PLACEHOLDER@${{ vars.EC2_URL }}@g' | sudo tee /etc/systemd/system/nightowl-enterprise.service
             #Servis dosyasını kaydedin ve systemd'ye değişiklikleri bildirin
             sudo systemctl daemon-reload
-            #Servisi başlatın
-            sudo systemctl start nightowl-enterprise
+            #Servisi başlatın(kapali, deploymant aşamasında stop start yapıyoruz
+            #sudo systemctl start nightowl-enterprise
           EOF
           
