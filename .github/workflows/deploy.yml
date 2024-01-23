@@ -33,7 +33,7 @@ jobs:
     - name: nightowl-enterprise directory is creating
       run: |
         ssh -i ~/.ssh/id_rsa ec2-user@${{ secrets.EC2_IP }} 'bash -s' << 'EOF'
-          if test -d "/nightowl-enterprise"; then
+          if test -d "nightowl-enterprise"; then
             echo "nightowl-enterprise directory is exist."
           else
             echo "nightowl-enterprise directory is not exist.it's creating."
