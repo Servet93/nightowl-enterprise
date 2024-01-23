@@ -1,0 +1,39 @@
+name: Configure EC2
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Set up SSH
+      run: |
+        mkdir -p ~/.ssh/
+        echo "EC2IP -> ${{ secrets.EC2_IP }}"
+        echo "SSH_PRIVATE_KEY ->  ${{ secrets.EC2_SSH_PRIVATE_KEY }}"
+        echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ secrets.EC2_IP }} >> ~/.ssh/known_hosts
+
+    - name: Creating env variables and service file
+      run: |
+          echo ${{ vars.EC2_URL }}
+          SERVICE_DEFINITON_CONTENT_ON_EC2_RUNNER_SCOPE=$(echo "${{ vars.SERVICE_DEFINITON_CONTENT_ON_EC2 }}" | sed 's@EC2_URL_PLACEHOLDER@${{ vars.EC2_URL }}@g')
+          echo $SERVICE_DEFINITON_CONTENT_ON_EC2_RUNNER_SCOPE >> $GITHUB_ENV
+          echo ${{ env.SERVICE_DEFINITON_CONTENT_ON_EC2_RUNNER_SCOPE }}
+          echo $SERVICE_DEFINITON_CONTENT_ON_EC2_RUNNER_SCOPE
+          ssh -i ~/.ssh/id_rsa ec2-user@${{ secrets.EC2_IP }} 'bash -s' << 'EOF'
+            # Buraya inline komutlarınızı ekleyin
+            # ssh üzerinden export çalışmıyor güvenlikten ötürü
+            #sudo export ASPNETCORE_URLS="${{ vars.EC2_URL }}"
+            # Daha fazla komut ekleyebilirsiniz
+            
+            echo -e "${{ vars.SERVICE_DEFINITON_CONTENT_ON_EC2 }}" | sed 's@EC2_URL_PLACEHOLDER@${{ vars.EC2_URL }}@g' | sudo tee /etc/systemd/system/nightowl-enterprise.service
+            #Servis dosyasını kaydedin ve systemd'ye değişiklikleri bildirin
+            sudo systemctl daemon-reload
+            #Servisi başlatın(kapali, deploymant aşamasında stop start yapıyoruz
+            #sudo systemctl start nightowl-enterprise
+          EOF
+          
