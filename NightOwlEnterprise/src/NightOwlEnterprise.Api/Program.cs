@@ -1,15 +1,29 @@
+using NLog;
+using NLog.Web;
+
+var logger = LogManager.Setup()
+                       .LoadConfigurationFromAppSettings()
+                       .GetCurrentClassLogger();
+
+logger.Fatal("Logger is created.");
+
 var builder = WebApplication.CreateBuilder(args);
 
-var configuration = builder.Configuration;
+logger.Fatal("Builder is created.");
 
-var isWorkingOnEc2 = configuration.GetValue<bool>("WorkingOnEc2");
-
-Console.WriteLine($"WorkingOnEc2 -> {isWorkingOnEc2}");
+builder.Host.UseNLog();
 
 var app = builder.Build();
 
-app.MapGet("/", () => "Hello World!");
+logger.Fatal("App is created.");
+
+app.MapGet("/", (ILogger<Program> logger) =>
+{
+    return "Hello World!";
+});
 
 app.MapGet("/by", () => "Servet ÞEKER");
 
 app.Run();
+
+logger.Fatal("App is running.");
