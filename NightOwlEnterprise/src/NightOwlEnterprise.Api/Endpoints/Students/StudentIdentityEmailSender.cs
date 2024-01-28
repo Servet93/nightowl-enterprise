@@ -44,14 +44,14 @@ public class StudentIdentityEmailSender : IEmailSender<StudentApplicationUser>
             color: #555;
         }}
         img {{
-            max-width: 10%;
-            height: auto;
+            max-width: 150px;
+            height: 150px;
             margin-bottom: 20px;
         }}
     </style>
 </head>
 <body>
-    <img src=""https://scontent-ist1-1.xx.fbcdn.net/v/t39.30808-6/420042941_794199422752068_4274037716486902982_n.jpg?_nc_cat=100&ccb=1-7&_nc_sid=efb6e6&_nc_ohc=v59xUScb25UAX_EwBfy&_nc_ht=scontent-ist1-1.xx&oh=00_AfD79xxUZVCUU52VD_rIAKjuFukNerSV8BuUXugrzQOIiA&oe=65BBC0C9"" alt=""Brand Logo"">
+    <img src=""https://cdn.pixabay.com/photo/2021/01/27/06/51/owl-5953875_1280.png"" alt=""Brand Logo"">
     <h2>{title}</h2>
     <p>Merhaba {name} {surname},</p>
     <p>Hesabınız başarıyla oluşturuldu. Lütfen aşağıdaki bağlantıya tıklayarak hesabınızı onaylayın:</p>
@@ -87,14 +87,14 @@ public class StudentIdentityEmailSender : IEmailSender<StudentApplicationUser>
             color: #555;
         }}
         img {{
-            max-width: 100%;
-            height: auto;
+            max-width: 150px;
+            height: 150px;
             margin-bottom: 20px;
         }}
         </style>
     </head>
     <body>
-        <img src=""https://scontent-ist1-1.xx.fbcdn.net/v/t39.30808-6/420042941_794199422752068_4274037716486902982_n.jpg?_nc_cat=100&ccb=1-7&_nc_sid=efb6e6&_nc_ohc=v59xUScb25UAX_EwBfy&_nc_ht=scontent-ist1-1.xx&oh=00_AfD79xxUZVCUU52VD_rIAKjuFukNerSV8BuUXugrzQOIiA&oe=65BBC0C9"" alt=""Brand Logo"">
+        <img src=""https://cdn.pixabay.com/photo/2021/01/27/06/51/owl-5953875_1280.png"" alt=""Brand Logo"">
         <h2>Password Reset Email</h2>
         <p>Merhaba {name} {surname},</p>
         <p>Şifrenizin sıfırlanmasını talep ettiniz. Lütfen aşağıdaki kodu kullanın:</p>

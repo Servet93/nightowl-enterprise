@@ -15,4 +15,6 @@ public class SmtpServerCredential
     public bool EnableSsl { get; init; }
 
     public string? DisplayName { get; init; } = null;
+    
+    public bool Enabled { get; init; }
 }
