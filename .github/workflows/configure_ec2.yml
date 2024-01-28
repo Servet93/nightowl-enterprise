@@ -25,7 +25,7 @@ jobs:
             #sudo export ASPNETCORE_URLS="${{ vars.EC2_URL }}"
             # Daha fazla komut ekleyebilirsiniz
             
-            echo -e "${{ vars.SERVICE_DEFINITON_CONTENT_ON_EC2 }}" | sed 's@EC2_URL_PLACEHOLDER@${{ vars.EC2_URL }}@g' | sed 's@SMTP_SERVER_CREDENTIAL@SmtpServer:Address=\"smtp.gmail.com\" SmtpServer:Port=587 SmtpServer:Username=\"invictisec@gmail.com\" SmtpServer:Password=\"baax mypo osju bpuv\" SmtpServer:EnableSsl=true SmtpServer:DisplayName=\"NightOwl Enterprise\" SmtpServer:Enabled=true@g' | sudo tee /etc/systemd/system/nightowl-enterprise.service
+            echo -e "${{ vars.SERVICE_DEFINITON_CONTENT_ON_EC2 }}" | sed 's@EC2_URL_PLACEHOLDER@${{ vars.EC2_URL }}@g' | sudo tee /etc/systemd/system/nightowl-enterprise.service
             #Servis dosyasını kaydedin ve systemd'ye değişiklikleri bildirin
             sudo systemctl daemon-reload
             #Servisi başlatın(kapali, deploymant aşamasında stop start yapıyoruz
