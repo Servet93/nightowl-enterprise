@@ -45,7 +45,7 @@ builder.Services.AddIdentityApiEndpoints<StudentApplicationUser>()
 
 builder.Services.AddSingleton<TurkishIdentityErrorDescriber>();
 
-var smtpServerCredentialEnabled = builder.Configuration.GetValue<bool>("SmtpServerCredential:Enabled");
+var smtpServerCredentialEnabled = builder.Configuration.GetValue<bool>("SmtpServer:Enabled");
 
 if (smtpServerCredentialEnabled)
 {
