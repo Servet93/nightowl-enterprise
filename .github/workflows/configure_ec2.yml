@@ -19,7 +19,7 @@ jobs:
 
     - name: Creating env variables and service file
       run: |
-          ssh -i ~/.ssh/id_rsa ec2-user@${{ secrets.EC2_IP }} 'bash -s' << 'EOF'
+          ssh -i ~/.ssh/id_rsa ubuntu@${{ secrets.EC2_IP }} 'bash -s' << 'EOF'
             # Buraya inline komutlarınızı ekleyin
             # ssh üzerinden export çalışmıyor güvenlikten ötürü
             #sudo export ASPNETCORE_URLS="${{ vars.EC2_URL }}"
