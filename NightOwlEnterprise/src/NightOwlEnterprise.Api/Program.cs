@@ -3,11 +3,14 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
+using NightOwlEnterprise.Api;
 using NightOwlEnterprise.Api.Endpoints.Students;
 using NightOwlEnterprise.Api.Utils.Email;
 using NLog;
 using NLog.Web;
+using Stripe;
 
 var logger = LogManager.Setup()
                        .LoadConfigurationFromAppSettings()
@@ -39,11 +42,13 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddAuthorization();
 
-builder.Services.AddIdentityApiEndpoints<StudentApplicationUser>()
+builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
     .AddErrorDescriber<TurkishIdentityErrorDescriber>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
 builder.Services.AddSingleton<TurkishIdentityErrorDescriber>();
+
+builder.Services.AddSingleton<StudentEmailSender>();
 
 var smtpServerCredentialEnabled = builder.Configuration.GetValue<bool>("SmtpServer:Enabled");
 
@@ -51,7 +56,7 @@ if (smtpServerCredentialEnabled)
 {
     builder.Services.Configure<SmtpServerCredential>(
         builder.Configuration.GetSection(SmtpServerCredential.SmtpServer));
-    builder.Services.AddTransient(typeof(IEmailSender<StudentApplicationUser>), typeof(StudentIdentityEmailSender));
+    builder.Services.AddTransient(typeof(IEmailSender<ApplicationUser>), typeof(StudentIdentityEmailSender));
     builder.Services.AddTransient<IEmailSender, ProductionEmailSender>();    
 }
 else
@@ -60,6 +65,9 @@ else
     // builder.Services.TryAddTransient<IEmailSender, NoOpEmailSender>();
     builder.Services.AddTransient<IEmailSender, LocalEmailSender>();    
 }
+
+builder.Services.Configure<StripeCredential>(
+    builder.Configuration.GetSection(StripeCredential.Stripe));
 
 var requireConfirmedEmail = builder.Configuration.GetValue<bool>("RequireConfirmedEmail");
 
@@ -70,12 +78,12 @@ builder.Services.Configure<IdentityOptions>(options =>
     // options.SignIn.RequireConfirmedEmail = true;
     options.SignIn.RequireConfirmedEmail = requireConfirmedEmail;
     
-    options.Password.RequireDigit = true;       // En az bir rakam içermeli
-    options.Password.RequireLowercase = true;   // En az bir küçük harf içermeli
-    options.Password.RequireUppercase = true;   // En az bir büyük harf içermeli
-    //options.Password.RequireNonAlphanumeric = true; // En az bir özel karakter içermeli
+    options.Password.RequireDigit = false;       // En az bir rakam içermeli
+    options.Password.RequireLowercase = false;   // En az bir küçük harf içermeli
+    options.Password.RequireUppercase = false;   // En az bir büyük harf içermeli
+    options.Password.RequireNonAlphanumeric = false; // En az bir özel karakter içermeli
     options.Password.RequiredLength = 8;        // Minimum şifre uzunluğu
-    options.Password.RequiredUniqueChars = 4;    // Şifrede kaç farklı karakter olmalı
+    options.Password.RequiredUniqueChars = 3;    // Şifrede kaç farklı karakter olmalı
     
     // Default Lockout settings.
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
@@ -115,12 +123,15 @@ builder.Services.AddSwaggerGen(swaggerGenOptions =>
 
 builder.Services.AddProblemDetails();
 
+builder.Services.AddControllersWithViews();
+
 var app = builder.Build();
+
+app.UseStaticFiles();
 
 app.UseExceptionHandler();
 
 //app.UseStatusCodePages();
-
 
 // app.UseExceptionHandler(exceptionHandlerApp =>
 // {
@@ -130,6 +141,8 @@ app.UseExceptionHandler();
 // app.UseStatusCodePages(async statusCodeContext 
 //     => await Results.Problem(statusCode: statusCodeContext.HttpContext.Response.StatusCode)
 //         .ExecuteAsync(statusCodeContext.HttpContext));
+
+
 
 app.UseSwagger();
 app.UseSwaggerUI();
@@ -145,6 +158,8 @@ app.UseSwaggerUI();
 //         options.Name = "Authorization";
 //     });
 // });
+
+app.MapControllers();
 
 logger.Fatal("App is created.");
 
@@ -199,29 +214,61 @@ app.MapGet("/", async context =>
 // app.MapGet("/todos/{id}", Results<Ok<User>, NotFound>(int id) =>
 //     id < 0 ? TypedResults.Ok(new User(id)) : TypedResults.NotFound());
 
-app.MapStudentsIdentityApi<StudentApplicationUser>();
+app.MapStudentsIdentityApi<ApplicationUser>();
+
+var stripeCredential = app.Services.GetService<IOptions<StripeCredential>>()?.Value;
+// This is a public sample test API key.
+// Don’t submit any personally identifiable information in requests made with this key.
+// Sign in to see your own test API key embedded in code samples.
+// Stripe.StripeConfiguration.ApiKey = "sk_test_4eC39HqLyjWDarjtT1zdp7dc";
+// Stripe.StripeConfiguration.ApiKey = "sk_test_51OsO7cEyxtA03PfNAGZBvY40v3lzbZLF7Bb0BYOG8wRdlXnLhJoCXUIjtIOCyZtawn5lh97dnu6O0J5jcMxDL00O00WekY3Ta7";
+if (string.IsNullOrEmpty(stripeCredential.SecretKey))
+{
+    logger.Fatal("Stripe is not active.");    
+}
+else
+{
+    logger.Fatal("Stripe is active.");
+    Stripe.StripeConfiguration.ApiKey = stripeCredential.SecretKey;    
+}
 
 app.Run();
 
 logger.Fatal("App is running.");
 
-
-
-
-public record User(int Id);
-
-public class ApplicationDbContext : Microsoft.AspNetCore.Identity.EntityFrameworkCore.IdentityDbContext<StudentApplicationUser>
+public class ApplicationDbContext : Microsoft.AspNetCore.Identity.EntityFrameworkCore.IdentityDbContext<ApplicationUser, ApplicationRole, Guid>
 {
     public ApplicationDbContext(Microsoft.EntityFrameworkCore.DbContextOptions<ApplicationDbContext> options) :
         base(options)
     { }
 }
 
-public class StudentApplicationUser : Microsoft.AspNetCore.Identity.IdentityUser
+public class ApplicationUser : Microsoft.AspNetCore.Identity.IdentityUser<Guid>
 {
     public string Name { get; set; } = String.Empty;
+    public string Address { get; set; }  = String.Empty;
+    public string City { get; set; }  = String.Empty;
     
-    public string Surname { get; set; }  = String.Empty;
+    public AccountStatus AccountStatus { get; set; }
+    
+    public UserType UserType { get; set; }
+}
+
+public class ApplicationRole : IdentityRole<Guid>
+{
+    
+}
+
+public enum AccountStatus
+{
+    Active,
+    PaymentAwaiting,
+}
+
+public enum UserType
+{
+    Student,
+    Coach,
 }
 
 

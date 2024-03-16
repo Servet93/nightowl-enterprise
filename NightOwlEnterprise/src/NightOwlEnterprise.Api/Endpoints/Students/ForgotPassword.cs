@@ -20,7 +20,8 @@ public static class ForgotPassword
             var userManager = sp.GetRequiredService<UserManager<TUser>>();
             var user = await userManager.FindByEmailAsync(resetRequest.Email);
 
-            if (user is not null && await userManager.IsEmailConfirmedAsync(user))
+            // if (user is not null && await userManager.IsEmailConfirmedAsync(user))
+            if (user is not null)
             {
                 var code = await userManager.GeneratePasswordResetTokenAsync(user);
                 code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));

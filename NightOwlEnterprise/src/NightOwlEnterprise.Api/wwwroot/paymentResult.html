@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Payment Result</title>
+    <meta name="description" content="A demo of a payment on Stripe" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        // This is a public sample test API key.
+        // Don’t submit any personally identifiable information in requests made with this key.
+        // Sign in to see your own test API key embedded in code samples.
+        const stripe = Stripe("pk_test_TYooMQauvdEDq54NiTphI7jx");
+
+        checkStatus();
+
+        // Fetches the payment intent status after payment submission
+        async function checkStatus() {
+            const clientSecret = new URLSearchParams(window.location.search).get(
+                "payment_intent_client_secret"
+            );
+
+            if (!clientSecret) {
+                return;
+            }
+
+            const { paymentIntent } = await stripe.retrievePaymentIntent(clientSecret);
+
+            switch (paymentIntent.status) {
+                case "succeeded":
+                    showMessage("Payment succeeded!");
+                    break;
+                case "processing":
+                    showMessage("Your payment is processing.");
+                    break;
+                case "requires_payment_method":
+                    showMessage("Your payment was not successful, please try again.");
+                    break;
+                default:
+                    showMessage("Something went wrong.");
+                    break;
+            }
+        }
+
+        function showMessage(messageText) {
+            const messageContainer = document.querySelector("#payment-message");
+
+            messageContainer.classList.remove("hidden");
+            messageContainer.textContent = messageText;
+        }
+        
+    </script>
+</head>
+<body>
+<div id="payment-message" class="hidden"></div>
+</body>
+</html>

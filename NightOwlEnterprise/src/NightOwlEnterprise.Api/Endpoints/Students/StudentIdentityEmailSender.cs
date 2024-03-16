@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 
 namespace NightOwlEnterprise.Api.Endpoints.Students;
 
-public class StudentIdentityEmailSender : IEmailSender<StudentApplicationUser> 
+public class StudentIdentityEmailSender : IEmailSender<ApplicationUser> 
 {
     private IEmailSender _emailSender;
 
@@ -12,13 +12,13 @@ public class StudentIdentityEmailSender : IEmailSender<StudentApplicationUser>
         _emailSender = emailSender;
     }
 
-    public Task SendConfirmationLinkAsync(StudentApplicationUser user, string email, string confirmationLink)
+    public Task SendConfirmationLinkAsync(ApplicationUser user, string email, string confirmationLink)
     {
-        var mailTemplate = ConfirmationEmailTemplate(user.Name, user.Surname, confirmationLink);
+        var mailTemplate = ConfirmationEmailTemplate(user.Name, confirmationLink);
         return _emailSender.SendEmailAsync(email, "Confirm your email", mailTemplate);
     }
 
-    private static string ConfirmationEmailTemplate(string name, string surname, string confirmationLink)
+    private static string ConfirmationEmailTemplate(string name, string confirmationLink)
     {
         string title = "Confirmation Email";
 
@@ -53,7 +53,7 @@ public class StudentIdentityEmailSender : IEmailSender<StudentApplicationUser>
 <body>
     <img src=""https://cdn.pixabay.com/photo/2021/01/27/06/51/owl-5953875_1280.png"" alt=""Brand Logo"">
     <h2>{title}</h2>
-    <p>Merhaba {name} {surname},</p>
+    <p>Merhaba {name},</p>
     <p>Hesabınız başarıyla oluşturuldu. Lütfen aşağıdaki bağlantıya tıklayarak hesabınızı onaylayın:</p>
     <p><a href=""{confirmationLink}"" style=""color: #3498db; text-decoration: none;"" target=""_blank"">Onay Bağlantısı</a></p>
     <p>Teşekkür ederiz!</p>
@@ -63,7 +63,7 @@ public class StudentIdentityEmailSender : IEmailSender<StudentApplicationUser>
         return htmlContent;
     }
 
-    private static string PasswordResetCodeEmailTemplate(string name, string surname, string resetCode)
+    private static string PasswordResetCodeEmailTemplate(string name, string resetCode)
     {
         string htmlContent = $@"<!DOCTYPE html>
 <html lang=""en"">
@@ -96,7 +96,7 @@ public class StudentIdentityEmailSender : IEmailSender<StudentApplicationUser>
     <body>
         <img src=""https://cdn.pixabay.com/photo/2021/01/27/06/51/owl-5953875_1280.png"" alt=""Brand Logo"">
         <h2>Password Reset Email</h2>
-        <p>Merhaba {name} {surname},</p>
+        <p>Merhaba {name},</p>
         <p>Şifrenizin sıfırlanmasını talep ettiniz. Lütfen aşağıdaki kodu kullanın:</p>
         <p><strong>{resetCode}</strong></p>
         <p>Bunu siz talep etmediyseniz bu e-postayı güvenle yok sayabilirsiniz.</p>
@@ -107,15 +107,15 @@ public class StudentIdentityEmailSender : IEmailSender<StudentApplicationUser>
         return htmlContent;
     }
 
-    public Task SendPasswordResetLinkAsync(StudentApplicationUser user, string email, string resetLink)
+    public Task SendPasswordResetLinkAsync(ApplicationUser user, string email, string resetLink)
     {
-        var mailTemplate = PasswordResetCodeEmailTemplate(user.Name, user.Surname, string.Empty);
+        var mailTemplate = PasswordResetCodeEmailTemplate(user.Name, string.Empty);
         return _emailSender.SendEmailAsync(email, "Reset your password", $"Please reset your password by <a href='{resetLink}'>clicking here</a>.");
     }
 
-    public Task SendPasswordResetCodeAsync(StudentApplicationUser user, string email, string resetCode)
+    public Task SendPasswordResetCodeAsync(ApplicationUser user, string email, string resetCode)
     {
-        var mailTemplate = PasswordResetCodeEmailTemplate(user.Name, user.Surname, resetCode);
+        var mailTemplate = PasswordResetCodeEmailTemplate(user.Name, resetCode);
         return _emailSender.SendEmailAsync(email, "Reset your password", mailTemplate);
     }
 }

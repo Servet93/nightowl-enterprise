@@ -1,11 +1,13 @@
 ﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
+using Stripe;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace NightOwlEnterprise.Api.Endpoints.Students;
@@ -14,7 +16,7 @@ public static class Register
 {
     private static readonly EmailAddressAttribute _emailAddressAttribute = new();
     
-    public static void MapRegister<TUser>(this IEndpointRouteBuilder endpoints, IEmailSender<StudentApplicationUser> emailSender, LinkGenerator linkGenerator)
+    public static void MapRegister<TUser>(this IEndpointRouteBuilder endpoints, IEmailSender<ApplicationUser> emailSender, LinkGenerator linkGenerator)
         where TUser : class, new()
     {
         // NOTE: We cannot inject UserManager<TUser> directly because the TUser generic parameter is currently unsupported by RDG.
@@ -22,8 +24,9 @@ public static class Register
         endpoints.MapPost("/register", async Task<Results<Ok, ValidationProblem>>
             ([FromBody] StudentRegisterRequest registration, HttpContext context, [FromServices] IServiceProvider sp) =>
         {
-            var userManager = sp.GetRequiredService<UserManager<StudentApplicationUser>>();
+            var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
             var errorDescriber = sp.GetRequiredService<TurkishIdentityErrorDescriber>();
+            var studentEmailSender = sp.GetRequiredService<StudentEmailSender>();
 
             if (!userManager.SupportsUserEmail)
             {
@@ -31,9 +34,10 @@ public static class Register
             }
             
             var name = registration.Name;
-            var surname = registration.Surname;
             var email = registration.Email;
             var phoneNumber = registration.PhoneNumber;
+            var address = registration.Address;
+            var city = registration.City;
             
             if (string.IsNullOrEmpty(email) || !_emailAddressAttribute.IsValid(email))
             {
@@ -47,46 +51,49 @@ public static class Register
             {
                 return IdentityResult.Failed(errorDescriber.InvalidName(name)).CreateValidationProblem();
             }
-            
-            if (string.IsNullOrEmpty(surname) || surname.Length < 2)
-            {
-                return IdentityResult.Failed(errorDescriber.InvalidSurname(surname)).CreateValidationProblem();
-            }
-            
+
             //533-222-88-44
-            if (string.IsNullOrEmpty(phoneNumber) ||
-                phoneNumber.Length != 13 ||
-                phoneNumber.Split("-").Length != 4 ||
-                phoneNumber.Split("-")[0].First() != '5' ||
-                !int.TryParse(phoneNumber.Split("-")[0], out var parseResult) ||
-                !int.TryParse(phoneNumber.Split("-")[1], out parseResult) ||
-                !int.TryParse(phoneNumber.Split("-")[2], out parseResult) || 
-                !int.TryParse(phoneNumber.Split("-")[3], out parseResult))
+            // if (string.IsNullOrEmpty(phoneNumber) ||
+            //     phoneNumber.Length != 13 ||
+            //     phoneNumber.Split("-").Length != 4 ||
+            //     phoneNumber.Split("-")[0].First() != '5' ||
+            //     !int.TryParse(phoneNumber.Split("-")[0], out var parseResult) ||
+            //     !int.TryParse(phoneNumber.Split("-")[1], out parseResult) ||
+            //     !int.TryParse(phoneNumber.Split("-")[2], out parseResult) || 
+            //     !int.TryParse(phoneNumber.Split("-")[3], out parseResult))
+            // {
+            //     return IdentityResult.Failed(errorDescriber.InvalidMobile(phoneNumber)).CreateValidationProblem();
+            // }
+
+            if (string.IsNullOrEmpty(address))
             {
-                return IdentityResult.Failed(errorDescriber.InvalidMobile(phoneNumber)).CreateValidationProblem();
+                return IdentityResult.Failed(errorDescriber.RequiredAddress()).CreateValidationProblem();
             }
 
-            var user = new StudentApplicationUser()
+            var userName = email.Split('@')[0];
+            
+            var user = new ApplicationUser()
             {
                 Name = name,
-                Surname = surname,
-                UserName = email,
+                UserName = userName,
                 Email = email,
-                PhoneNumber = phoneNumber,
+                Address = address,
+                City = city,
             };
             
             var result = await userManager.CreateAsync(user, registration.Password);
-
+            
             if (!result.Succeeded)
             {
                 return result.CreateValidationProblem();
             }
-
+            
             await SendConfirmationEmailAsync(user, userManager, context, email);
+            
             return TypedResults.Ok();
         });
         
-        async Task SendConfirmationEmailAsync(StudentApplicationUser user, UserManager<StudentApplicationUser> userManager, HttpContext context, string email, bool isChange = false)
+        async Task SendConfirmationEmailAsync(ApplicationUser user, UserManager<ApplicationUser> userManager, HttpContext context, string email, bool isChange = false)
         {
             if (ConfirmEmail.confirmEmailEndpointName is null)
             {
@@ -117,25 +124,26 @@ public static class Register
             await emailSender.SendConfirmationLinkAsync(user, email, HtmlEncoder.Default.Encode(confirmEmailUrl));
         }
     }
-    
+
     private sealed class StudentRegisterRequest
     {
         [DefaultValue("NightOwl")]
         public required string Name { get; init; }
         
-        [DefaultValue("Enterprise")]
-        public required string Surname { get; init; }
-        
         [DefaultValue("nightowl-enterprise@gmail.com")]
         public required string Email { get; init; }
-
+        
         [DefaultValue("Aa.123456")]
         public required string Password { get; init; }
+        
+        public required string Address { get; init; }
+        
+        public required string City { get; init; }
         
         [SwaggerSchema("The student's phone number", Description = "phone number format is 5xx-xxx-xxx-xxx")]
         [DefaultValue("533-333-33-33")]
         public required string PhoneNumber { get; init; }
         
         public required Dictionary<string,string> QuestionIdsToAnswers { get; init; }
-    } 
+    }
 }

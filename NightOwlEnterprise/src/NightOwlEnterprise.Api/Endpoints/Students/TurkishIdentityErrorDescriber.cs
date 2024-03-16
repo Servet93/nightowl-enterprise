@@ -22,12 +22,21 @@ public class TurkishIdentityErrorDescriber : IdentityErrorDescriber
         };
     }
     
-    public IdentityError InvalidMobile(string mobile)
+    public IdentityError RequiredAddress()
     {
         return new IdentityError
         {
-            Code = nameof(InvalidMobile),
-            Description = $"Mobil '{mobile}' geçersiz (5xx-xxx-xx-xx)"
+            Code = nameof(RequiredAddress),
+            Description = $"Adres bilgisi gerekli"
+        };
+    }
+    
+    public IdentityError InvalidCity(string city)
+    {
+        return new IdentityError
+        {
+            Code = nameof(InvalidCity),
+            Description = $"Şehir '{city}' geçersiz"
         };
     }
     

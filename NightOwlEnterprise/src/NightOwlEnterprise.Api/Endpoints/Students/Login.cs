@@ -16,10 +16,21 @@ public static class Login
         {
             var signInManager = sp.GetRequiredService<SignInManager<TUser>>();
             
+            var userManager = sp.GetRequiredService<UserManager<TUser>>();
+            
             signInManager.AuthenticationScheme = IdentityConstants.BearerScheme;
-            
-            var result = await signInManager.PasswordSignInAsync(login.Email, login.Password, isPersistent: false, lockoutOnFailure: true);
-            
+
+            var user = await userManager.FindByEmailAsync(login.Email);
+
+            if (user is null)
+            {
+                return TypedResults.Problem("Failed", statusCode: StatusCodes.Status401Unauthorized);
+            }
+
+            //PasswordSignIn uses username
+            // var result = await signInManager.PasswordSignInAsync(login.Email, login.Password, isPersistent: false, lockoutOnFailure: true);
+            var result = await signInManager.PasswordSignInAsync(user, login.Password, isPersistent: false, lockoutOnFailure: true);
+
             if (!result.Succeeded)
             {
                 return TypedResults.Problem(result.ToString(), statusCode: StatusCodes.Status401Unauthorized);

@@ -10,13 +10,21 @@ public static class IdentityResultExtensions
 
     private static ValidationProblem CreateValidationProblemSpecial(IdentityResult result)
     {
-        var errorDescriptions = result.Errors.Select(x => x.Description);
+        var dict = new Dictionary<string, string[]>();
+        
+        foreach (var error in result.Errors)
+        {
+            dict.Add(error.Code, new string[1] {error.Description});    
+        }
 
-        return TypedResults.ValidationProblem(
-            new Dictionary<string, string[]>(),
-            extensions: new Dictionary<string, object?>()
-            {
-                { "errors",  errorDescriptions  }
-            });
+        return TypedResults.ValidationProblem(dict);
+        
+        
+        // return TypedResults.ValidationProblem(
+        //     new Dictionary<string, string[]>(),
+        //     extensions: new Dictionary<string, object?>()
+        //     {
+        //         { "errors",  errorDescriptions  }
+        //     });
     }
 }
