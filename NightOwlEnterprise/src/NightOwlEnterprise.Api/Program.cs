@@ -1,10 +1,16 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using MongoDB.Bson;
+using MongoDB.Driver;
 using NightOwlEnterprise.Api;
 using NightOwlEnterprise.Api.Endpoints.Students;
 using NightOwlEnterprise.Api.Utils.Email;
@@ -24,11 +30,11 @@ logger.Fatal("Builder is created.");
 
 builder.Host.UseNLog();
 
+var postgresConnectionString = builder.Configuration.GetConnectionString("PostgresConnection");
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-    
-    if (string.IsNullOrEmpty(connectionString))
+    if (string.IsNullOrEmpty(postgresConnectionString))
     {
         logger.Fatal("ApplicationDbContext is using memory database.");
         options.UseInMemoryDatabase("AppDb");    
@@ -36,19 +42,89 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     else
     {
         logger.Fatal("ApplicationDbContext is using postgresql.");
-        options.UseNpgsql(connectionString);
+        options.UseNpgsql(postgresConnectionString);    
     }
 });
 
-builder.Services.AddAuthorization();
+var mongoConnectionString = builder.Configuration.GetConnectionString("MongoConnection");
+
+if (!string.IsNullOrEmpty(mongoConnectionString))
+{
+    // MongoDB istemci nesnesi oluşturma
+    MongoClient mongoClient = new MongoClient(mongoConnectionString);
+
+    // Veritabanı adı
+    string databaseName = "chat";
+
+    // Veritabanı nesnesi oluşturma
+    IMongoDatabase database = mongoClient.GetDatabase(databaseName);
+
+
+    var messasgesCollection = database.GetCollection<BsonDocument>("messages");
+
+    // Azalan sıralama (descending) için index oluşturma
+    var keysDescending = Builders<BsonDocument>.IndexKeys.Descending("timestamp");
+    var indexOptionsDescending = new CreateIndexOptions { Name = "timestamp_-1" }; // "-1" azalan sıralamayı ifade eder
+    await messasgesCollection.Indexes.CreateOneAsync(new CreateIndexModel<BsonDocument>(keysDescending, indexOptionsDescending));
+
+    var conversationIdDescending = Builders<BsonDocument>.IndexKeys.Ascending("conversationId");
+    await messasgesCollection.Indexes.CreateOneAsync(new CreateIndexModel<BsonDocument>(conversationIdDescending));
+    
+    // Veritabanı nesnesini dependency injection ile servislere ekleme
+    builder.Services.AddSingleton(database);
+}
 
 builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
     .AddErrorDescriber<TurkishIdentityErrorDescriber>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidIssuer = builder.Configuration.GetValue<string>("Jwt:Issuer"),
+        ValidAudience = builder.Configuration.GetValue<string>("Jwt:Audience"),
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration.GetValue<string>("Jwt:Key"))),
+        
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateIssuerSigningKey = true,
+        
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero
+    };
+    
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+
+            // If the request is for our hub...
+            var path = context.HttpContext.Request.Path;
+            if (!string.IsNullOrEmpty(accessToken) &&
+                (path.StartsWithSegments("/chatHub")))
+            {
+                // Read the token out of the query string
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
+    };
+});
+builder.Services.AddAuthorization();
+
 builder.Services.AddSingleton<TurkishIdentityErrorDescriber>();
 
 builder.Services.AddSingleton<StudentEmailSender>();
+
+builder.Services.AddSingleton<JwtHelper>();
+
+builder.Services.AddSignalR();
 
 var smtpServerCredentialEnabled = builder.Configuration.GetValue<bool>("SmtpServer:Enabled");
 
@@ -67,7 +143,10 @@ else
 }
 
 builder.Services.Configure<StripeCredential>(
-    builder.Configuration.GetSection(StripeCredential.Stripe));
+    builder.Configuration.GetSection(StripeCredential.StripeSection));
+
+builder.Services.Configure<JwtConfig>(
+    builder.Configuration.GetSection(JwtConfig.JwtSection));
 
 var requireConfirmedEmail = builder.Configuration.GetValue<bool>("RequireConfirmedEmail");
 
@@ -127,6 +206,8 @@ builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
+logger.Fatal("App is created.");
+
 app.UseStaticFiles();
 
 app.UseExceptionHandler();
@@ -159,9 +240,34 @@ app.UseSwaggerUI();
 //     });
 // });
 
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapControllers();
 
-logger.Fatal("App is created.");
+if (!string.IsNullOrEmpty(mongoConnectionString))
+{
+    app.MapHub<ChatHub>("/chatHub", options =>
+    {
+        options.Transports = HttpTransportType.WebSockets;
+    });    
+}
+else
+{
+    app.MapGet("/chatHub", async context =>
+    {
+        await context.Response.WriteAsync("chat hub not configured.");
+    });
+}
+
+app.MapGet("/conf", async context =>
+{
+    StringBuilder sb = new();
+    sb.AppendLine($"Mongo -> {mongoConnectionString}");
+    sb.AppendLine($"Postgres -> {postgresConnectionString}");
+    await context.Response.WriteAsync(sb.ToString());
+});
+
 
 app.MapGet("/", async context =>
 {
@@ -252,6 +358,14 @@ public class ApplicationUser : Microsoft.AspNetCore.Identity.IdentityUser<Guid>
     public AccountStatus AccountStatus { get; set; }
     
     public UserType UserType { get; set; }
+    
+    public string CustomerId { get; set; } = String.Empty;
+    
+    public string SubscriptionId { get; set; } = String.Empty;
+    
+    public string? RefreshToken { get; set; }
+    
+    public DateTime? RefreshTokenExpiration { get; set; }
 }
 
 public class ApplicationRole : IdentityRole<Guid>

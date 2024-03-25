@@ -17,13 +17,16 @@ public static class StudentIdentityEndpoints
         var stripeCredential = endpoints.ServiceProvider.GetRequiredService<IOptions<StripeCredential>>()?.Value;
         var stripeCredentialSigningSecret = stripeCredential?.SigningSecret;
         
+        var jwtHelper = endpoints.ServiceProvider.GetRequiredService<JwtHelper>();
+        var jwtConfig = endpoints.ServiceProvider.GetRequiredService<IOptions<JwtConfig>>()?.Value;
+        
         var routeGroup = endpoints.MapGroup("students");
 
         routeGroup.MapRegister<ApplicationUser>((IEmailSender<ApplicationUser>)emailSender,
             linkGenerator);
         routeGroup.MapPayment<ApplicationUser>(stripeCredentialSigningSecret);
-        routeGroup.MapLogin<ApplicationUser>();
-        routeGroup.MapRefresh<ApplicationUser>();
+        routeGroup.MapLogin<ApplicationUser>(jwtHelper);
+        routeGroup.MapRefresh<ApplicationUser>(jwtHelper);
         routeGroup.MapConfirmEmail<ApplicationUser>();
         routeGroup.MapResendConfirmationEmail<TUser>(emailSender, linkGenerator);
         routeGroup.MapForgotPassword<TUser>(emailSender);

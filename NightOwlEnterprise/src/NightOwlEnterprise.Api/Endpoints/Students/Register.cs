@@ -88,7 +88,7 @@ public static class Register
                 return result.CreateValidationProblem();
             }
             
-            await SendConfirmationEmailAsync(user, userManager, context, email);
+            // await SendConfirmationEmailAsync(user, userManager, context, email);
             
             return TypedResults.Ok();
         });
@@ -143,7 +143,5 @@ public static class Register
         [SwaggerSchema("The student's phone number", Description = "phone number format is 5xx-xxx-xxx-xxx")]
         [DefaultValue("533-333-33-33")]
         public required string PhoneNumber { get; init; }
-        
-        public required Dictionary<string,string> QuestionIdsToAnswers { get; init; }
     }
 }

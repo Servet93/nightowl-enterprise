@@ -11,7 +11,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace NightOwlEnterprise.Api.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240314133059_Initial")]
+    [Migration("20240317134220_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -75,6 +75,10 @@ namespace NightOwlEnterprise.Api.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("text");
 
+                    b.Property<string>("CustomerId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
@@ -110,6 +114,10 @@ namespace NightOwlEnterprise.Api.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("SecurityStamp")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SubscriptionId")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<bool>("TwoFactorEnabled")

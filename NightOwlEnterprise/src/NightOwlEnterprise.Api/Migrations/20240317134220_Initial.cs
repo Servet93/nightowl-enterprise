@@ -36,6 +36,8 @@ namespace NightOwlEnterprise.Api.Migrations
                     City = table.Column<string>(type: "text", nullable: false),
                     AccountStatus = table.Column<int>(type: "integer", nullable: false),
                     UserType = table.Column<int>(type: "integer", nullable: false),
+                    CustomerId = table.Column<string>(type: "text", nullable: false),
+                    SubscriptionId = table.Column<string>(type: "text", nullable: false),
                     UserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),

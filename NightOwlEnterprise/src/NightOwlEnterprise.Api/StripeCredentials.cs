@@ -2,7 +2,7 @@
 
 public class StripeCredential
 {
-    public const string Stripe = "Stripe";
+    public const string StripeSection = "Stripe";
 
     //For Backend
     public string? SecretKey { get; init; } = null;
