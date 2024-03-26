@@ -218,10 +218,18 @@ logger.Fatal("App is created.");
 
 logger.Fatal("Db migration is started");
 
-using (var scope = app.Services.CreateScope())
+try
 {
-    var db = scope.ServiceProvider.GetRequiredService<DbContext>();
-    db.Database.Migrate();
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<DbContext>();
+        db.Database.Migrate();
+    }
+}
+catch (Exception e)
+{
+    logger.Error(e, "Postgres Migration Failed.");
+    throw;
 }
 
 logger.Fatal("Db migration is finished");
