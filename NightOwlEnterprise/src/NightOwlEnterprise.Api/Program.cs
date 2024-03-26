@@ -208,6 +208,16 @@ var app = builder.Build();
 
 logger.Fatal("App is created.");
 
+logger.Fatal("Db migration is started");
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<DbContext>();
+    db.Database.Migrate();
+}
+
+logger.Fatal("Db migration is finished");
+
 app.UseStaticFiles();
 
 app.UseExceptionHandler();
@@ -267,7 +277,6 @@ app.MapGet("/conf", async context =>
     sb.AppendLine($"Postgres -> {postgresConnectionString}");
     await context.Response.WriteAsync(sb.ToString());
 });
-
 
 app.MapGet("/", async context =>
 {
