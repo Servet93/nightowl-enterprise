@@ -32,19 +32,27 @@ builder.Host.UseNLog();
 
 var postgresConnectionString = builder.Configuration.GetConnectionString("PostgresConnection");
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+try
 {
-    if (string.IsNullOrEmpty(postgresConnectionString))
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
     {
-        logger.Fatal("ApplicationDbContext is using memory database.");
-        options.UseInMemoryDatabase("AppDb");    
-    }
-    else
-    {
-        logger.Fatal("ApplicationDbContext is using postgresql.");
-        options.UseNpgsql(postgresConnectionString);    
-    }
-});
+        if (string.IsNullOrEmpty(postgresConnectionString))
+        {
+            logger.Fatal("ApplicationDbContext is using memory database.");
+            options.UseInMemoryDatabase("AppDb");    
+        }
+        else
+        {
+            logger.Fatal("ApplicationDbContext is using postgresql.");
+            options.UseNpgsql(postgresConnectionString);    
+        }
+    });
+}
+catch (Exception e)
+{
+    logger.Error(e, "Postgres Connection Failed.");
+    throw;
+}
 
 var mongoConnectionString = builder.Configuration.GetConnectionString("MongoConnection");
 
