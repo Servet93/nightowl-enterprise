@@ -29,6 +29,9 @@ jobs:
             # echo "export Stripe__PublishableKey='${{ vars.STRIPE__PUBLISHABLEKEY }}'" >> ~/.bashrc
             #echo "export Stripe__SigningSecret='${{ vars.STRIPE__SIGNINGSECRET }}'" >> ~/.bashrc 
             # Aşağıdaki komut environment variableları sistemden kaldırır.
+            #Remove Connection Strings
+            sudo sed -i "/^ConnectionStrings__PostgresConnection=/d" /etc/environment   
+            sudo sed -i "/^ConnectionStrings__MongoConnection=/d" /etc/environment
             #Remove Stripe configs
             sudo sed -i "/^Stripe__SecretKey=/d" /etc/environment
             sudo sed -i "/^Stripe__PublishableKey=/d" /etc/environment
@@ -38,6 +41,9 @@ jobs:
             sudo sed -i "/^Jwt__Audience=/d" /etc/environment
             sudo sed -i "/^Jwt__Key=/d" /etc/environment
             # Aşağıdaki komut environment variableları sisteme ekler.
+            #Define Connection Strings
+            echo 'ConnectionStrings__PostgresConnection="${{ vars.CONNECTIONSTRINGS__POSTGRESCONNECTION }}"' | sudo tee -a /etc/environment
+            echo 'ConnectionStrings__MongoConnection="${{ vars.CONNECTIONSTRINGS__MONGOCONNECTION }}"' | sudo tee -a /etc/environment
             #Define Stripe configs
             echo 'Stripe__SecretKey="${{ vars.STRIPE__SECRETKEY }}"' | sudo tee -a /etc/environment
             echo 'Stripe__PublishableKey="${{ vars.STRIPE__PUBLISHABLEKEY }}"' | sudo tee -a /etc/environment
