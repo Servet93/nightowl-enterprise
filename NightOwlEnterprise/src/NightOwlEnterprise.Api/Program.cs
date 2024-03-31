@@ -150,6 +150,12 @@ else
     builder.Services.AddTransient<IEmailSender, LocalEmailSender>();    
 }
 
+var secretKey = builder.Configuration.GetValue<string>("Stripe:SecretKey");
+var publishableKey = builder.Configuration.GetValue<string>("Stripe:PublishableKey");
+var signingSecret = builder.Configuration.GetValue<string>("Stripe:SigningSecret");
+
+logger.Fatal($"SecretKey: {secretKey}, PublishableKey: {publishableKey}, SigningSecret: {signingSecret}");
+
 builder.Services.Configure<StripeCredential>(options =>
 {
     options.SecretKey = builder.Configuration.GetValue<string>("Stripe:SecretKey");
