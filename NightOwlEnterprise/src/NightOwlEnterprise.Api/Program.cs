@@ -150,8 +150,12 @@ else
     builder.Services.AddTransient<IEmailSender, LocalEmailSender>();    
 }
 
-builder.Services.Configure<StripeCredential>(
-    builder.Configuration.GetSection(StripeCredential.StripeSection));
+builder.Services.Configure<StripeCredential>(options =>
+{
+    options.SecretKey = builder.Configuration.GetValue<string>("Stripe:SecretKey");
+    options.PublishableKey = builder.Configuration.GetValue<string>("Stripe:PublishableKey");
+    options.SigningSecret = builder.Configuration.GetValue<string>("Stripe:SigningSecret");
+});
 
 builder.Services.Configure<JwtConfig>(
     builder.Configuration.GetSection(JwtConfig.JwtSection));

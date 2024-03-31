@@ -5,11 +5,11 @@ public class StripeCredential
     public const string StripeSection = "Stripe";
 
     //For Backend
-    public string? SecretKey { get; init; } = null;
+    public string? SecretKey { get; set; }
 
     //For Client(Browser,Mobile)
-    public string? PublishableKey { get; init; } = null;
+    public string? PublishableKey { get; set; }
     
     //For Webhook
-    public string? SigningSecret { get; init; } = null;
+    public string? SigningSecret { get; set; }
 }
