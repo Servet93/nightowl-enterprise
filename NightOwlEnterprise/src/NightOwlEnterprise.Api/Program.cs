@@ -30,21 +30,26 @@ logger.Fatal("Builder is created.");
 
 builder.Host.UseNLog();
 
+var isPostgresEnabled = builder.Configuration.GetValue<bool>("IsPostgresEnabled");
+
 var postgresConnectionString = builder.Configuration.GetConnectionString("PostgresConnection");
 
 try
 {
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
     {
-        if (string.IsNullOrEmpty(postgresConnectionString))
+        if (isPostgresEnabled)
         {
-            logger.Fatal("ApplicationDbContext is using memory database.");
-            options.UseInMemoryDatabase("AppDb");    
-        }
-        else
-        {
-            logger.Fatal("ApplicationDbContext is using postgresql.");
-            options.UseNpgsql(postgresConnectionString);    
+            if (string.IsNullOrEmpty(postgresConnectionString))
+            {
+                logger.Fatal("ApplicationDbContext is using memory database.");
+                options.UseInMemoryDatabase("AppDb");    
+            }
+            else
+            {
+                logger.Fatal("ApplicationDbContext is using postgresql.");
+                options.UseNpgsql(postgresConnectionString);    
+            }    
         }
     });
 }
@@ -54,9 +59,10 @@ catch (Exception e)
     throw;
 }
 
+var isMongoEnabled = builder.Configuration.GetValue<bool>("IsMongoEnabled");
 var mongoConnectionString = builder.Configuration.GetConnectionString("MongoConnection");
 
-if (!string.IsNullOrEmpty(mongoConnectionString))
+if (isMongoEnabled && !string.IsNullOrEmpty(mongoConnectionString))
 {
     // MongoDB istemci nesnesi oluşturma
     MongoClient mongoClient = new MongoClient(mongoConnectionString);
@@ -86,45 +92,74 @@ builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
     .AddErrorDescriber<TurkishIdentityErrorDescriber>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-}).AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidIssuer = builder.Configuration.GetValue<string>("Jwt:Issuer"),
-        ValidAudience = builder.Configuration.GetValue<string>("Jwt:Audience"),
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration.GetValue<string>("Jwt:Key"))),
-        
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateIssuerSigningKey = true,
-        
-        ValidateLifetime = true,
-        ClockSkew = TimeSpan.Zero
-    };
-    
-    options.Events = new JwtBearerEvents
-    {
-        OnMessageReceived = context =>
-        {
-            var accessToken = context.Request.Query["access_token"];
+var stripeCredential = builder.Configuration.GetSection(StripeCredential.StripeSection).Get<StripeCredential>();
 
-            // If the request is for our hub...
-            var path = context.HttpContext.Request.Path;
-            if (!string.IsNullOrEmpty(accessToken) &&
-                (path.StartsWithSegments("/chatHub")))
+// This is a public sample test API key.
+// Don’t submit any personally identifiable information in requests made with this key.
+// Sign in to see your own test API key embedded in code samples.
+// Stripe.StripeConfiguration.ApiKey = "sk_test_4eC39HqLyjWDarjtT1zdp7dc";
+// Stripe.StripeConfiguration.ApiKey = "sk_test_51OsO7cEyxtA03PfNAGZBvY40v3lzbZLF7Bb0BYOG8wRdlXnLhJoCXUIjtIOCyZtawn5lh97dnu6O0J5jcMxDL00O00WekY3Ta7";
+if (string.IsNullOrEmpty(stripeCredential.SecretKey))
+{
+    logger.Fatal("Stripe is not active.");    
+}
+else
+{
+    logger.Fatal("Stripe is active.");
+    Stripe.StripeConfiguration.ApiKey = stripeCredential.SecretKey;    
+}
+
+builder.Services.Configure<StripeCredential>(
+    builder.Configuration.GetSection(StripeCredential.StripeSection));
+
+var jwtConfig = builder.Configuration.GetSection(JwtConfig.JwtSection).Get<JwtConfig>();
+
+builder.Services.Configure<JwtConfig>(
+    builder.Configuration.GetSection(JwtConfig.JwtSection));
+
+if (jwtConfig is not null && !string.IsNullOrEmpty(jwtConfig.Key))
+{
+    builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    }).AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidIssuer = jwtConfig.Issuer,
+            ValidAudience = jwtConfig.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtConfig.Key)),
+        
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateIssuerSigningKey = true,
+        
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero
+        };
+    
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
             {
-                // Read the token out of the query string
-                context.Token = accessToken;
+                var accessToken = context.Request.Query["access_token"];
+
+                // If the request is for our hub...
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) &&
+                    (path.StartsWithSegments("/chatHub")))
+                {
+                    // Read the token out of the query string
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
             }
-            return Task.CompletedTask;
-        }
-    };
-});
-builder.Services.AddAuthorization();
+        };
+    });
+
+    builder.Services.AddAuthorization();    
+}
 
 builder.Services.AddSingleton<TurkishIdentityErrorDescriber>();
 
@@ -134,12 +169,12 @@ builder.Services.AddSingleton<JwtHelper>();
 
 builder.Services.AddSignalR();
 
-var smtpServerCredentialEnabled = builder.Configuration.GetValue<bool>("SmtpServer:Enabled");
+var smtpServerCredential = builder.Configuration.GetSection(SmtpServerCredential.SmtpServerSection).Get<SmtpServerCredential>();
 
-if (smtpServerCredentialEnabled)
+if (smtpServerCredential!.Enabled)
 {
     builder.Services.Configure<SmtpServerCredential>(
-        builder.Configuration.GetSection(SmtpServerCredential.SmtpServer));
+        builder.Configuration.GetSection(SmtpServerCredential.SmtpServerSection));
     builder.Services.AddTransient(typeof(IEmailSender<ApplicationUser>), typeof(StudentIdentityEmailSender));
     builder.Services.AddTransient<IEmailSender, ProductionEmailSender>();    
 }
@@ -149,12 +184,6 @@ else
     // builder.Services.TryAddTransient<IEmailSender, NoOpEmailSender>();
     builder.Services.AddTransient<IEmailSender, LocalEmailSender>();    
 }
-
-builder.Services.Configure<StripeCredential>(
-    builder.Configuration.GetSection(StripeCredential.StripeSection));
-
-builder.Services.Configure<JwtConfig>(
-    builder.Configuration.GetSection(JwtConfig.JwtSection));
 
 var requireConfirmedEmail = builder.Configuration.GetValue<bool>("RequireConfirmedEmail");
 
@@ -216,7 +245,7 @@ var app = builder.Build();
 
 logger.Fatal("App is created.");
 
-if (!string.IsNullOrEmpty(postgresConnectionString))
+if (isPostgresEnabled && !string.IsNullOrEmpty(postgresConnectionString))
 {
     logger.Fatal("Db migration is started");
     
@@ -342,30 +371,26 @@ app.MapGet("/", async context =>
 
 app.MapStudentsIdentityApi<ApplicationUser>();
 
-var stripeCredential = app.Services.GetService<IOptions<StripeCredential>>()?.Value;
-// This is a public sample test API key.
-// Don’t submit any personally identifiable information in requests made with this key.
-// Sign in to see your own test API key embedded in code samples.
-// Stripe.StripeConfiguration.ApiKey = "sk_test_4eC39HqLyjWDarjtT1zdp7dc";
-// Stripe.StripeConfiguration.ApiKey = "sk_test_51OsO7cEyxtA03PfNAGZBvY40v3lzbZLF7Bb0BYOG8wRdlXnLhJoCXUIjtIOCyZtawn5lh97dnu6O0J5jcMxDL00O00WekY3Ta7";
-if (string.IsNullOrEmpty(stripeCredential.SecretKey))
-{
-    logger.Fatal("Stripe is not active.");    
-}
-else
-{
-    logger.Fatal("Stripe is active.");
-    Stripe.StripeConfiguration.ApiKey = stripeCredential.SecretKey;    
-}
-
 app.MapGet("/conf", async context =>
 {
     StringBuilder sb = new();
+    sb.AppendLine($"IsMongoEnabled -> {isMongoEnabled}");
     sb.AppendLine($"Mongo -> {mongoConnectionString}");
+    sb.AppendLine($"IsPostgresEnabled -> {isPostgresEnabled}");
     sb.AppendLine($"Postgres -> {postgresConnectionString}");
     sb.AppendLine($"Stripe.PublishableKey -> {stripeCredential.PublishableKey}");
     sb.AppendLine($"Stripe.SecretKey -> {stripeCredential.SecretKey}");
     sb.AppendLine($"Stripe.SigningSecret -> {stripeCredential.SigningSecret}");
+    sb.AppendLine($"JwtConfig.Audience -> {jwtConfig!.Audience}");
+    sb.AppendLine($"JwtConfig.Issuer -> {jwtConfig.Issuer}");
+    sb.AppendLine($"JwtConfig.Key -> {jwtConfig.Key}");
+    sb.AppendLine($"SmtpServerCredential.Enabled -> {smtpServerCredential.Enabled}");
+    sb.AppendLine($"SmtpServerCredential.Address -> {smtpServerCredential.Address}");
+    sb.AppendLine($"SmtpServerCredential.Port -> {smtpServerCredential.Port}");
+    sb.AppendLine($"SmtpServerCredential.Username -> {smtpServerCredential.Username}");
+    sb.AppendLine($"SmtpServerCredential.Password -> {smtpServerCredential.Password}");
+    sb.AppendLine($"SmtpServerCredential.DisplayName -> {smtpServerCredential.DisplayName}");
+    sb.AppendLine($"SmtpServerCredential.EnableSsl -> {smtpServerCredential.EnableSsl}");
     await context.Response.WriteAsync(sb.ToString());
 });
 

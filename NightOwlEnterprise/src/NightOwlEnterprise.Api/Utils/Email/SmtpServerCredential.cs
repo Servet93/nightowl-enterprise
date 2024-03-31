@@ -2,7 +2,7 @@
 
 public class SmtpServerCredential
 {
-    public const string SmtpServer = "SmtpServer";
+    public const string SmtpServerSection = "SmtpServer";
 
     public string? Address { get; init; } = null;
 
