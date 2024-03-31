@@ -30,6 +30,8 @@ jobs:
             #echo "export Stripe__SigningSecret='${{ vars.STRIPE__SIGNINGSECRET }}'" >> ~/.bashrc 
             # Aşağıdaki komut environment variableları sistemden kaldırır.
             #Remove Connection Strings
+            sudo sed -i "/^IsPostgresEnabled=/d" /etc/environment
+            sudo sed -i "/^IsMongoEnabled=/d" /etc/environment
             sudo sed -i "/^ConnectionStrings__PostgresConnection=/d" /etc/environment   
             sudo sed -i "/^ConnectionStrings__MongoConnection=/d" /etc/environment
             #Remove Stripe configs
@@ -42,6 +44,8 @@ jobs:
             sudo sed -i "/^Jwt__Key=/d" /etc/environment
             # Aşağıdaki komut environment variableları sisteme ekler.
             #Define Connection Strings
+            echo 'IsPostgresEnabled="${{ vars.ISPOSTGRESENABLED }}"' | sudo tee -a /etc/environment
+            echo 'IsMongoEnabled="${{ vars.ISMONGOENABLED }}"' | sudo tee -a /etc/environment
             echo 'ConnectionStrings__PostgresConnection="${{ vars.CONNECTIONSTRINGS__POSTGRESCONNECTION }}"' | sudo tee -a /etc/environment
             echo 'ConnectionStrings__MongoConnection="${{ vars.CONNECTIONSTRINGS__MONGOCONNECTION }}"' | sudo tee -a /etc/environment
             #Define Stripe configs
