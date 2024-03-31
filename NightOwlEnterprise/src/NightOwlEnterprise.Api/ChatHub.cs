@@ -56,7 +56,7 @@ public class ChatHub : Hub
             Timestamp = timeStamp
         };
         
-        _messageCollection.InsertOne(messageObj);
+        await _messageCollection.InsertOneAsync(messageObj);
         
         var isReceiverIdExist = userIdentifierToConnectionIds.ContainsKey(receiverId);
 

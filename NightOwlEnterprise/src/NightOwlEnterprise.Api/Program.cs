@@ -286,14 +286,6 @@ else
     });
 }
 
-app.MapGet("/conf", async context =>
-{
-    StringBuilder sb = new();
-    sb.AppendLine($"Mongo -> {mongoConnectionString}");
-    sb.AppendLine($"Postgres -> {postgresConnectionString}");
-    await context.Response.WriteAsync(sb.ToString());
-});
-
 app.MapGet("/", async context =>
 {
     context.Response.ContentType = "text/html";
@@ -363,6 +355,17 @@ else
     Stripe.StripeConfiguration.ApiKey = stripeCredential.SecretKey;    
 }
 
+app.MapGet("/conf", async context =>
+{
+    StringBuilder sb = new();
+    sb.AppendLine($"Mongo -> {mongoConnectionString}");
+    sb.AppendLine($"Postgres -> {postgresConnectionString}");
+    sb.AppendLine($"Stripe.PublishableKey -> {stripeCredential.PublishableKey}");
+    sb.AppendLine($"Stripe.SecretKey -> {stripeCredential.SecretKey}");
+    sb.AppendLine($"Stripe.SigningSecret -> {stripeCredential.SigningSecret}");
+    await context.Response.WriteAsync(sb.ToString());
+});
+
 app.Run();
 
 logger.Fatal("App is running.");
@@ -400,8 +403,11 @@ public class ApplicationRole : IdentityRole<Guid>
 
 public enum AccountStatus
 {
-    Active,
     PaymentAwaiting,
+    OnboardProgress,
+    OnboardCompleted,
+    CoachSelect,
+    Active,
 }
 
 public enum UserType
