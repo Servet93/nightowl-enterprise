@@ -12,6 +12,8 @@ jobs:
       run: |
         mkdir -p ~/.ssh/
         echo "EC2IP -> ${{ secrets.EC2_IP }}"
+        echo "Stripe_SecretKey -> ${{ vars.Stripe_SecretKey }}"
+        echo "STRIPE__PUBLISHABLEKEY -> ${{ vars.STRIPE__PUBLISHABLEKEY }}"
         echo "SSH_PRIVATE_KEY ->  ${{ secrets.EC2_SSH_PRIVATE_KEY }}"
         echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
