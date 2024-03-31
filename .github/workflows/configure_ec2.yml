@@ -30,6 +30,9 @@ jobs:
             echo "export Stripe__SecretKey='${{ vars.Stripe_SecretKey }}'" >> ~/.bashrc
             echo "export Stripe__PublishableKey='${{ vars.STRIPE__PUBLISHABLEKEY }}'" >> ~/.bashrc
             echo "export Stripe__SigningSecret='${{ vars.STRIPE__SIGNINGSECRET }}'" >> ~/.bashrc  
+            echo "export Jwt__Issuer='${{ vars.JWT__ISSUER }}'" >> ~/.bashrc
+            echo "export Jwt__Audience='${{ vars.JWT__AUDIENCE }}'" >> ~/.bashrc
+            echo "export Jwt__Key='${{ vars.JWT__KEY }}'" >> ~/.bashrc
             echo -e "${{ vars.SERVICE_DEFINITON_CONTENT_ON_EC2 }}" | sed 's@EC2_URL_PLACEHOLDER@${{ vars.EC2_URL }}@g' | sudo tee /etc/systemd/system/nightowl-enterprise.service
             #Servis dosyasını kaydedin ve systemd'ye değişiklikleri bildirin
             sudo systemctl daemon-reload
