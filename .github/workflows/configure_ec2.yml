@@ -42,6 +42,14 @@ jobs:
             sudo sed -i "/^Jwt__Issuer=/d" /etc/environment
             sudo sed -i "/^Jwt__Audience=/d" /etc/environment
             sudo sed -i "/^Jwt__Key=/d" /etc/environment
+            #Remove SmtpServer Credentials
+            sudo sed -i "/^SmtpServer__Enabled=/d" /etc/environment   
+            sudo sed -i "/^SmtpServer__Address=/d" /etc/environment   
+            sudo sed -i "/^SmtpServer__Port=/d" /etc/environment 
+            sudo sed -i "/^SmtpServer__DisplayName=/d" /etc/environment
+            sudo sed -i "/^SmtpServer__Username=/d" /etc/environment 
+            sudo sed -i "/^SmtpServer__Password=/d" /etc/environment 
+            sudo sed -i "/^SmtpServer__EnableSsl=/d" /etc/environment 
             # Aşağıdaki komut environment variableları sisteme ekler.
             #Define Connection Strings
             echo 'IsPostgresEnabled="${{ vars.ISPOSTGRESENABLED }}"' | sudo tee -a /etc/environment
@@ -56,6 +64,14 @@ jobs:
             echo 'Jwt__Issuer="${{ vars.JWT__ISSUER }}"' | sudo tee -a /etc/environment
             echo 'Jwt__Audience="${{ vars.JWT__AUDIENCE }}"' | sudo tee -a /etc/environment
             echo 'Jwt__Key="${{ vars.JWT__KEY }}"' | sudo tee -a /etc/environment
+            #Define SmtpServer credentials
+            echo 'SmtpServer__Enabled="${{ vars.SMTPSERVER__ENABLED }}"' | sudo tee -a /etc/environment
+            echo 'SmtpServer__Address="${{ vars.SMTPSERVER__ADDRESS }}"' | sudo tee -a /etc/environment
+            echo 'SmtpServer__Port="${{ vars.SMTPSERVER__PORT }}"' | sudo tee -a /etc/environment
+            echo 'SmtpServer__DisplayName="${{ vars.SMTPSERVER__DISPLAYNAME }}"' | sudo tee -a /etc/environment
+            echo 'SmtpServer__Username="${{ vars.SMTPSERVER__USERNAME }}"' | sudo tee -a /etc/environment
+            echo 'SmtpServer__Password="${{ vars.SMTPSERVER__PASSWORD }}"' | sudo tee -a /etc/environment
+            echo 'SmtpServer__EnableSsl="${{ vars.SMTPSERVER__ENABLESSL }}"' | sudo tee -a /etc/environment
             #Update environments variable
             source /etc/environment
             echo -e "${{ vars.SERVICE_DEFINITON_CONTENT_ON_EC2 }}" | sed 's@EC2_URL_PLACEHOLDER@${{ vars.EC2_URL }}@g' | sudo tee /etc/systemd/system/nightowl-enterprise.service
