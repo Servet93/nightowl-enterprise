@@ -216,23 +216,26 @@ var app = builder.Build();
 
 logger.Fatal("App is created.");
 
-logger.Fatal("Db migration is started");
-
-try
+if (!string.IsNullOrEmpty(postgresConnectionString))
 {
-    using (var scope = app.Services.CreateScope())
+    logger.Fatal("Db migration is started");
+    
+    try
     {
-        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        db.Database.Migrate();
+        using (var scope = app.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            db.Database.Migrate();
+        }
     }
-}
-catch (Exception e)
-{
-    logger.Error(e, "Postgres Migration Failed.");
-    throw;
-}
+    catch (Exception e)
+    {
+        logger.Error(e, "Postgres Migration Failed.");
+        throw;
+    }
 
-logger.Fatal("Db migration is finished");
+    logger.Fatal("Db migration is finished");    
+}
 
 app.UseStaticFiles();
 
