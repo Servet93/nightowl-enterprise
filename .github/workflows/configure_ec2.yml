@@ -27,14 +27,27 @@ jobs:
             # echo "export YOUR_VARIABLE='${{ secrets.YOUR_VARIABLE }}'" >> ~/.bashrc
             # echo "export Stripe__SecretKey='${{ vars.STRIPE__SECRETKEY }}'" >> ~/.bashrc
             # echo "export Stripe__PublishableKey='${{ vars.STRIPE__PUBLISHABLEKEY }}'" >> ~/.bashrc
-            #echo "export Stripe__SigningSecret='${{ vars.STRIPE__SIGNINGSECRET }}'" >> ~/.bashrc  
+            #echo "export Stripe__SigningSecret='${{ vars.STRIPE__SIGNINGSECRET }}'" >> ~/.bashrc 
+            # Aşağıdaki komut environment variableları sistemden kaldırır.
+            #Remove Stripe configs
+            sudo sed -i "/^Stripe__SecretKey=/d" /etc/environment
+            sudo sed -i "/^Stripe__PublishableKey=/d" /etc/environment
+            sudo sed -i "/^Stripe__SigningSecret=/d" /etc/environment
+            #Remove Jwt configs
+            sudo sed -i "/^Jwt__Issuer=/d" /etc/environment
+            sudo sed -i "/^Jwt__Audience=/d" /etc/environment
+            sudo sed -i "/^Jwt__Key=/d" /etc/environment
+            # Aşağıdaki komut environment variableları sisteme ekler.
+            #Define Stripe configs
             echo 'Stripe__SecretKey="${{ vars.STRIPE__SECRETKEY }}"' | sudo tee -a /etc/environment
             echo 'Stripe__PublishableKey="${{ vars.STRIPE__PUBLISHABLEKEY }}"' | sudo tee -a /etc/environment
             echo 'Stripe__SigningSecret="${{ vars.STRIPE__SIGNINGSECRET }}"' | sudo tee -a /etc/environment
+            #Define Jwt configs
+            echo 'Jwt__Issuer="${{ vars.JWT__ISSUER }}"' | sudo tee -a /etc/environment
+            echo 'Jwt__Audience="${{ vars.JWT__AUDIENCE }}"' | sudo tee -a /etc/environment
+            echo 'Jwt__Key="${{ vars.JWT__KEY }}"' | sudo tee -a /etc/environment
+            #Update environments variable
             source /etc/environment
-            echo "export Jwt__Issuer='${{ vars.JWT__ISSUER }}'" >> ~/.bashrc
-            echo "export Jwt__Audience='${{ vars.JWT__AUDIENCE }}'" >> ~/.bashrc
-            echo "export Jwt__Key='${{ vars.JWT__KEY }}'" >> ~/.bashrc
             echo -e "${{ vars.SERVICE_DEFINITON_CONTENT_ON_EC2 }}" | sed 's@EC2_URL_PLACEHOLDER@${{ vars.EC2_URL }}@g' | sudo tee /etc/systemd/system/nightowl-enterprise.service
             #Servis dosyasını kaydedin ve systemd'ye değişiklikleri bildirin
             sudo systemctl daemon-reload
