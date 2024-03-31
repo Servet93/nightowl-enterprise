@@ -25,6 +25,9 @@ jobs:
             #sudo export ASPNETCORE_URLS="${{ vars.EC2_URL }}"
             # Daha fazla komut ekleyebilirsiniz
             echo "export YOUR_VARIABLE='${{ secrets.YOUR_VARIABLE }}'" >> ~/.bashrc
+            echo "export Stripe__SecretKey='${{ vars.Stripe__SecretKey }}'" >> ~/.bashrc
+            echo "export Stripe__PublishableKey='${{ vars.Stripe__PublishableKey }}'" >> ~/.bashrc
+            echo "export Stripe__SigningSecret='${{ vars.Stripe__SigningSecret }}'" >> ~/.bashrc
             echo -e "${{ vars.SERVICE_DEFINITON_CONTENT_ON_EC2 }}" | sed 's@EC2_URL_PLACEHOLDER@${{ vars.EC2_URL }}@g' | sudo tee /etc/systemd/system/nightowl-enterprise.service
             #Servis dosyasını kaydedin ve systemd'ye değişiklikleri bildirin
             sudo systemctl daemon-reload
