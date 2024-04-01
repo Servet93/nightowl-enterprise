@@ -1,0 +1,52 @@
+name: Manual Prod Deployment to EC2
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+      
+    - name: Publish Project
+      run: dotnet publish --configuration Release
+      working-directory: NightOwlEnterprise/src/NightOwlEnterprise.Api
+
+    - name: Set up SSH
+      run: |
+        mkdir -p ~/.ssh/
+        echo "EC2IP -> ${{ secrets.PROD_EC2_IP }}"
+        echo "SSH_PRIVATE_KEY ->  ${{ secrets.PROD_EC2_SSH_PRIVATE_KEY }}"
+        echo "${{ secrets.PROD_EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ secrets.PROD_EC2_IP }} >> ~/.ssh/known_hosts
+
+    - name: Stop nightowl-enterprise service on ec2
+      run:  |
+        ssh -i ~/.ssh/id_rsa ubuntu@${{ secrets.PROD_EC2_IP }} 'bash -s' << 'EOF'
+        sudo systemctl stop nightowl-enterprise
+        EOF
+
+    - name: nightowl-enterprise directory is creating
+      run: |
+        ssh -i ~/.ssh/id_rsa ubuntu@${{ secrets.PROD_EC2_IP }} 'bash -s' << 'EOF'
+          if test -d "nightowl-enterprise"; then
+            echo "nightowl-enterprise directory is exist."
+          else
+            echo "nightowl-enterprise directory is not exist.it's creating."
+            mkdir "nightowl-enterprise"
+          fi
+        EOF
+        
+    - name: Copy Files to EC2
+      run: scp -r ./* ubuntu@${{ secrets.PROD_EC2_IP }}:nightowl-enterprise/
+      working-directory: NightOwlEnterprise/src/NightOwlEnterprise.Api/bin/Release/net8.0/publish
+
+    - name: Stop nightowl-enterprise service on ec2
+      run:  |
+        ssh -i ~/.ssh/id_rsa ubuntu@${{ secrets.PROD_EC2_IP }} 'bash -s' << 'EOF'
+        sudo systemctl start nightowl-enterprise
+        EOF
