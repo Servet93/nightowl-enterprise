@@ -1,0 +1,83 @@
+name: Prod Configure EC2
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Set up SSH
+      run: |
+        mkdir -p ~/.ssh/
+        echo "EC2IP -> ${{ secrets.PROD_EC2_IP }}"
+        echo "SSH_PRIVATE_KEY ->  ${{ secrets.PROD_EC2_SSH_PRIVATE_KEY }}"
+        echo "${{ secrets.PROD_EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ secrets.PROD_EC2_IP }} >> ~/.ssh/known_hosts
+
+    - name: Creating env variables and service file
+      run: |
+          ssh -i ~/.ssh/id_rsa ubuntu@${{ secrets.PROD_EC2_IP }} 'bash -s' << 'EOF'
+            # Buraya inline komutlarınızı ekleyin
+            # ssh üzerinden export çalışmıyor güvenlikten ötürü
+            #sudo export ASPNETCORE_URLS="${{ vars.PROD_EC2_URL }}"
+            # Daha fazla komut ekleyebilirsiniz
+            # echo "export YOUR_VARIABLE='${{ secrets.YOUR_VARIABLE }}'" >> ~/.bashrc
+            # echo "export Stripe__SecretKey='${{ vars.STRIPE__SECRETKEY }}'" >> ~/.bashrc
+            # echo "export Stripe__PublishableKey='${{ vars.STRIPE__PUBLISHABLEKEY }}'" >> ~/.bashrc
+            #echo "export Stripe__SigningSecret='${{ vars.STRIPE__SIGNINGSECRET }}'" >> ~/.bashrc 
+            # Aşağıdaki komut environment variableları sistemden kaldırır.
+            #Remove Connection Strings
+            sudo sed -i "/^IsPostgresEnabled=/d" /etc/environment
+            sudo sed -i "/^IsMongoEnabled=/d" /etc/environment
+            sudo sed -i "/^ConnectionStrings__PostgresConnection=/d" /etc/environment   
+            sudo sed -i "/^ConnectionStrings__MongoConnection=/d" /etc/environment
+            #Remove Stripe configs
+            sudo sed -i "/^Stripe__SecretKey=/d" /etc/environment
+            sudo sed -i "/^Stripe__PublishableKey=/d" /etc/environment
+            sudo sed -i "/^Stripe__SigningSecret=/d" /etc/environment
+            #Remove Jwt configs
+            sudo sed -i "/^Jwt__Issuer=/d" /etc/environment
+            sudo sed -i "/^Jwt__Audience=/d" /etc/environment
+            sudo sed -i "/^Jwt__Key=/d" /etc/environment
+            #Remove SmtpServer Credentials
+            sudo sed -i "/^SmtpServer__Enabled=/d" /etc/environment   
+            sudo sed -i "/^SmtpServer__Address=/d" /etc/environment   
+            sudo sed -i "/^SmtpServer__Port=/d" /etc/environment 
+            sudo sed -i "/^SmtpServer__DisplayName=/d" /etc/environment
+            sudo sed -i "/^SmtpServer__Username=/d" /etc/environment 
+            sudo sed -i "/^SmtpServer__Password=/d" /etc/environment 
+            sudo sed -i "/^SmtpServer__EnableSsl=/d" /etc/environment 
+            # Aşağıdaki komut environment variableları sisteme ekler.
+            #Define Connection Strings
+            echo 'IsPostgresEnabled="${{ vars.PROD_ISPOSTGRESENABLED }}"' | sudo tee -a /etc/environment
+            echo 'IsMongoEnabled="${{ vars.PROD_ISMONGOENABLED }}"' | sudo tee -a /etc/environment
+            echo 'ConnectionStrings__PostgresConnection="${{ vars.PROD_CONNECTIONSTRINGS__POSTGRESCONNECTION }}"' | sudo tee -a /etc/environment
+            echo 'ConnectionStrings__MongoConnection="${{ vars.PROD_CONNECTIONSTRINGS__MONGOCONNECTION }}"' | sudo tee -a /etc/environment
+            #Define Stripe configs
+            echo 'Stripe__SecretKey="${{ vars.PROD_STRIPE__SECRETKEY }}"' | sudo tee -a /etc/environment
+            echo 'Stripe__PublishableKey="${{ vars.PROD_STRIPE__PUBLISHABLEKEY }}"' | sudo tee -a /etc/environment
+            echo 'Stripe__SigningSecret="${{ vars.PROD_STRIPE__SIGNINGSECRET }}"' | sudo tee -a /etc/environment
+            #Define Jwt configs
+            echo 'Jwt__Issuer="${{ vars.PROD_JWT__ISSUER }}"' | sudo tee -a /etc/environment
+            echo 'Jwt__Audience="${{ vars.PROD_JWT__AUDIENCE }}"' | sudo tee -a /etc/environment
+            echo 'Jwt__Key="${{ vars.PROD_JWT__KEY }}"' | sudo tee -a /etc/environment
+            #Define SmtpServer credentials
+            echo 'SmtpServer__Enabled="${{ vars.PROD_SMTPSERVER__ENABLED }}"' | sudo tee -a /etc/environment
+            echo 'SmtpServer__Address="${{ vars.PROD_SMTPSERVER__ADDRESS }}"' | sudo tee -a /etc/environment
+            echo 'SmtpServer__Port="${{ vars.PROD_SMTPSERVER__PORT }}"' | sudo tee -a /etc/environment
+            echo 'SmtpServer__DisplayName="${{ vars.PROD_SMTPSERVER__DISPLAYNAME }}"' | sudo tee -a /etc/environment
+            echo 'SmtpServer__Username="${{ vars.PROD_SMTPSERVER__USERNAME }}"' | sudo tee -a /etc/environment
+            echo 'SmtpServer__Password="${{ vars.PROD_SMTPSERVER__PASSWORD }}"' | sudo tee -a /etc/environment
+            echo 'SmtpServer__EnableSsl="${{ vars.PROD_SMTPSERVER__ENABLESSL }}"' | sudo tee -a /etc/environment
+            #Update environments variable
+            source /etc/environment
+            echo -e "${{ vars.PROD_SERVICE_DEFINITON_CONTENT_ON_EC2 }}" | sed 's@EC2_URL_PLACEHOLDER@${{ vars.PROD_EC2_URL }}@g' | sudo tee /etc/systemd/system/nightowl-enterprise.service
+            #Servis dosyasını kaydedin ve systemd'ye değişiklikleri bildirin
+            sudo systemctl daemon-reload
+            #Servisi başlatın(kapali, deploymant aşamasında stop start yapıyoruz
+            #sudo systemctl start nightowl-enterprise
+          EOF
+          
