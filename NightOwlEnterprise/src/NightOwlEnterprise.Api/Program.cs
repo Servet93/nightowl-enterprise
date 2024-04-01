@@ -1,12 +1,10 @@
 using System.Text;
+using Amazon.Runtime;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Connections;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MongoDB.Bson;
@@ -15,18 +13,61 @@ using NightOwlEnterprise.Api;
 using NightOwlEnterprise.Api.Endpoints.Students;
 using NightOwlEnterprise.Api.Utils.Email;
 using NLog;
+using NLog.AWS.Logger;
+using NLog.Config;
+using NLog.Layouts;
 using NLog.Web;
-using Stripe;
-
-var logger = LogManager.Setup()
-                       .LoadConfigurationFromAppSettings()
-                       .GetCurrentClassLogger();
-
-logger.Fatal("Logger is created.");
 
 var builder = WebApplication.CreateBuilder(args);
 
-logger.Fatal("Builder is created.");
+var logger = LogManager.Setup()
+    .LoadConfigurationFromAppSettings()
+    .GetCurrentClassLogger();
+
+var awsCloudWatchConfig = builder.Configuration.GetSection(AwsCloudWatchConfig.AwsCloudWatchConfigSection).Get<AwsCloudWatchConfig>();
+
+if (awsCloudWatchConfig is not null && awsCloudWatchConfig.Enabled)
+{
+    var awsTarget = new AWSTarget()
+    {
+        LogGroup = awsCloudWatchConfig.LogGroup,
+        Region = awsCloudWatchConfig.Region,
+        Credentials = new BasicAWSCredentials(awsCloudWatchConfig.AccessKey,awsCloudWatchConfig.SecretKey),
+        Layout = new JsonLayout()
+        {
+            IncludeGdc = true,
+            IncludeEventProperties = true,
+            IncludeScopeProperties = true,
+            Attributes =
+            {
+                new JsonAttribute("timestamp", "${date:format=o}"),
+                new JsonAttribute("level", "${level:upperCase=true}"),
+                new JsonAttribute("logger", "${logger}"),
+                new JsonAttribute("message", "${message}"),
+                new JsonAttribute("exception", "${exception:format=ToString,Data}")
+                {
+                    IncludeEmptyValue = false
+                },
+                new JsonAttribute("stackTrace", "${stacktrace}")
+                {
+                    IncludeEmptyValue = false
+                },
+            }
+        }
+    };
+
+    NLog.LogManager.Configuration.AddTarget("aws", awsTarget);
+    NLog.LogManager.Configuration.LoggingRules.Add(new LoggingRule("*", NLog.LogLevel.Warn, awsTarget));
+
+    NLog.LogManager.ReconfigExistingLoggers();    
+}
+
+logger.Fatal("Logger is created.");
+
+logger.Fatal("Created By. Name: {Name}", "Servet");
+logger.Fatal("Created By. Name: {Name}", "Melike");
+
+logger.Fatal(new Exception("Sa"),"Created By. Name: {Name}", "Fırlama");
 
 builder.Host.UseNLog();
 
@@ -36,9 +77,9 @@ var postgresConnectionString = builder.Configuration.GetConnectionString("Postgr
 
 try
 {
-    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    if (isPostgresEnabled)
     {
-        if (isPostgresEnabled)
+        builder.Services.AddDbContext<ApplicationDbContext>(options =>
         {
             if (string.IsNullOrEmpty(postgresConnectionString))
             {
@@ -50,8 +91,8 @@ try
                 logger.Fatal("ApplicationDbContext is using postgresql.");
                 options.UseNpgsql(postgresConnectionString);    
             }    
-        }
-    });
+        });    
+    }
 }
 catch (Exception e)
 {
@@ -303,7 +344,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-if (!string.IsNullOrEmpty(mongoConnectionString))
+if (isMongoEnabled && !string.IsNullOrEmpty(mongoConnectionString))
 {
     app.MapHub<ChatHub>("/chatHub", options =>
     {
@@ -373,6 +414,14 @@ app.MapStudentsIdentityApi<ApplicationUser>();
 
 app.MapGet("/conf", async context =>
 {
+    // ILoggerFactory örneği al
+    var loggerFactory = context.RequestServices.GetRequiredService<ILoggerFactory>();
+
+    // ILogger örneğini oluştur
+    var logger = loggerFactory.CreateLogger("ConfigEndpoint");
+    
+    logger.LogInformation("Aws Cloud Watch Conf");
+    
     StringBuilder sb = new();
     sb.AppendLine($"IsMongoEnabled -> {isMongoEnabled}");
     sb.AppendLine($"Mongo -> {mongoConnectionString}");

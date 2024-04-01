@@ -25,7 +25,7 @@ public static class Login
             var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
             
             signInManager.AuthenticationScheme = IdentityConstants.BearerScheme;
-
+            
             var user = await userManager.FindByEmailAsync(login.Email);
 
             if (user is null)
