@@ -34,12 +34,6 @@ jobs:
             sudo sed -i "/^IsMongoEnabled=/d" /etc/environment
             sudo sed -i "/^ConnectionStrings__PostgresConnection=/d" /etc/environment   
             sudo sed -i "/^ConnectionStrings__MongoConnection=/d" /etc/environment
-            #Remove AwsCloudWatch
-            sudo sed -i "/^AwsCloudWatch__Enabled=/d" /etc/environment
-            sudo sed -i "/^AwsCloudWatch__AccessKey=/d" /etc/environment
-            sudo sed -i "/^AwsCloudWatch__SecretKey=/d" /etc/environment   
-            sudo sed -i "/^AwsCloudWatch__Region=/d" /etc/environment
-            sudo sed -i "/^AwsCloudWatch__LogGroup=/d" /etc/environment
             #Remove Stripe configs
             sudo sed -i "/^Stripe__SecretKey=/d" /etc/environment
             sudo sed -i "/^Stripe__PublishableKey=/d" /etc/environment
@@ -57,12 +51,6 @@ jobs:
             sudo sed -i "/^SmtpServer__Password=/d" /etc/environment 
             sudo sed -i "/^SmtpServer__EnableSsl=/d" /etc/environment 
             # Aşağıdaki komut environment variableları sisteme ekler.
-            #Define AwsCloudWatch
-            echo 'AwsCloudWatch__Enabled="${{ vars.PROD_AWSCLOUDWATCH__ENABLED }}"' | sudo tee -a /etc/environment
-            echo 'AwsCloudWatch__AccessKey="${{ vars.PROD_AWSCLOUDWATCH__ACCESSKEY }}"' | sudo tee -a /etc/environment
-            echo 'AwsCloudWatch__SecretKey="${{ vars.PROD_AWSCLOUDWATCH__SECRETKEY }}"' | sudo tee -a /etc/environment
-            echo 'AwsCloudWatch__Region="${{ vars.PROD_AWSCLOUDWATCH__REGION }}"' | sudo tee -a /etc/environment
-            echo 'AwsCloudWatch__LogGroup="${{ vars.PROD_AWSCLOUDWATCH__LOGGROUP }}"' | sudo tee -a /etc/environment
             #Define Connection Strings
             echo 'IsPostgresEnabled="${{ vars.PROD_ISPOSTGRESENABLED }}"' | sudo tee -a /etc/environment
             echo 'IsMongoEnabled="${{ vars.PROD_ISMONGOENABLED }}"' | sudo tee -a /etc/environment
