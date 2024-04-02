@@ -34,6 +34,12 @@ jobs:
             sudo sed -i "/^IsMongoEnabled=/d" /etc/environment
             sudo sed -i "/^ConnectionStrings__PostgresConnection=/d" /etc/environment   
             sudo sed -i "/^ConnectionStrings__MongoConnection=/d" /etc/environment
+            #Remove AwsCloudWatch
+            sudo sed -i "/^AwsCloudWatch__Enabled=/d" /etc/environment
+            sudo sed -i "/^AwsCloudWatch__AccessKey=/d" /etc/environment
+            sudo sed -i "/^AwsCloudWatch__SecretKey=/d" /etc/environment   
+            sudo sed -i "/^AwsCloudWatch__Region=/d" /etc/environment
+            sudo sed -i "/^AwsCloudWatch__LogGroup=/d" /etc/environment
             #Remove Stripe configs
             sudo sed -i "/^Stripe__SecretKey=/d" /etc/environment
             sudo sed -i "/^Stripe__PublishableKey=/d" /etc/environment
@@ -56,6 +62,12 @@ jobs:
             echo 'IsMongoEnabled="${{ vars.PROD_ISMONGOENABLED }}"' | sudo tee -a /etc/environment
             echo 'ConnectionStrings__PostgresConnection="${{ vars.PROD_CONNECTIONSTRINGS__POSTGRESCONNECTION }}"' | sudo tee -a /etc/environment
             echo 'ConnectionStrings__MongoConnection="${{ vars.PROD_CONNECTIONSTRINGS__MONGOCONNECTION }}"' | sudo tee -a /etc/environment
+            #Define AwsCloudWatch
+            echo 'AwsCloudWatch__Enabled="${{ vars.PROD_AWSCLOUDWATCH__ENABLED }}"' | sudo tee -a /etc/environment
+            echo 'AwsCloudWatch__AccessKey="${{ vars.PROD_AWSCLOUDWATCH__ACCESSKEY }}"' | sudo tee -a /etc/environment
+            echo 'AwsCloudWatch__SecretKey="${{ vars.PROD_AWSCLOUDWATCH__SECRETKEY }}"' | sudo tee -a /etc/environment
+            echo 'AwsCloudWatch__Region="${{ vars.PROD_AWSCLOUDWATCH__REGION }}"' | sudo tee -a /etc/environment
+            echo 'AwsCloudWatch__LogGroup="${{ vars.PROD_AWSCLOUDWATCH__LOGGROUP }}"' | sudo tee -a /etc/environment
             #Define Stripe configs
             echo 'Stripe__SecretKey="${{ vars.PROD_STRIPE__SECRETKEY }}"' | sudo tee -a /etc/environment
             echo 'Stripe__PublishableKey="${{ vars.PROD_STRIPE__PUBLISHABLEKEY }}"' | sudo tee -a /etc/environment
