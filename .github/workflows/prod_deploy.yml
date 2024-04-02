@@ -26,9 +26,9 @@ jobs:
 
     - name: Stop nightowl-enterprise service on ec2
       run:  |
-        ssh -i ~/.ssh/id_rsa ubuntu@${{ secrets.PROD_EC2_IP }} 'bash -s' << 'EOF'
-        sudo systemctl stop nightowl-enterprise
-        EOF
+        #ssh -i ~/.ssh/id_rsa ubuntu@${{ secrets.PROD_EC2_IP }} 'bash -s' << 'EOF'
+        #sudo systemctl stop nightowl-enterprise
+        #EOF
 
     - name: nightowl-enterprise directory is creating
       run: |
@@ -45,8 +45,8 @@ jobs:
       run: scp -r ./* ubuntu@${{ secrets.PROD_EC2_IP }}:nightowl-enterprise/
       working-directory: NightOwlEnterprise/src/NightOwlEnterprise.Api/bin/Release/net8.0/publish
 
-    - name: Stop nightowl-enterprise service on ec2
+    - name: Start nightowl-enterprise service on ec2
       run:  |
-        ssh -i ~/.ssh/id_rsa ubuntu@${{ secrets.PROD_EC2_IP }} 'bash -s' << 'EOF'
-        sudo systemctl start nightowl-enterprise
-        EOF
+        #ssh -i ~/.ssh/id_rsa ubuntu@${{ secrets.PROD_EC2_IP }} 'bash -s' << 'EOF'
+        #sudo systemctl start nightowl-enterprise
+        #EOF
