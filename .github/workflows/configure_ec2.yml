@@ -34,6 +34,12 @@ jobs:
             sudo sed -i "/^IsMongoEnabled=/d" /etc/environment
             sudo sed -i "/^ConnectionStrings__PostgresConnection=/d" /etc/environment   
             sudo sed -i "/^ConnectionStrings__MongoConnection=/d" /etc/environment
+            #Remove AwsCloudWatch
+            sudo sed -i "/^AWSCLOUDWATCH__ENABLED=/d" /etc/environment
+            sudo sed -i "/^AWSCLOUDWATCH__ACCESSKEY=/d" /etc/environment
+            sudo sed -i "/^AWSCLOUDWATCH__SECRETKEY=/d" /etc/environment   
+            sudo sed -i "/^AWSCLOUDWATCH__REGION=/d" /etc/environment
+            sudo sed -i "/^AWSCLOUDWATCH__LOGGROUP=/d" /etc/environment
             #Remove Stripe configs
             sudo sed -i "/^Stripe__SecretKey=/d" /etc/environment
             sudo sed -i "/^Stripe__PublishableKey=/d" /etc/environment
@@ -56,6 +62,12 @@ jobs:
             echo 'IsMongoEnabled="${{ vars.ISMONGOENABLED }}"' | sudo tee -a /etc/environment
             echo 'ConnectionStrings__PostgresConnection="${{ vars.CONNECTIONSTRINGS__POSTGRESCONNECTION }}"' | sudo tee -a /etc/environment
             echo 'ConnectionStrings__MongoConnection="${{ vars.CONNECTIONSTRINGS__MONGOCONNECTION }}"' | sudo tee -a /etc/environment
+            #Define AwsCloudWatch
+            echo 'AWSCLOUDWATCH__ENABLED="${{ vars.AWSCLOUDWATCH__ENABLED }}"' | sudo tee -a /etc/environment
+            echo 'AWSCLOUDWATCH__ACCESSKEY="${{ vars.AWSCLOUDWATCH__ACCESSKEY }}"' | sudo tee -a /etc/environment
+            echo 'AWSCLOUDWATCH__SECRETKEY="${{ vars.AWSCLOUDWATCH__SECRETKEY }}"' | sudo tee -a /etc/environment
+            echo 'AWSCLOUDWATCH__REGION="${{ vars.AWSCLOUDWATCH__REGION }}"' | sudo tee -a /etc/environment
+            echo 'AWSCLOUDWATCH__LOGGROUP="${{ vars.AWSCLOUDWATCH__LOGGROUP }}"' | sudo tee -a /etc/environment
             #Define Stripe configs
             echo 'Stripe__SecretKey="${{ vars.STRIPE__SECRETKEY }}"' | sudo tee -a /etc/environment
             echo 'Stripe__PublishableKey="${{ vars.STRIPE__PUBLISHABLEKEY }}"' | sudo tee -a /etc/environment
