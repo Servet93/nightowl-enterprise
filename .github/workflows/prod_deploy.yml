@@ -27,7 +27,7 @@ jobs:
     - name: Stop nightowl-enterprise service on ec2
       run:  |
         ssh -i ~/.ssh/id_rsa ubuntu@${{ secrets.PROD_EC2_IP }} 'bash -s' << 'EOF'
-        sudo systemctl stop nightowl-enterprise
+        #sudo systemctl stop nightowl-enterprise
         EOF
 
     - name: nightowl-enterprise directory is creating
@@ -48,5 +48,5 @@ jobs:
     - name: Start nightowl-enterprise service on ec2
       run:  |
         ssh -i ~/.ssh/id_rsa ubuntu@${{ secrets.PROD_EC2_IP }} 'bash -s' << 'EOF'
-        sudo systemctl start nightowl-enterprise
+        #sudo systemctl start nightowl-enterprise
         EOF
