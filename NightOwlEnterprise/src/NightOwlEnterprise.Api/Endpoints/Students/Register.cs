@@ -79,6 +79,8 @@ public static class Register
                 Email = email,
                 Address = address,
                 City = city,
+                AccountStatus = AccountStatus.OnboardProgress,
+                UserType = UserType.Student,
             };
             
             var result = await userManager.CreateAsync(user, registration.Password);

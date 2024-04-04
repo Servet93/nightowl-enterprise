@@ -93,6 +93,15 @@ public class TurkishIdentityErrorDescriber : IdentityErrorDescriber
             Description = $"Token geçersiz"
         };
     }
+    
+    public static IdentityError InvalidPasswordResetCode()
+    {
+        return new IdentityError
+        {
+            Code = nameof(InvalidPasswordResetCode),
+            Description = $"Password Reset Code geçersiz"
+        };
+    }
 
     public override IdentityError InvalidUserName(string? userName)
     {

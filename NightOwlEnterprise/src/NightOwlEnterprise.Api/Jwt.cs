@@ -32,12 +32,12 @@ public class JwtHelper
         using var rnd = RandomNumberGenerator.Create();
         rnd.GetBytes(bytes);
 
-        return (Convert.ToBase64String(bytes), DateTime.UtcNow.AddHours(48));
+        return (Convert.ToBase64String(bytes), DateTime.UtcNow.AddHours(12));
     }
     
     public (string, DateTime) CreateToken(ApplicationUser user)
     {
-        var expiration = DateTime.UtcNow.AddMinutes(90);
+        var expiration = DateTime.UtcNow.AddHours(6);
         var keyBytes = Encoding.ASCII.GetBytes(jwtConfig.Key);
         var tokenDescriptor = new SecurityTokenDescriptor
         {

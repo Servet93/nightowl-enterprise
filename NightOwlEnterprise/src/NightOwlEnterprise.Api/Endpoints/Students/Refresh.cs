@@ -15,17 +15,21 @@ public static class Refresh
         var timeProvider = endpoints.ServiceProvider.GetRequiredService<TimeProvider>();
         var bearerTokenOptions = endpoints.ServiceProvider.GetRequiredService<IOptionsMonitor<BearerTokenOptions>>();
         
-        endpoints.MapPost("/refresh", async Task<Results<Ok<AccessTokenResponse>, UnauthorizedHttpResult, SignInHttpResult, ChallengeHttpResult>>
+        endpoints.MapPost("/refresh", async Task<Results<Ok<AccessTokenResponse>, UnauthorizedHttpResult, ChallengeHttpResult>>
             ([FromBody] RefreshRequest refreshRequest, [FromServices] IServiceProvider sp) =>
         {
-            var signInManager = sp.GetRequiredService<SignInManager<ApplicationUser>>();
             var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
 
             var user = userManager.Users.Where(x => x.RefreshToken == refreshRequest.RefreshToken).FirstOrDefault();
             
             if (user is null || user.RefreshTokenExpiration < DateTime.Now)
             {
-                return TypedResults.Challenge();
+                return TypedResults.Problem(new ValidationProblemDetails()
+                {
+                    Detail = "Token not updated",
+                    Status = StatusCodes.Status403Forbidden
+                });
+                //return TypedResults.Challenge();
             }
             
             // var refreshTokenProtector = bearerTokenOptions.Get(IdentityConstants.BearerScheme).RefreshTokenProtector;
@@ -58,6 +62,6 @@ public static class Refresh
                 RefreshToken = refreshTokenResult.Item1,
                 RefreshTokenExpiration = refreshTokenResult.Item2
             });
-        });
+        }).ProducesValidationProblem(401).ProducesValidationProblem(403);
     }
 }

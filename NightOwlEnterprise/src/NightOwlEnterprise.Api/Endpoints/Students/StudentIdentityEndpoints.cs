@@ -27,10 +27,10 @@ public static class StudentIdentityEndpoints
         routeGroup.MapPayment<ApplicationUser>(stripeCredentialSigningSecret);
         routeGroup.MapLogin<ApplicationUser>(jwtHelper);
         routeGroup.MapRefresh<ApplicationUser>(jwtHelper);
-        routeGroup.MapConfirmEmail<ApplicationUser>();
-        routeGroup.MapResendConfirmationEmail<TUser>(emailSender, linkGenerator);
-        routeGroup.MapForgotPassword<TUser>(emailSender);
-        routeGroup.MapResetPassword<TUser>();
+        //routeGroup.MapConfirmEmail<ApplicationUser>();
+        //routeGroup.MapResendConfirmationEmail<TUser>(emailSender, linkGenerator);
+        routeGroup.MapForgotPassword<ApplicationUser>((IEmailSender<ApplicationUser>)emailSender);
+        routeGroup.MapResetPassword<ApplicationUser>();
         routeGroup.MapManageInfo<TUser>();
 
         return new IdentityEndpointsConventionBuilder(routeGroup);

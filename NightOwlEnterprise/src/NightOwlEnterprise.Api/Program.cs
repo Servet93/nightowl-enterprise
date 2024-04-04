@@ -64,11 +64,6 @@ if (awsCloudWatchConfig is not null && awsCloudWatchConfig.Enabled)
 
 logger.Fatal("Logger is created.");
 
-logger.Fatal("Created By. Name: {Name}", "Servet");
-logger.Fatal("Created By. Name: {Name}", "Melike");
-
-logger.Fatal(new Exception("Sa"),"Created By. Name: {Name}", "Fırlama");
-
 builder.Host.UseNLog();
 
 var isPostgresEnabled = builder.Configuration.GetValue<bool>("IsPostgresEnabled");
@@ -140,7 +135,7 @@ var stripeCredential = builder.Configuration.GetSection(StripeCredential.StripeS
 // Sign in to see your own test API key embedded in code samples.
 // Stripe.StripeConfiguration.ApiKey = "sk_test_4eC39HqLyjWDarjtT1zdp7dc";
 // Stripe.StripeConfiguration.ApiKey = "sk_test_51OsO7cEyxtA03PfNAGZBvY40v3lzbZLF7Bb0BYOG8wRdlXnLhJoCXUIjtIOCyZtawn5lh97dnu6O0J5jcMxDL00O00WekY3Ta7";
-if (string.IsNullOrEmpty(stripeCredential.SecretKey))
+if (stripeCredential is null || string.IsNullOrEmpty(stripeCredential.SecretKey))
 {
     logger.Fatal("Stripe is not active.");    
 }
@@ -201,6 +196,8 @@ if (jwtConfig is not null && !string.IsNullOrEmpty(jwtConfig.Key))
 
     builder.Services.AddAuthorization();    
 }
+
+builder.Services.AddScoped<ApplicationUserManager>();
 
 builder.Services.AddSingleton<TurkishIdentityErrorDescriber>();
 
@@ -471,6 +468,10 @@ public class ApplicationUser : Microsoft.AspNetCore.Identity.IdentityUser<Guid>
     public string? RefreshToken { get; set; }
     
     public DateTime? RefreshTokenExpiration { get; set; }
+    
+    public string? PasswordResetCode { get; set; }
+    
+    public DateTime? PasswordResetCodeExpiration { get; set; }
 }
 
 public class ApplicationRole : IdentityRole<Guid>
