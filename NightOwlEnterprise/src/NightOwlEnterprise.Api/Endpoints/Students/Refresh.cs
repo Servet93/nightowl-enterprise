@@ -15,7 +15,7 @@ public static class Refresh
         var timeProvider = endpoints.ServiceProvider.GetRequiredService<TimeProvider>();
         var bearerTokenOptions = endpoints.ServiceProvider.GetRequiredService<IOptionsMonitor<BearerTokenOptions>>();
         
-        endpoints.MapPost("/refresh", async Task<Results<Ok<AccessTokenResponse>, UnauthorizedHttpResult, ChallengeHttpResult>>
+        endpoints.MapPost("/refresh", async Task<Results<Ok<AccessTokenResponse>, ProblemHttpResult>>
             ([FromBody] RefreshRequest refreshRequest, [FromServices] IServiceProvider sp) =>
         {
             var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
