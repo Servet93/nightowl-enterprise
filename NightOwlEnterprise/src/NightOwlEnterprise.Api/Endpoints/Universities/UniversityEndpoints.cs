@@ -29,7 +29,7 @@ public static class UniversityEndpoints
             
         }).ProducesProblem(StatusCodes.Status500InternalServerError);
         
-        endpoints.MapPost("/", async Task<Results<Ok<UniversityItem>, ProblemHttpResult>>
+        routeGroup.MapPost("/", async Task<Results<Ok<UniversityItem>, ProblemHttpResult>>
             ([FromBody] string name, HttpContext context, [FromServices] IServiceProvider sp) =>
         {
             var applicationDbContext = sp.GetRequiredService<ApplicationDbContext>();
@@ -67,7 +67,7 @@ public static class UniversityEndpoints
             
         }).ProducesProblem(StatusCodes.Status500InternalServerError);
 
-        endpoints.MapPost("/{universityId}/departments",
+        routeGroup.MapPost("/{universityId}/departments",
             async Task<Results<Ok<UniversityDepartmentItem>, ProblemHttpResult>>
             ([FromRoute] Guid universityId, [FromBody] string name, HttpContext context,
                 [FromServices] IServiceProvider sp) =>
