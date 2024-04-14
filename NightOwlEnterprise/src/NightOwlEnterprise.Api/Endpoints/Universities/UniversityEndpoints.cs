@@ -112,7 +112,7 @@ public static class UniversityEndpoints
 
             }).ProducesProblem(StatusCodes.Status400BadRequest);
 
-        return new IdentityEndpointsConventionBuilder(routeGroup);
+        return new IdentityEndpointsConventionBuilder(routeGroup).WithOpenApi().WithTags("Üniversite");
     }
 
     public record CreateDepartmentItem(Guid UniversityId, string Name);
