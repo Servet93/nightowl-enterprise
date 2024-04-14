@@ -25,7 +25,10 @@ public static class ManageInfo
 
             Guid.TryParse(userId, out var id);
 
-            var user = dbContext.Users.Include(x => x.SubscriptionHistories).FirstOrDefault(x => x.Id == id);
+            var user = dbContext.Users
+                .Include(x => x.SubscriptionHistories)
+                .Include(x => x.StudentDetail)
+                .FirstOrDefault(x => x.Id == id);
             
             // if (await userManager.GetUserAsync(claimsPrincipal) is not { } user)
             // {
