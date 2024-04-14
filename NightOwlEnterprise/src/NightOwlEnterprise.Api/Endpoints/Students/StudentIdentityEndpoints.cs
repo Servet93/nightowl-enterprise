@@ -33,7 +33,7 @@ public static class StudentIdentityEndpoints
         routeGroup.MapOnboard();
         routeGroup.MapAssignCoach();
 
-        return new IdentityEndpointsConventionBuilder(routeGroup).WithDescription("Önemli knkkkk");
+        return new IdentityEndpointsConventionBuilder(routeGroup).WithDescription("Onboard formunu submit et");
     }
 
 

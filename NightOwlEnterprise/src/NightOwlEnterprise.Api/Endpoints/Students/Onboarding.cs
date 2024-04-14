@@ -297,7 +297,9 @@ public static class Onboard
             if (request.IsTryPracticeTYTExamBefore) // Temel Yeterlilik Testi
             {
                 errorDescriptors.AddRange(ValidateLastPracticeTytExamPoints(request.LastPracticeTytExamPoints));
-            }else if (request.IsTryPracticeAYTExamBefore) // Alan Yeterlilik Testi
+            }
+            
+            if (request.StudentGeneralInfo.ExamType.ToLower() != "tyt" && request.IsTryPracticeAYTExamBefore) // Alan Yeterlilik Testi
             {
                 if (request.StudentGeneralInfo != null)
                     switch (request.StudentGeneralInfo.ExamType.ToLower())
