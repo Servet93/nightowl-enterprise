@@ -6,17 +6,25 @@ public class Result
 
     public bool IsFailure => !IsSuccess;
 
-    public ErrorDescriptor Error { get; }
+    public List<ErrorDescriptor> Errors { get; }
 
     protected Result() => IsSuccess = true;
 
+    protected Result(List<ErrorDescriptor> errors)
+    {
+        IsSuccess = false;
+        Errors = errors;  
+    }
+    
     protected Result(ErrorDescriptor error)
     {
         IsSuccess = false;
-        Error = error;  
+        Errors = new List<ErrorDescriptor>() { error };
     } 
 
     public static Result Success() => new();
+    
+    public static Result Failure(List<ErrorDescriptor> errors) => new(errors);
     
     public static Result Failure(ErrorDescriptor error) => new(error);
 }

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -10,9 +11,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace NightOwlEnterprise.Api.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240408121053_NewCoachDetailFields")]
+    partial class NewCoachDetailFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -55,6 +58,9 @@ namespace NightOwlEnterprise.Api.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<int>("AccessFailedCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("AccountStatus")
                         .HasColumnType("integer");
 
                     b.Property<string>("Address")
@@ -199,6 +205,7 @@ namespace NightOwlEnterprise.Api.Migrations
                         .HasColumnType("smallint");
 
                     b.Property<string>("FromSection")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<bool>("GoneCramSchool")
@@ -226,6 +233,7 @@ namespace NightOwlEnterprise.Api.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("ToSection")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<bool>("Tyt")
@@ -364,49 +372,6 @@ namespace NightOwlEnterprise.Api.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("StudentDetail", b =>
-                {
-                    b.Property<Guid>("StudentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<bool>("TermsAndConditionsAccepted")
-                        .HasColumnType("boolean");
-
-                    b.HasKey("StudentId");
-
-                    b.ToTable("StudentDetail");
-                });
-
-            modelBuilder.Entity("SubscriptionHistory", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime?>("SubscriptionEndDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("SubscriptionStartDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Type")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("SubscriptionHistories");
-                });
-
             modelBuilder.Entity("University", b =>
                 {
                     b.Property<Guid>("Id")
@@ -534,28 +499,6 @@ namespace NightOwlEnterprise.Api.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("StudentDetail", b =>
-                {
-                    b.HasOne("ApplicationUser", "Student")
-                        .WithOne("StudentDetail")
-                        .HasForeignKey("StudentDetail", "StudentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Student");
-                });
-
-            modelBuilder.Entity("SubscriptionHistory", b =>
-                {
-                    b.HasOne("ApplicationUser", "User")
-                        .WithMany("SubscriptionHistories")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("UniversityDepartment", b =>
                 {
                     b.HasOne("Department", "Department")
@@ -579,11 +522,6 @@ namespace NightOwlEnterprise.Api.Migrations
                 {
                     b.Navigation("CoachDetail")
                         .IsRequired();
-
-                    b.Navigation("StudentDetail")
-                        .IsRequired();
-
-                    b.Navigation("SubscriptionHistories");
                 });
 
             modelBuilder.Entity("Department", b =>

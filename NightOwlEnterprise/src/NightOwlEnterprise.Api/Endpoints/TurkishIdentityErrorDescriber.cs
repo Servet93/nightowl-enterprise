@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 
-namespace NightOwlEnterprise.Api.Endpoints.Students;
+namespace NightOwlEnterprise.Api.Endpoints;
 
 public class TurkishIdentityErrorDescriber : IdentityErrorDescriber
 {
@@ -244,6 +244,15 @@ public class TurkishIdentityErrorDescriber : IdentityErrorDescriber
         {
             Code = nameof(DefaultError),
             Description = $"Kullanıcı yönetim sistemi hatası"
+        };
+    }
+    
+    public static IdentityError InvalidMobile(string mobile)
+    {
+        return new IdentityError
+        {
+            Code = nameof(InvalidMobile),
+            Description = $"Mobile '{mobile}' geçersiz"
         };
     }
 }

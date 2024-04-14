@@ -1,7 +1,10 @@
+using System.ComponentModel;
 using System.Text;
+using System.Text.Json.Serialization;
 using Amazon.Runtime;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Connections;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
@@ -9,14 +12,20 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using Newtonsoft.Json.Converters;
 using NightOwlEnterprise.Api;
+using NightOwlEnterprise.Api.Endpoints;
+using NightOwlEnterprise.Api.Endpoints.Coachs;
 using NightOwlEnterprise.Api.Endpoints.Students;
+using NightOwlEnterprise.Api.Endpoints.Universities;
 using NightOwlEnterprise.Api.Utils.Email;
 using NLog;
 using NLog.AWS.Logger;
 using NLog.Config;
 using NLog.Layouts;
 using NLog.Web;
+using JsonAttribute = NLog.Layouts.JsonAttribute;
+using Register = NightOwlEnterprise.Api.Endpoints.Coachs.Register;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -248,6 +257,12 @@ builder.Services.Configure<IdentityOptions>(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(swaggerGenOptions => 
 {
+    // Enumların açıklayıcı değerlerini göstermek için
+    // swaggerGenOptions.UseAllOfToExtendReferenceSchemas();
+    
+    // Endpoint gruplaması için
+    swaggerGenOptions.TagActionsBy(api => api.GroupName);
+    
     // Identity Bearer Authentication şemasını ekleyin
     swaggerGenOptions.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -277,7 +292,18 @@ builder.Services.AddSwaggerGen(swaggerGenOptions =>
 
 builder.Services.AddProblemDetails();
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews().AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
+
+builder.Services.AddSingleton<PaginationUriBuilder>(o =>
+{
+    var accessor = o.GetRequiredService<IHttpContextAccessor>();
+    var request = accessor.HttpContext?.Request;
+    var uri = string.Concat(request?.Scheme, "://", request?.Host.ToUriComponent());
+    return new PaginationUriBuilder(uri);
+});
 
 var app = builder.Build();
 
@@ -302,6 +328,15 @@ if (isPostgresEnabled && !string.IsNullOrEmpty(postgresConnectionString))
     }
 
     logger.Fatal("Db migration is finished");    
+}
+
+if (isPostgresEnabled)
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+    SeedDepartmentsAndUniversities(db);
+    await SeedCoachs(db, userManager);
 }
 
 app.UseStaticFiles();
@@ -408,6 +443,8 @@ app.MapGet("/", async context =>
 //     id < 0 ? TypedResults.Ok(new User(id)) : TypedResults.NotFound());
 
 app.MapStudentsIdentityApi<ApplicationUser>();
+app.MapCoachsIdentityApi<ApplicationUser>();
+app.MapUniversity();
 
 app.MapGet("/conf", async context =>
 {
@@ -444,11 +481,222 @@ app.Run();
 
 logger.Fatal("App is running.");
 
+void SeedDepartmentsAndUniversities(ApplicationDbContext dbContext)
+{
+    var hasAnyDepartment = dbContext.Departments.Any();
+
+    var departments = new List<Department>
+    {
+        new Department { Name = "Bilgisayar Mühendisliği" },
+        new Department { Name = "Elektrik-Elektronik Mühendisliği" },
+        new Department { Name = "Makine Mühendisliği" },
+        new Department { Name = "Endüstri Mühendisliği" },
+        new Department { Name = "Sosyoloji" },
+        new Department { Name = "Tarih" },
+        new Department { Name = "Psikoloji" },
+        new Department { Name = "İngiliz Dili ve Edebiyatı" },
+        new Department { Name = "Fransız Dili ve Edebiyatı" },
+        new Department { Name = "Alman Dili ve Edebiyatı" },
+        // Diğer departmanları buraya ekleyin
+    };
+    
+    if (!hasAnyDepartment)
+    {
+        dbContext.Departments.AddRange(departments);
+        dbContext.SaveChanges();
+    }
+
+    var hasAnyUniversity = dbContext.Universities.Any();
+
+    var universities = new List<University>
+    {
+        new University
+        {
+            Name = "Boğaziçi Üniversitesi",
+        },
+        new University
+        {
+            Name = "Orta Doğu Teknik Üniversitesi",
+        },
+        new University
+        {
+            Name = "İstanbul Teknik Üniversitesi",
+        },
+        // Diğer üniversiteleri buraya ekleyin
+    };
+    
+    if (!hasAnyUniversity)
+    {
+        dbContext.Universities.AddRange(universities);
+        dbContext.SaveChanges();
+    }
+
+    var hasAnyUniversityDepartment = dbContext.UniversityDepartments.Any();
+
+    if (!hasAnyUniversityDepartment)
+    {
+        var _universities = dbContext.Universities.ToList();
+        var _departments = dbContext.Departments.ToList();
+        
+        foreach (var university in _universities)
+        {
+            foreach (var department in _departments)
+            {
+                university.UniversityDepartments.Add(new UniversityDepartment()
+                {
+                    UniversityId = university.Id,
+                    DepartmentId = department.Id
+                });
+            }
+        }
+
+        dbContext.SaveChanges();
+    }
+
+    /*
+     *             UniversityDepartments = departments.Select(d => new UniversityDepartment
+            {
+                UniversityId = Guid.NewGuid(),
+                DepartmentId = d.Id,
+                Department = d
+            }).ToList()
+     */
+
+}
+
+async Task SeedCoachs(ApplicationDbContext dbContext, UserManager<ApplicationUser> userManager)
+{
+    var hasAnyCoach = dbContext.Users.Any(x => x.UserType == UserType.Coach);
+    
+    var rnd = new Random();
+
+    var index = 0;
+
+    var namesAndGender = Common.NamesAndGender.DistinctBy(x => x.Item1).ToList();
+    
+    if (!hasAnyCoach)
+    {
+        var universities = dbContext.Universities.ToList();
+
+        var departments = dbContext.Departments.ToList();
+        
+        foreach (var university in universities)
+        {
+            foreach (var department in departments)
+            {
+                for (int i = 0; i < 5; i++)
+                {
+                    var applicationUser = new ApplicationUser()
+                    {
+                        Name = namesAndGender[index].Item1,
+                        UserName = namesAndGender[index].Item1,
+                        Email = $"{namesAndGender[index].Item1.ToLower()}@gmail.com",
+                        PhoneNumber = "533-333-33-33",
+                        City = "İstanbul",
+                        Address = "Cihangir",
+                        CoachDetail = new CoachDetail()
+                        {
+                            UniversityId = university.Id,
+                            DepartmentId = department.Id,
+                            Quota = (byte)rnd.Next(5),
+                            FirstTytNet = (byte)rnd.Next(90, 140),
+                            UsedYoutube = rnd.Next(100) % 2 == 0,
+                            GoneCramSchool = rnd.Next(100) % 2 == 0,
+                            Rank = (uint)rnd.Next(5000),
+                            IsGraduated = rnd.Next(6) != 1 ? true : false,
+                            ChangedSection = false,
+                            Tm = rnd.Next(100) % 2 == 0,
+                            Mf = rnd.Next(100) % 2 == 0,
+                            Dil = rnd.Next(100) % 2 == 0,
+                            Sozel = rnd.Next(100) % 2 == 0,
+                            Tyt = rnd.Next(100) % 2 == 0,
+                            Male = namesAndGender[index].Item2,
+                        },
+                        UserType = UserType.Coach,
+                    };
+                    index += 1;
+                    try
+                    {
+                        await userManager.CreateAsync(applicationUser, "Aa123456");
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                    }
+                }
+            }
+        }
+    }
+}
+
 public class ApplicationDbContext : Microsoft.AspNetCore.Identity.EntityFrameworkCore.IdentityDbContext<ApplicationUser, ApplicationRole, Guid>
 {
+    public DbSet<University> Universities { get; set; }
+    
+    public DbSet<Department> Departments { get; set; }
+    
+    public DbSet<UniversityDepartment> UniversityDepartments { get; set; }
+    public DbSet<ApplicationUser> Coachs { get; set; }
+    
+    public DbSet<CoachCalendar> CoachCalendars { get; set; }
+    
+    public DbSet<SubscriptionHistory> SubscriptionHistories { get; set; }
+    
     public ApplicationDbContext(Microsoft.EntityFrameworkCore.DbContextOptions<ApplicationDbContext> options) :
         base(options)
     { }
+
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        base.OnModelCreating(builder);
+
+        builder.Entity<ApplicationUser>().ToTable("Users");
+        
+        // CoachCalendar ile Coach arasında ilişki
+        builder.Entity<CoachCalendar>()
+            .HasOne(c => c.Coach)
+            .WithMany()
+            .HasForeignKey(c => c.CoachId);
+
+        // CoachCalendar ile Student arasında ilişki
+        builder.Entity<CoachCalendar>()
+            .HasOne(c => c.Student)
+            .WithMany()
+            .HasForeignKey(c => c.StudentId);
+
+        // CoachDetail tablosunun ilişkilerini belirtiyoruz
+        builder.Entity<CoachDetail>()
+            .HasKey(cd => cd.CoachId); // Primary key'i belirtiyoruz
+
+        // CoachDetail ile ApplicationUser arasında ilişki
+        builder.Entity<CoachDetail>()
+            .HasOne(cd => cd.Coach)
+            .WithOne(u => u.CoachDetail)
+            .HasForeignKey<CoachDetail>(cd => cd.CoachId);
+        
+        // CoachDetail tablosunun ilişkilerini belirtiyoruz
+        builder.Entity<StudentDetail>()
+            .HasKey(cd => cd.StudentId); // Primary key'i belirtiyoruz
+
+        // CoachDetail ile ApplicationUser arasında ilişki
+        builder.Entity<StudentDetail>()
+            .HasOne(cd => cd.Student)
+            .WithOne(u => u.StudentDetail)
+            .HasForeignKey<StudentDetail>(cd => cd.StudentId);
+        
+        builder.Entity<UniversityDepartment>()
+            .HasKey(ud => new { ud.UniversityId, ud.DepartmentId });
+
+        builder.Entity<UniversityDepartment>()
+            .HasOne(ud => ud.University)
+            .WithMany(u => u.UniversityDepartments)
+            .HasForeignKey(ud => ud.UniversityId);
+
+        builder.Entity<UniversityDepartment>()
+            .HasOne(ud => ud.Department)
+            .WithMany(d => d.UniversityDepartments)
+            .HasForeignKey(ud => ud.DepartmentId);
+    }
 }
 
 public class ApplicationUser : Microsoft.AspNetCore.Identity.IdentityUser<Guid>
@@ -456,8 +704,6 @@ public class ApplicationUser : Microsoft.AspNetCore.Identity.IdentityUser<Guid>
     public string Name { get; set; } = String.Empty;
     public string Address { get; set; }  = String.Empty;
     public string City { get; set; }  = String.Empty;
-    
-    public AccountStatus AccountStatus { get; set; }
     
     public UserType UserType { get; set; }
     
@@ -472,6 +718,11 @@ public class ApplicationUser : Microsoft.AspNetCore.Identity.IdentityUser<Guid>
     public string? PasswordResetCode { get; set; }
     
     public DateTime? PasswordResetCodeExpiration { get; set; }
+    
+    public CoachDetail CoachDetail { get; set; }
+    
+    public StudentDetail StudentDetail { get; set; }
+    public ICollection<SubscriptionHistory> SubscriptionHistories { get; set; } = new List<SubscriptionHistory>();
 }
 
 public class ApplicationRole : IdentityRole<Guid>
@@ -479,12 +730,133 @@ public class ApplicationRole : IdentityRole<Guid>
     
 }
 
-public enum AccountStatus
+public class SubscriptionHistory
 {
+    public int Id { get; set; } // Abonelik geçmişi kimliği
+
+    public Guid UserId { get; set; } // Kullanıcı kimliği
+    
+    // ForeignKey ile ilişkiyi kurmak için ApplicationUser sınıfına referans
+    public ApplicationUser User { get; set; }
+
+    public DateTime SubscriptionStartDate { get; set; } // Abonelik başlangıç tarihi
+
+    public DateTime? SubscriptionEndDate { get; set; } // Abonelik bitiş tarihi
+
+    public SubscriptionType Type { get; set; } // Abonelik tipi (örneğin, ücretsiz, standart, premium)
+}
+
+public enum SubscriptionType
+{
+    OnlyPdr = 0,
+    PdrWithCoach = 1,
+}
+
+public class StudentDetail
+{
+    public Guid StudentId { get; set; }
+    
+    public ApplicationUser Student { get; set; } // İlişkiyi burada tanımlıyoruz
+    
+    public bool TermsAndConditionsAccepted { get; set; }
+    public StudentStatus Status { get; set; }
+}
+
+public class CoachDetail
+{
+    public Guid CoachId { get; set; }
+    
+    public ApplicationUser Coach { get; set; } // İlişkiyi burada tanımlıyoruz
+    
+    public bool Tm { get; set; }
+    public bool Mf { get; set; }
+    public bool Sozel { get; set; }
+    public bool Dil { get; set; }
+    public bool Tyt { get; set; }
+
+    public bool IsGraduated { get; set; }
+    
+    public byte FirstTytNet { get; set; }
+    
+    public bool UsedYoutube { get; set; }
+    
+    public bool GoneCramSchool { get; set; }
+
+    public Guid UniversityId { get; set; }
+    
+    // Universite referansı
+    public University University { get; set; } 
+    
+    public Guid DepartmentId { get; set; }
+    
+    // Department referansı
+    public Department Department { get; set; } 
+    
+    public bool Male { get; set; }
+    
+    //Alan değiştirdi mi
+    public bool ChangedSection { get; set; }
+    
+    public string? FromSection { get; set; }
+    
+    public string? ToSection { get; set; }
+    
+    public uint Rank { get; set; }
+
+    public byte Quota { get; set; }
+}
+
+public class University
+{
+    public Guid Id { get; set; }
+    
+    public string Name { get; set; }
+
+    public ICollection<UniversityDepartment> UniversityDepartments { get; set; } = new List<UniversityDepartment>();
+}
+
+public class Department
+{
+    public Guid Id { get; set; }
+    
+    public string Name { get; set; }
+    
+    public ICollection<UniversityDepartment> UniversityDepartments { get; set; } = new List<UniversityDepartment>();
+}
+
+public class UniversityDepartment
+{
+    public Guid UniversityId { get; set; }
+    public University University { get; set; }
+
+    public Guid DepartmentId { get; set; }
+    public Department Department { get; set; }
+}
+
+public class CoachCalendar
+{
+    public Guid Id { get; set; }
+    public Guid CoachId { get; set; }
+    public ApplicationUser Coach { get; set; }
+    public Guid StudentId { get; set; }
+    public ApplicationUser Student { get; set; }
+    public DateTime Date { get; set; }
+    public TimeSpan StartTime { get; set; }
+    public TimeSpan EndTime { get; set; }
+    public bool IsAvailable { get; set; } // true ise müsait, false ise dolu
+}
+
+public enum StudentStatus
+{
+    [Description("Payment Awaiting")]
     PaymentAwaiting,
+    [Description("Onboard Progress")]
     OnboardProgress,
+    [Description("Onboard Completed")]
     OnboardCompleted,
+    [Description("Coach Select")]
     CoachSelect,
+    [Description("Active")]
     Active,
 }
 

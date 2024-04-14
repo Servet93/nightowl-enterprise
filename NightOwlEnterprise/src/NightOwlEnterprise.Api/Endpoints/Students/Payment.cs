@@ -1,10 +1,12 @@
 ﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.IO.Pipelines;
+using System.Runtime.InteropServices.JavaScript;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Stripe;
 
 namespace NightOwlEnterprise.Api.Endpoints.Students;
@@ -19,9 +21,11 @@ public static class Payment
         
         // NOTE: We cannot inject UserManager<TUser> directly because the TUser generic parameter is currently unsupported by RDG.
         // https://github.com/dotnet/aspnetcore/issues/47338
-        endpoints.MapPost("/payment", async Task<Results<Ok<ConfirmIntentResult>, ValidationProblem>>
+        endpoints.MapPost("/payment", async Task<Results<Ok<ConfirmIntentResult>, ProblemHttpResult>>
             ([FromBody] StudentRegisterRequestWithPaymentMethodId registration, HttpContext context, [FromServices] IServiceProvider sp) =>
         {
+            var identityErrors = new List<IdentityError>();
+            
             var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
             var errorDescriber = sp.GetRequiredService<TurkishIdentityErrorDescriber>();
 
@@ -37,25 +41,26 @@ public static class Payment
             
             if (string.IsNullOrEmpty(email) || !_emailAddressAttribute.IsValid(email))
             {
-                return IdentityResult.Failed(userManager.ErrorDescriber.InvalidEmail(email)).CreateValidationProblem();
+                identityErrors.Add(userManager.ErrorDescriber.InvalidEmail(email));
+                //return IdentityResult.Failed(userManager.ErrorDescriber.InvalidEmail(email)).CreateValidationProblem();
             }
             
-            if (string.IsNullOrEmpty(name) ||
-                name.Length < 3 ||
-                name.ToLower().Contains("su") // :)
-                )
+            if (string.IsNullOrEmpty(name) || name.Length < 3) // :)
             {
-                return IdentityResult.Failed(errorDescriber.InvalidName(name)).CreateValidationProblem();
+                identityErrors.Add(errorDescriber.InvalidName(name));
+                //return IdentityResult.Failed(errorDescriber.InvalidName(name)).CreateValidationProblem();
             }
 
             if (string.IsNullOrEmpty(address))
             {
-                return IdentityResult.Failed(errorDescriber.RequiredAddress()).CreateValidationProblem();
+                identityErrors.Add(errorDescriber.RequiredAddress());
+                //return IdentityResult.Failed(errorDescriber.RequiredAddress()).CreateValidationProblem();
             }
 
             if (!cities.Contains(city))
             {
-                return IdentityResult.Failed(errorDescriber.InvalidCity(city)).CreateValidationProblem();
+                identityErrors.Add(errorDescriber.InvalidCity(city));
+                //return IdentityResult.Failed(errorDescriber.InvalidCity(city)).CreateValidationProblem();
             }
 
             var userName = email.Split('@')[0];
@@ -67,15 +72,24 @@ public static class Payment
                 Email = email,
                 Address = address,
                 City = city,
-                AccountStatus  = AccountStatus.PaymentAwaiting,
                 UserType = UserType.Student,
+                StudentDetail = new StudentDetail()
+                {
+                    Status = StudentStatus.PaymentAwaiting,
+                }
             };
             
             var result = await userManager.CreateAsync(user);
 
             if (!result.Succeeded)
             {
-                return result.CreateValidationProblem();
+                identityErrors.AddRange(result.Errors);
+                //return result.CreateValidationProblem();
+            }
+
+            if (identityErrors.Any())
+            {
+                return identityErrors.CreateProblem();
             }
             
             var confirmPaymentResult = ConfirmPayment(user.Id, registration.PaymentMethodId, context);
@@ -84,19 +98,25 @@ public static class Payment
             {
                 await userManager.DeleteAsync(user);
 
-                return TypedResults.ValidationProblem(new Dictionary<string, string[]>()
-                {
-                    { "PaymentIntentCreationError", new string[] {confirmPaymentResult.error}},
-                });
+                var errorDesciptor = new ErrorDescriptor("PaymentIntentCreationError", confirmPaymentResult.error);
+
+                return errorDesciptor.CreateProblem();
+                
+                // return TypedResults.ValidationProblem(new Dictionary<string, string[]>()
+                // {
+                //     { "PaymentIntentCreationError", new string[] {confirmPaymentResult.error}},
+                // });
             }
             
             return TypedResults.Ok(confirmPaymentResult);
-        });
+        }).ProducesProblem(StatusCodes.Status400BadRequest);
         
         
-        endpoints.MapPost("/subscribe", async Task<Results<Ok<ConfirmIntentResult>, ValidationProblem>>
+        endpoints.MapPost("/subscribe", async Task<Results<Ok<ConfirmIntentResult>, ProblemHttpResult>>
             ([FromBody] StudentRegisterRequestWithPaymentMethodId registration, HttpContext context, [FromServices] IServiceProvider sp) =>
         {
+            var identityErrors = new List<IdentityError>();
+
             var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
             var errorDescriber = sp.GetRequiredService<TurkishIdentityErrorDescriber>();
 
@@ -112,25 +132,26 @@ public static class Payment
             
             if (string.IsNullOrEmpty(email) || !_emailAddressAttribute.IsValid(email))
             {
-                return IdentityResult.Failed(userManager.ErrorDescriber.InvalidEmail(email)).CreateValidationProblem();
+                identityErrors.Add(userManager.ErrorDescriber.InvalidEmail(email));
+                //return IdentityResult.Failed(userManager.ErrorDescriber.InvalidEmail(email)).CreateValidationProblem();
             }
             
-            if (string.IsNullOrEmpty(name) ||
-                name.Length < 3 ||
-                name.ToLower().Contains("su") // :)
-                )
+            if (string.IsNullOrEmpty(name) || name.Length < 3) // :)
             {
-                return IdentityResult.Failed(errorDescriber.InvalidName(name)).CreateValidationProblem();
+                identityErrors.Add(errorDescriber.InvalidName(name));
+                //return IdentityResult.Failed(errorDescriber.InvalidName(name)).CreateValidationProblem();
             }
 
             if (string.IsNullOrEmpty(address))
             {
-                return IdentityResult.Failed(errorDescriber.RequiredAddress()).CreateValidationProblem();
+                identityErrors.Add(errorDescriber.RequiredAddress());
+                //return IdentityResult.Failed(errorDescriber.RequiredAddress()).CreateValidationProblem();
             }
 
             if (!cities.Contains(city))
             {
-                return IdentityResult.Failed(errorDescriber.InvalidCity(city)).CreateValidationProblem();
+                identityErrors.Add(errorDescriber.InvalidCity(city));
+                //return IdentityResult.Failed(errorDescriber.InvalidCity(city)).CreateValidationProblem();
             }
 
             var userName = email.Split('@')[0];
@@ -142,15 +163,24 @@ public static class Payment
                 Email = email,
                 Address = address,
                 City = city,
-                AccountStatus  = AccountStatus.PaymentAwaiting,
                 UserType = UserType.Student,
+                StudentDetail = new StudentDetail()
+                {
+                    Status = StudentStatus.PaymentAwaiting, 
+                }
             };
             
             var result = await userManager.CreateAsync(user);
 
             if (!result.Succeeded)
             {
-                return result.CreateValidationProblem();
+                identityErrors.AddRange(result.Errors);
+                //return result.CreateValidationProblem();
+            }
+
+            if (identityErrors.Any())
+            {
+                return identityErrors.CreateProblem("Öğrenci kaydetme işlemi başarısız.");
             }
 
             var userId = user.Id;
@@ -160,11 +190,15 @@ public static class Payment
             if (!createCustomerResult.Item1)
             {
                 await userManager.DeleteAsync(user);
+
+                var error = new ErrorDescriptor("CreateCustomerOnStripeError", createCustomerResult.Item2);
+
+                return error.CreateProblem("Öğrenci kaydetme işlemi başarısız.");
                 
-                return TypedResults.ValidationProblem(new Dictionary<string, string[]>()
-                {
-                    { "CreateCustomerOnStripeError", new string[] {createCustomerResult.Item2}},
-                });
+                // return TypedResults.ValidationProblem(new Dictionary<string, string[]>()
+                // {
+                //     { "CreateCustomerOnStripeError", new string[] {createCustomerResult.Item2}},
+                // });
             }
 
             var customerId = createCustomerResult.Item3.Id;
@@ -179,15 +213,19 @@ public static class Payment
             if (!createSubscriptionResult.Item1)
             {
                 await userManager.DeleteAsync(user);
+             
+                var error = new ErrorDescriptor("CreateSubscriptionOnStripeError", createSubscriptionResult.Item2);
+
+                return error.CreateProblem("Öğrenci kaydetme işlemi başarısız.");
                 
-                return TypedResults.ValidationProblem(new Dictionary<string, string[]>()
-                {
-                    { "CreateSubscriptionOnStripeError", new string[] {createSubscriptionResult.Item2}},
-                });
+                // return TypedResults.ValidationProblem(new Dictionary<string, string[]>()
+                // {
+                //     { "CreateSubscriptionOnStripeError", new string[] {createSubscriptionResult.Item2}},
+                // });
             }
 
             return TypedResults.Ok(createSubscriptionResult.Item3);
-        });
+        }).ProducesProblem(StatusCodes.Status400BadRequest);
 
         // const string stripeCredentialSigningSecret = "whsec_7YBhw4M9aSypQq7K6fVCJnhcbduPb6yN";
 
@@ -219,6 +257,7 @@ public static class Payment
                 string userId;
 
                 var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
+                var dbContext = sp.GetRequiredService<ApplicationDbContext>();
 
                 switch (stripeEvent.Type)
                 {
@@ -234,7 +273,7 @@ public static class Payment
 
                         customer.Metadata?.TryGetValue("UserId", out userId);
 
-                        user = await GetUser(logger, userManager, customer.Metadata);
+                        user = await GetUser(logger, dbContext, userManager, customer.Metadata);
 
                         if (user is null)
                         {
@@ -259,7 +298,7 @@ public static class Payment
 
                         var studentEmailSender = sp.GetRequiredService<StudentEmailSender>();
 
-                        user.AccountStatus = AccountStatus.Active;
+                        user.StudentDetail.Status = StudentStatus.Active;
 
                         var updateAsyncResult = await userManager.UpdateAsync(user);
 
@@ -290,7 +329,7 @@ public static class Payment
 
                         customer.Metadata?.TryGetValue("UserId", out userId);
 
-                        user = await GetUser(logger, userManager, customer.Metadata);
+                        user = await GetUser(logger, dbContext, userManager, customer.Metadata);
 
                         if (user is null)
                         {
@@ -327,14 +366,14 @@ public static class Payment
                             "Invoice Paid. SubscriptionId: {SubscriptionId}, InvoiceId: {InvoiceId}, CustomerId: {CustomerId}, UserId: {UserId}",
                             invoice.SubscriptionId, invoice.Id, invoice.CustomerId, userId);
 
-                        user = await GetUser(logger, userManager, customer.Metadata);
+                        user = await GetUser(logger, dbContext, userManager, customer.Metadata);
 
                         if (user is null)
                         {
                             return TypedResults.Empty;
                         }
 
-                        user.AccountStatus = AccountStatus.Active;
+                        user.StudentDetail.Status = StudentStatus.Active;
                         user.SubscriptionId = invoice.SubscriptionId;
                         
                         await userManager.UpdateAsync(user);
@@ -356,14 +395,14 @@ public static class Payment
                             "Invoice Payment Failed. SubscriptionId: {SubscriptionId}, InvoiceId: {InvoiceId}, CustomerId: {CustomerId}, UserId: {UserId}",
                             invoice.SubscriptionId, invoice.Id, invoice.CustomerId, userId);
 
-                        user = await GetUser(logger, userManager, customer.Metadata);
+                        user = await GetUser(logger, dbContext, userManager, customer.Metadata);
 
                         if (user is null)
                         {
                             return TypedResults.Empty;
                         }
 
-                        user.AccountStatus = AccountStatus.PaymentAwaiting;
+                        user.StudentDetail.Status = StudentStatus.PaymentAwaiting;
 
                         await userManager.UpdateAsync(user);
 
@@ -399,17 +438,19 @@ public static class Payment
         });
     }
 
-    private static async Task<ApplicationUser> GetUser(ILogger logger, UserManager<ApplicationUser> userManager, Dictionary<string, string> metadata)
+    private static async Task<ApplicationUser> GetUser(ILogger logger, ApplicationDbContext dbContext, UserManager<ApplicationUser> userManager, Dictionary<string, string> metadata)
     {
-        string userId = null;
+        string strUserId = null;
         
-        var isExist = metadata?.TryGetValue("UserId", out userId) ?? false;
+        var isExist = metadata?.TryGetValue("UserId", out strUserId) ?? false;
 
         ApplicationUser user = null;
                 
         if (isExist)
         {
-            user = await userManager.FindByIdAsync(userId);
+            Guid.TryParse(strUserId, out var userId);
+
+            user = dbContext.Users.Include(x => x.StudentDetail).FirstOrDefault(x => x.Id == userId);
 
             if (user is null)
             {

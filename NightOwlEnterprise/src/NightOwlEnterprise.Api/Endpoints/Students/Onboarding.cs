@@ -1,226 +1,828 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.JsonWebTokens;
+using Microsoft.EntityFrameworkCore;
+using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace NightOwlEnterprise.Api.Endpoints.Students;
 
 public static class Onboard
 {
-    public static void MapOnboard<TUser>(this IEndpointRouteBuilder endpoints)
-        where TUser : class, new()
+    private static readonly EmailAddressAttribute EmailAddressAttribute = new();
+    
+    private static string[] examTypes = new string[5] { "mf", "tm", "sozel", "dil", "tyt" };
+        
+    private static string[] gradeTypes = new string[5] { "9", "10", "11", "12", "mezun" };
+    
+    public static void MapOnboard(this IEndpointRouteBuilder endpoints)
     {
-        var examTypes = new string[5] { "mf", "tm", "sozel", "dil", "tyt" };
-        
-        var gradeTypes = new string[5] { "9", "10", "11", "12", "mezun" };
-        
-        endpoints.MapPost("/onboard", async Task<Results<Ok, ValidationProblem, NotFound>>
-            (StudentOnboardRequest request, ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
-        {
-            var requestValidation = RequestValidation(request);
-
-            if (requestValidation.IsFailure)
+        endpoints.MapPost("/onboard/student-general-info", Results<Ok, ProblemHttpResult>
+                (StudentGeneralInfo request, [FromServices] IServiceProvider sp) =>
             {
-                return requestValidation.Error.CreateValidationProblem();    
-            }
-            
-            var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
-            
-            var mongoDatabase = sp.GetRequiredService<IMongoDatabase>();
-            
-            var onboardStudentCollection = mongoDatabase.GetCollection<OnboardStudent>("OnboardStudents");
+                var requestValidation = ValidateStudentGeneralInfo(request);
 
-            var userIdStr = claimsPrincipal.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Sub).Value;
+                if (requestValidation.Any())
+                {
+                    return requestValidation.CreateProblem("Öğrenci bilgisi doğrulanamadı");
+                }
 
-            Guid.TryParse(userIdStr, out var userId);
-            
-            await onboardStudentCollection.InsertOneAsync(new OnboardStudent()
+                return TypedResults.Ok();
+
+            }).RequireAuthorization().Produces<ProblemHttpResult>(400).WithOpenApi()
+            .WithTags("Öğrenci Tanışma Formu İşlemleri");
+
+        endpoints.MapPost("/onboard/parent-info", Results<Ok, ProblemHttpResult>
+                (ParentInfo request, [FromServices] IServiceProvider sp) =>
             {
-                UserId = userId,
-                Data = request,
-            });
-            
-            return TypedResults.Ok();
-        }).RequireAuthorization();
+                var requestValidation = ValidateParentInfo(request);
+
+                if (requestValidation.Any())
+                {
+                    return requestValidation.CreateProblem("Veli bilgisi doğrulanamadı");
+                }
+
+                return TypedResults.Ok();
+
+            }).RequireAuthorization().Produces<ProblemHttpResult>(400).WithOpenApi()
+            .WithTags("Öğrenci Tanışma Formu İşlemleri");
+
+        endpoints.MapPost("/onboard/last-practice-tyt-exam-points", Results<Ok, ProblemHttpResult>
+                (TYTAveragePoints request, [FromServices] IServiceProvider sp) =>
+            {
+                var requestValidation = ValidateLastPracticeTytExamPoints(request);
+
+                if (requestValidation.Any())
+                {
+                    return requestValidation.CreateProblem("Son temel yeterlilik sınav türü bilgisi doğrulanamadı");
+                }
+
+                return TypedResults.Ok();
+
+            }).RequireAuthorization().Produces<ProblemHttpResult>(400).WithOpenApi()
+            .WithTags("Öğrenci Tanışma Formu İşlemleri");
+
+        endpoints.MapPost("/onboard/last-practice-tm-exam-points", Results<Ok, ProblemHttpResult>
+                (TMAveragePoints request, [FromServices] IServiceProvider sp) =>
+            {
+                var requestValidation = ValidateLastPracticeTmExamPoints(request);
+
+                if (requestValidation.Any())
+                {
+                    return requestValidation.CreateProblem("Son eşit ağırlık puan türü bilgisi doğrulanamadı");
+                }
+
+                return TypedResults.Ok();
+
+            }).RequireAuthorization().Produces<ProblemHttpResult>(400).WithOpenApi()
+            .WithTags("Öğrenci Tanışma Formu İşlemleri");
+
+        endpoints.MapPost("/onboard/last-practice-mf-exam-points", Results<Ok, ProblemHttpResult>
+                (MFAveragePoints request, [FromServices] IServiceProvider sp) =>
+            {
+                var requestValidation = ValidateLastPracticeMfExamPoints(request);
+
+                if (requestValidation.Any())
+                {
+                    return requestValidation.CreateProblem("Son sayısal puan türü bilgisi doğrulanamadı");
+                }
+
+                return TypedResults.Ok();
+
+            }).RequireAuthorization().Produces<ProblemHttpResult>(400).WithOpenApi()
+            .WithTags("Öğrenci Tanışma Formu İşlemleri");
+
+        endpoints.MapPost("/onboard/last-practice-sozel-exam-points", Results<Ok, ProblemHttpResult>
+                (SozelAveragePoints request, [FromServices] IServiceProvider sp) =>
+            {
+                var requestValidation = ValidateLastPracticeSozelExamPoints(request);
+
+                if (requestValidation.Any())
+                {
+                    return requestValidation.CreateProblem("Son sözel puan türü bilgisi doğrulanamadı");
+                }
+
+                return TypedResults.Ok();
+
+            }).RequireAuthorization().Produces<ProblemHttpResult>(400).WithOpenApi()
+            .WithTags("Öğrenci Tanışma Formu İşlemleri");
+
+        endpoints.MapPost("/onboard/last-practice-dil-exam-points", Results<Ok, ProblemHttpResult>
+                (DilAveragePoints request, [FromServices] IServiceProvider sp) =>
+            {
+                var requestValidation = ValidateLastPracticeDilExamPoints(request);
+
+                if (requestValidation.Any())
+                {
+                    return requestValidation.CreateProblem("Son yabancı dil puan türü bilgisi doğrulanamadı");
+                }
+
+                return TypedResults.Ok();
+
+            }).RequireAuthorization().Produces<ProblemHttpResult>(400).WithOpenApi()
+            .WithTags("Öğrenci Tanışma Formu İşlemleri");
+
+        endpoints.MapPost("/onboard/student-goals", Results<Ok, ProblemHttpResult>
+                (StudentGoals request, [FromServices] IServiceProvider sp) =>
+            {
+                var requestValidation = ValidateStudentGoals(request);
+
+                if (requestValidation.Any())
+                {
+                    return requestValidation.CreateProblem("Öğrenci hedefleri doğrulanamadı.");
+                }
+
+                return TypedResults.Ok();
+
+            }).RequireAuthorization().Produces<ProblemHttpResult>(400).WithOpenApi()
+            .WithTags("Öğrenci Tanışma Formu İşlemleri");
+
+        endpoints.MapPost("/onboard/academic-summary", Results<Ok, ProblemHttpResult>
+                (AcademicSummary request, [FromServices] IServiceProvider sp) =>
+            {
+                var requestValidation = ValidateAcademicSummary(request);
+
+                if (requestValidation.Any())
+                {
+                    return requestValidation.CreateProblem("Öğrenci akademik özet bilgisi doğrulanamadı.");
+                }
+
+                return TypedResults.Ok();
+
+            }).RequireAuthorization().Produces<ProblemHttpResult>(400).WithOpenApi()
+            .WithTags("Öğrenci Tanışma Formu İşlemleri");
+
+        endpoints.MapPost("/onboard/suplementary-materials/{examType}", Results<Ok, ProblemHttpResult>
+            ([FromQuery] string examType, [FromBody] SupplementaryMaterials request,
+                [FromServices] IServiceProvider sp) =>
+            {
+                var requestValidation = ValidateSupplementaryMaterials(examType, request);
+
+                if (requestValidation.Any())
+                {
+                    return requestValidation.CreateProblem("Öğrenci akademik özet bilgisi doğrulanamadı.");
+                }
+
+                return TypedResults.Ok();
+
+            }).RequireAuthorization().Produces<ProblemHttpResult>(400).WithOpenApi()
+            .WithTags("Öğrenci Tanışma Formu İşlemleri");
+
+        endpoints.MapPost("/onboard", async Task<Results<Ok, ProblemHttpResult>>
+                (StudentOnboardRequest request, ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
+            {
+                var requestValidation = RequestValidation(request);
+
+                if (requestValidation.IsFailure)
+                {
+                    var errors = requestValidation.Errors;
+
+                    return TypedResults.Problem("Tanışma formu eksik yada hatalı!",
+                        extensions: new Dictionary<string, object?>()
+                        {
+                            { "errors", errors },
+                        });
+                }
+
+                var dbContext = sp.GetRequiredService<ApplicationDbContext>();
+
+                var mongoDatabase = sp.GetRequiredService<IMongoDatabase>();
+
+                var onboardStudentCollection = mongoDatabase.GetCollection<OnboardStudent>("onboardStudents");
+
+                var strUserId = claimsPrincipal.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier).Value;
+
+                var filter = Builders<OnboardStudent>.Filter.Eq(s => s.UserId, strUserId);
+
+                var onboardStudent = await onboardStudentCollection.Find(filter).FirstOrDefaultAsync();
+
+                if (onboardStudent is null)
+                {
+                    await onboardStudentCollection.InsertOneAsync(new OnboardStudent()
+                    {
+                        UserId = strUserId,
+                        Data = request,
+                    });
+
+                    Guid.TryParse(strUserId, out var userId);
+
+                    var user = await dbContext.Users
+                        .Include(x => x.StudentDetail)
+                        .Include(x => x.SubscriptionHistories)
+                        .FirstOrDefaultAsync(x => x.Id == userId);
+
+                    if (user is not null)
+                    {
+                        var subscription = user.SubscriptionHistories.Where(x => x.SubscriptionEndDate != null)
+                            .OrderBy(x => x.SubscriptionEndDate.Value)
+                            .FirstOrDefault(x => x.SubscriptionEndDate.Value > DateTime.UtcNow);
+                        
+                        if (subscription.Type == SubscriptionType.OnlyPdr)
+                        {
+                            user!.StudentDetail.Status = StudentStatus.OnboardCompleted;    
+                        }else if (subscription.Type == SubscriptionType.PdrWithCoach)
+                        {
+                            user!.StudentDetail.Status = StudentStatus.CoachSelect;
+                        }
+                        
+                        await dbContext.SaveChangesAsync();
+                    }
+                }
+                else
+                {
+                    filter = Builders<OnboardStudent>.Filter.Eq(s => s.Id, onboardStudent.Id);
+
+                    await onboardStudentCollection.ReplaceOneAsync(filter, new OnboardStudent()
+                    {
+                        Id = onboardStudent.Id,
+                        UserId = strUserId,
+                        Data = request,
+                    });
+                }
+
+                return TypedResults.Ok();
+            }).RequireAuthorization().Produces<ProblemHttpResult>(400).WithOpenApi()
+            .WithTags("Öğrenci Tanışma Formu İşlemleri");
+        
+        endpoints.MapPost("/onboard/terms-and-conditions-accepted", async Task<Results<Ok, ProblemHttpResult>>
+                (ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
+            {
+                var dbContext = sp.GetRequiredService<ApplicationDbContext>();
+                
+                var strUserId = claimsPrincipal?.Claims?.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+
+                Guid.TryParse(strUserId, out var userId);
+
+                var user = dbContext.Users
+                    .Include(x => x.StudentDetail)
+                    // .Include(x => x.SubscriptionHistories)
+                    .FirstOrDefault(x => x.Id == userId && x.UserType == UserType.Student);
+
+                // var subscription = user!.SubscriptionHistories.OrderBy(x => x.SubscriptionEndDate)
+                //     .FirstOrDefault(
+                //         x => x.SubscriptionEndDate.HasValue && x.SubscriptionEndDate.Value > DateTime.UtcNow);
+                
+                // if (user.StudentDetail.Status == StudentStatus.OnboardCompleted && subscription is not null && subscription.Type == SubscriptionType.OnlyPdr)
+
+                if (user is not null && user.StudentDetail.Status != StudentStatus.OnboardCompleted)
+                {
+                    return TypedResults.Problem("Öğrenci tanışma formunu tamamlayın",
+                        statusCode: StatusCodes.Status400BadRequest);
+                }
+                
+                user.StudentDetail.TermsAndConditionsAccepted = true;
+                // TODO: PDR ataması yapılacak. 
+                user.StudentDetail.Status = StudentStatus.Active;
+                    
+                await dbContext.SaveChangesAsync();
+                    
+                return TypedResults.Ok();
+
+            }).RequireAuthorization().Produces<ProblemHttpResult>(400).WithOpenApi()
+            .WithTags("Öğrenci Tanışma Formu İşlemleri");
         
         Result RequestValidation(StudentOnboardRequest request)
         {
-            if (string.IsNullOrEmpty(request.Name))
+            var errorDescriptors = new List<ErrorDescriptor>();
+            
+            errorDescriptors.AddRange(ValidateStudentGeneralInfo(request.StudentGeneralInfo));
+            
+            errorDescriptors.AddRange(ValidateParentInfo(request.ParentInfo));
+
+            errorDescriptors.AddRange(ValidateAcademicSummary(request.AcademicSummary));
+
+            if (request.IsTryPracticeTYTExamBefore) // Temel Yeterlilik Testi
             {
-                return Result.Failure(CommonErrorDescriptor.InvalidStudentName(request.Name));  
+                errorDescriptors.AddRange(ValidateLastPracticeTytExamPoints(request.LastPracticeTytExamPoints));
+            }else if (request.IsTryPracticeAYTExamBefore) // Alan Yeterlilik Testi
+            {
+                if (request.StudentGeneralInfo != null)
+                    switch (request.StudentGeneralInfo.ExamType.ToLower())
+                    {
+                        case "tm":
+                            errorDescriptors.AddRange(
+                                ValidateLastPracticeTmExamPoints(request.LastPracticeTmExamPoints));
+                            break;
+                        case "mf":
+                            errorDescriptors.AddRange(
+                                ValidateLastPracticeMfExamPoints(request.LastPracticeMfExamPoints));
+                            break;
+                        case "sozel":
+                        case "sözel":
+                            errorDescriptors.AddRange(
+                                ValidateLastPracticeSozelExamPoints(request.LastPracticeSozelExamPoints));
+                            break;
+                        case "dil":
+                            errorDescriptors.AddRange(
+                                ValidateLastPracticeDilExamPoints(request.LastPracticeDilExamPoints));
+                            break;
+                    }
             }
             
-            if (string.IsNullOrEmpty(request.Surname))
+            //F Part
+            errorDescriptors.AddRange(ValidateStudentGoals(request.StudentGoals));
+
+            //G Part
+            errorDescriptors.AddRange(ValidateSupplementaryMaterials(request.StudentGeneralInfo.ExamType, request.SupplementaryMaterials));
+
+            return errorDescriptors.Any() ? Result.Failure(errorDescriptors) : Result.Success();
+        }
+    }
+
+    private static List<ErrorDescriptor> ValidateAcademicSummary(AcademicSummary? request)
+    {
+        var errorDescriptors = new List<ErrorDescriptor>();
+
+        if (request is null)
+        {
+            errorDescriptors.Add(CommonErrorDescriptor.EmptyAcademicSummary());
+        }
+        else
+        {
+            if (string.IsNullOrEmpty(request.HighSchool))
             {
-                return Result.Failure(CommonErrorDescriptor.InvalidStudentSurname(request.Surname));
+                errorDescriptors.Add(CommonErrorDescriptor.EmptyHighSchool());
+            }
+
+            if (request.HighSchoolGPA is < 0 or > 100)
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidHighSchoolGPA(request.HighSchoolGPA));
+            }    
+        }
+
+        return errorDescriptors;
+    }
+
+    private static List<ErrorDescriptor> ValidateStudentGoals(StudentGoals request)
+    {
+        var errorDescriptors = new List<ErrorDescriptor>();
+        
+        if (request.TytGoalNet is < 0 or > 120)
+        {
+            errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidTYTGoalNet", "TYT neti",
+                request.TytGoalNet.Value, 120, 0));
+        }
+
+        if (request.AytGoalNet is < 0 or > 80)
+        {
+            errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidAYTGoalNet", "AYT neti",
+                request.AytGoalNet.Value, 80, 0));
+        }
+
+        if (request.GoalRanking is < 1 or > 5000000)
+        {
+            errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidGoalRanking", "Hedef sıralaması",
+                request.GoalRanking.Value, 5000000, 1));
+        }
+
+        //request.DesiredProfessionSchoolField
+
+        return errorDescriptors;
+    }
+
+    private static List<ErrorDescriptor> ValidateSupplementaryMaterials(string examType, SupplementaryMaterials? request)
+    {
+        var errorDescriptors = new List<ErrorDescriptor>();
+        
+        if (string.IsNullOrEmpty(examType) || !examTypes.Contains(examType.ToLower()))
+        {
+            errorDescriptors.Add(CommonErrorDescriptor.InvalidExamType(examType));
+        }
+        
+        if (request is null)
+        {
+            errorDescriptors.Add(CommonErrorDescriptor.EmptySupplementaryMaterials());
+        }
+        else
+        {
+            if (request.PrivateTutoring)
+            {
+                if (request.PrivateTutoringAyt)
+                {
+                    if (request.PrivateTutoringAytLessons is null)
+                    {
+                        errorDescriptors.Add(CommonErrorDescriptor.EmptyTM());
+                    }
+                    else
+                    {
+                        switch (examType.ToLower())
+                        {
+                            case "tm" when request.PrivateTutoringAytLessons?.Tm is null:
+                                errorDescriptors.Add(CommonErrorDescriptor.EmptyTM());
+                                break;
+                            case "mf" when request.PrivateTutoringAytLessons?.Mf is null:
+                                errorDescriptors.Add(CommonErrorDescriptor.EmptyMF());
+                                break;
+                            case "sozel" or "sözel"
+                                when request.PrivateTutoringAytLessons?.Sozel is null:
+                                errorDescriptors.Add(CommonErrorDescriptor.EmptySozel());
+                                break;
+                            case "dil" when request.PrivateTutoringAytLessons?.Dil is null:
+                                errorDescriptors.Add(CommonErrorDescriptor.EmptyDil());
+                                break;
+                        }
+                    }
+                }
+            }    
+        }
+        
+        return errorDescriptors;
+    }
+
+    private static List<ErrorDescriptor> ValidateLastPracticeDilExamPoints(DilAveragePoints? request)
+    {
+        var errorDescriptors = new List<ErrorDescriptor>();
+        
+        if (request is null)
+        {
+            errorDescriptors.Add(CommonErrorDescriptor.EmptyLastPracticeYDTExamPoints());
+        }
+        else
+        {
+            if (request.YDT > 80)
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidYdtNet",
+                    "Yabancı dil neti",
+                    request.YDT, 80, 0));
+            }
+        }
+
+        return errorDescriptors;
+    }
+
+    private static List<ErrorDescriptor> ValidateLastPracticeSozelExamPoints(SozelAveragePoints? request)
+    {
+        var errorDescriptors = new List<ErrorDescriptor>();
+        
+        if (request is null)
+        {
+            errorDescriptors.Add(CommonErrorDescriptor.EmptyLastPracticeMFExamPoints());
+        }
+        else
+        {
+            //Tarih-1: (Max 10, Min 0)
+            if (request.History1 > 10)
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidHistory1Net",
+                    "Tarih-1 neti",
+                    request.History1, 10, 0));
+            }
+
+            //Coğrafya-1: (Max 24, Min 0)
+            if (request.Geography1 > 24)
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidGeometryNet",
+                    "Coğrafya-1 neti",
+                    request.Geography1, 24, 0));
+            }
+
+            //Edebiyat-1: (Max 6, Min 0)
+            if (request.Literature1 > 6)
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidLiterature1Net",
+                    "Edebiyat-1 neti",
+                    request.Literature1, 6, 0));
+            }
+
+            //Tarih-2: (Max 11, Min 0)
+            if (request.History2 > 11)
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidHistory2Net", "Tarih-2 neti",
+                    request.History2, 11, 0));
+            }
+
+            //Coğrafya-2: (Max 13, Min 0)
+            if (request.Geography2 > 11)
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidGeography2Net",
+                    "Coğrafya-2 neti",
+                    request.Geography2, 11, 0));
+            }
+
+            //Felsefe: (Max 12, Min 0)
+            if (request.Philosophy > 12)
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidPhilosophyNet",
+                    "Felsefe neti",
+                    request.Philosophy, 12, 0));
+            }
+
+            //DİN: (Max 6, Min 0)
+            if (request.Religion > 6)
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidReligionNet",
+                    "Din neti",
+                    request.Philosophy, 6, 0));
+            }
+        }
+
+        return errorDescriptors;
+    }
+
+    private static List<ErrorDescriptor> ValidateLastPracticeMfExamPoints(MFAveragePoints? request)
+    {
+        var errorDescriptors = new List<ErrorDescriptor>();
+        
+        if (request is null)
+        {
+            errorDescriptors.Add(CommonErrorDescriptor.EmptyLastPracticeMFExamPoints());
+        }
+        else
+        {
+            //Matematik: (Max 30, Min 0)
+            if (request.Mathematics > 30)
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidMathematicsNet",
+                    "Matematik neti",
+                    request.Mathematics, 30, 0));
+            }
+
+            //Geometri: (Max 10, Min 0)
+            if (request.Geometry > 10)
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidGeometryNet",
+                    "Geometri neti",
+                    request.Geometry, 10, 0));
+            }
+
+            //Fizik: (Max 13, Min 0)
+            if (request.Physics <= 13)
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidPhysicsNet",
+                    "Fizik neti",
+                    request.Physics, 13, 0));
+            }
+
+            //Kimya: (Max 13, Min 0)
+            if (request.Chemistry > 13)
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidChemistryNet", "Kimya neti",
+                    request.Chemistry, 13, 0));
+            }
+
+            //Biyoloji: (Max 13, Min 0)
+            if (request.Biology > 13)
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidBiologyNet",
+                    "Biyoloji neti",
+                    request.Biology, 13, 0));
+            }
+        }
+        
+        return errorDescriptors;
+    }
+
+    private static List<ErrorDescriptor> ValidateLastPracticeTmExamPoints(TMAveragePoints? request)
+    {
+        var errorDescriptors = new List<ErrorDescriptor>();
+        
+        if (request is null)
+        {
+            errorDescriptors.Add(CommonErrorDescriptor.EmptyLastPracticeTMExamPoints());
+        }
+        else
+        {
+            //Matematik: (Max 30, Min 0)
+            if (request.Mathematics > 30)
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidMathematicsNet", "Matematik neti",
+                    request.Mathematics, 30, 0));
+            }
+
+            //Geometri: (Max 10, Min 0)
+            if (request.Geometry > 10)
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidGeometryNet", "Geometri neti",
+                    request.Geometry, 10, 0));
+            }
+
+            //Edebiyat: (Max 24, Min 0)
+            if (request.Literature > 24)
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidLiteratureNet", "Edebiyat neti",
+                    request.Literature, 24, 0));
+            }
+
+            //Tarih: (Max 10, Min 0)
+            if (request.History > 10)
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidHistoryNet", "Tarih neti",
+                    request.History, 10, 0));
+            }
+
+            //Coğrafya: (Max 6, Min 0)
+            if (request.Geography > 6)
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidGeographyNet", "Coğrafya neti",
+                    request.Geography, 6, 0));
+            }
+        }
+        
+        return errorDescriptors;
+    }
+
+    private static List<ErrorDescriptor> ValidateLastPracticeTytExamPoints(TYTAveragePoints? request)
+    {
+        var errorDescriptors = new List<ErrorDescriptor>();
+        
+        if (request is null)
+        {
+            errorDescriptors.Add(CommonErrorDescriptor.EmptyLastPracticeTYTExamPoints());
+        }
+        else
+        {
+            //Anlam Bilgisi: (Max 30, Min 0)
+            if (request.Semantics > 30)
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidSemanticNet", "Anlam bilgisi neti",
+                    request.Semantics, 30, 0));
             }
             
-            if (string.IsNullOrEmpty(request.Email))
+            //Dil Bilgisi: (Max 10, Min 0)
+            if (request.Grammar > 10)
             {
-                return Result.Failure(CommonErrorDescriptor.InvalidStudentEmail(request.Email));
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidGrammarNet", "Dil bilgisi neti",
+                    request.Grammar, 10, 0));
             }
             
+            //Matematik: (Max 30, Min 0)
+            if (request.Mathematics > 30)
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidMathematicsNet", "Matematik neti",
+                    request.Mathematics, 30, 0));
+            }
+            
+            //Geometri: (Max 10, Min 0)
+            if (request.Geometry > 10)
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidGeometryNet", "Geometri neti",
+                    request.Mathematics, 10, 0));
+            }
+            
+            //Tarih: (Max 5, Min 0)
+            if (request.History > 5)
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidHistoryNet", "Tarih neti",
+                    request.History, 5, 0));
+            }
+            
+            //Coğrafya: (Max 5, Min 0)
+            if (request.Geography > 5)
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidGeographyNet", "Coğrafya neti",
+                    request.Geography, 5, 0));
+            }
+            
+            //Felsefe: (Max 5, Min 0)
+            if (request.Philosophy > 5)
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidPhilosophyNet", "Felsefe neti",
+                    request.Philosophy, 5, 0));
+            }
+            
+            //Din: (Max 5, Min 0)
+            if (request.Religion > 5)
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidReligionNet", "Din neti",
+                    request.Religion, 5, 0));
+            }
+            
+            //Fizik: (Max 7, Min 0)
+            if (request.Physics > 7)
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidPhysicsNet", "Fizik neti",
+                    request.Physics, 7, 0));
+            }
+            
+            //Kimya: (Max 7, Min 0)
+            if (request.Chemistry > 7)
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidChemistryNet", "Kimya neti",
+                    request.Chemistry, 7, 0));
+            }
+            
+            //Biyoloji: (Max 6, Min 0)
+            if (request.Biology > 6)
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidBiologyNet", "Biyoloji neti",
+                    request.Biology, 6, 0));
+            }    
+        }
+        
+        return errorDescriptors;
+    }
+
+    private static List<ErrorDescriptor> ValidateParentInfo(ParentInfo? request)
+    {
+        var errorDescriptors = new List<ErrorDescriptor>();
+
+        if (request is null)
+        {
+            errorDescriptors.Add(CommonErrorDescriptor.EmptyParentInfo());
+        }
+        else
+        {
+            if (string.IsNullOrEmpty(request.Name) || request.Name.Length < 3)
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidParentName(request.Name));
+            }
+
+            if (string.IsNullOrEmpty(request.Surname) || request.Surname.Length < 2)
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidParentSurname(request.Surname));
+            }
+
+            if (string.IsNullOrEmpty(request.Email) || !EmailAddressAttribute.IsValid(request.Email))
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidParentEmail(request.Email));
+            }
+
             if (string.IsNullOrEmpty(request.Mobile))
             {
-                return Result.Failure(CommonErrorDescriptor.InvalidStudentMobile(request.Mobile));
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidParentMobile(request.Mobile));
             }
+            else
+            {
+                //533-222-88-44
+                if (string.IsNullOrEmpty(request.Mobile) ||
+                    request.Mobile.Length != 13 ||
+                    request.Mobile.Split("-").Length != 4 ||
+                    request.Mobile.Split("-")[0].First() != '5' ||
+                    !int.TryParse(request.Mobile.Split("-")[0], out var parseResult) ||
+                    !int.TryParse(request.Mobile.Split("-")[1], out parseResult) ||
+                    !int.TryParse(request.Mobile.Split("-")[2], out parseResult) ||
+                    !int.TryParse(request.Mobile.Split("-")[3], out parseResult))
+                {
+                    errorDescriptors.Add(CommonErrorDescriptor.InvalidParentMobile(request.Mobile));
+                }
+            }    
+        }
+
+        return errorDescriptors;
+    }
+
+    private static List<ErrorDescriptor> ValidateStudentGeneralInfo(StudentGeneralInfo? request)
+    {
+        var errorDescriptors = new List<ErrorDescriptor>();
+
+        if (request is null)
+        {
+            errorDescriptors.Add(CommonErrorDescriptor.EmptyStudentGeneralInfo());
+        }
+        else
+        {
+            if (string.IsNullOrEmpty(request.Name) || request.Name.Length < 3)
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidStudentName(request.Name));
+            }
+
+            if (string.IsNullOrEmpty(request.Surname) || request.Surname.Length < 2)
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidStudentSurname(request.Surname));
+            }
+
+            if (string.IsNullOrEmpty(request.Email) || !EmailAddressAttribute.IsValid(request.Email))
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidStudentEmail(request.Email));
+            }
+
+            if (string.IsNullOrEmpty(request.Mobile))
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidStudentMobile(request.Mobile));
+            }
+            else
+            {
+                //533-222-88-44
+                if (string.IsNullOrEmpty(request.Mobile) ||
+                    request.Mobile.Length != 13 ||
+                    request.Mobile.Split("-").Length != 4 ||
+                    request.Mobile.Split("-")[0].First() != '5' ||
+                    !int.TryParse(request.Mobile.Split("-")[0], out var parseResult) ||
+                    !int.TryParse(request.Mobile.Split("-")[1], out parseResult) ||
+                    !int.TryParse(request.Mobile.Split("-")[2], out parseResult) ||
+                    !int.TryParse(request.Mobile.Split("-")[3], out parseResult))
+                {
+                    errorDescriptors.Add(CommonErrorDescriptor.InvalidStudentMobile(request.Mobile));
+                }
+            }    
             
             if (string.IsNullOrEmpty(request.ExamType) || !examTypes.Contains(request.ExamType.ToLower()))
             {
-                return Result.Failure(CommonErrorDescriptor.InvalidExamType(request.ExamType));
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidExamType(request.ExamType));
             }
             
             if (string.IsNullOrEmpty(request.Grade) || !gradeTypes.Contains(request.Grade.ToLower()))
             {
-                return Result.Failure(CommonErrorDescriptor.InvalidGrade(request.Grade));
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidGrade(request.Grade));
             }
-
-            if (request.IsTryPracticeTYTExamBefore)
-            {
-                if (request.LastPracticeTYTExamPoints == null)
-                {
-                    return Result.Failure(CommonErrorDescriptor.InvalidGrade(request.Grade));
-                }
-                
-                //Anlam Bilgisi: (Max 30, Min 0)
-                if (!(request.LastPracticeTYTExamPoints.Semantics >= 0 && request.LastPracticeTYTExamPoints.Semantics <= 30))
-                {
-                    return Result.Failure(CommonErrorDescriptor.InvalidRange("InvalidSemanticNet", "Anlam bilgisi neti",
-                        request.LastPracticeTYTExamPoints.Semantics, 30, 0));
-                }
-                
-                //Dil Bilgisi: (Max 10, Min 0)
-                if (!(request.LastPracticeTYTExamPoints.Grammar >= 0 && request.LastPracticeTYTExamPoints.Grammar <= 10))
-                {
-                    return Result.Failure(CommonErrorDescriptor.InvalidRange("InvalidGrammarNet", "Dil bilgisi neti",
-                        request.LastPracticeTYTExamPoints.Grammar, 10, 0));
-                }
-                
-                //Matematik: (Max 30, Min 0)
-                if (!(request.LastPracticeTYTExamPoints.Mathematics >= 0 && request.LastPracticeTYTExamPoints.Mathematics <= 30))
-                {
-                    return Result.Failure(CommonErrorDescriptor.InvalidRange("InvalidMathematicsNet", "Matematik neti",
-                        request.LastPracticeTYTExamPoints.Mathematics, 30, 0));
-                }
-                
-                //Geometri: (Max 10, Min 0)
-                if (!(request.LastPracticeTYTExamPoints.Geometry >= 0 && request.LastPracticeTYTExamPoints.Geometry <= 10))
-                {
-                    return Result.Failure(CommonErrorDescriptor.InvalidRange("InvalidGeometryNet", "Geometri neti",
-                        request.LastPracticeTYTExamPoints.Mathematics, 10, 0));
-                }
-                
-                //Tarih: (Max 5, Min 0)
-                if (!(request.LastPracticeTYTExamPoints.History >= 0 && request.LastPracticeTYTExamPoints.History <= 5))
-                {
-                    return Result.Failure(CommonErrorDescriptor.InvalidRange("InvalidHistoryNet", "Tarih neti",
-                        request.LastPracticeTYTExamPoints.History, 5, 0));
-                }
-                
-                //Coğrafya: (Max 5, Min 0)
-                if (!(request.LastPracticeTYTExamPoints.Geography >= 0 && request.LastPracticeTYTExamPoints.Geography <= 5))
-                {
-                    return Result.Failure(CommonErrorDescriptor.InvalidRange("InvalidGeographyNet", "Coğrafya neti",
-                        request.LastPracticeTYTExamPoints.Geography, 5, 0));
-                }
-                
-                //Felsefe: (Max 5, Min 0)
-                if (!(request.LastPracticeTYTExamPoints.Philosophy >= 0 && request.LastPracticeTYTExamPoints.Philosophy <= 5))
-                {
-                    return Result.Failure(CommonErrorDescriptor.InvalidRange("InvalidPhilosophyNet", "Felsefe neti",
-                        request.LastPracticeTYTExamPoints.Philosophy, 5, 0));
-                }
-                
-                //Din: (Max 5, Min 0)
-                if (!(request.LastPracticeTYTExamPoints.Religion >= 0 && request.LastPracticeTYTExamPoints.Religion <= 5))
-                {
-                    return Result.Failure(CommonErrorDescriptor.InvalidRange("InvalidReligionNet", "Din neti",
-                        request.LastPracticeTYTExamPoints.Religion, 5, 0));
-                }
-                
-                //Fizik: (Max 7, Min 0)
-                if (!(request.LastPracticeTYTExamPoints.Physics >= 0 && request.LastPracticeTYTExamPoints.Physics <= 7))
-                {
-                    return Result.Failure(CommonErrorDescriptor.InvalidRange("InvalidPhysicsNet", "Fizik neti",
-                        request.LastPracticeTYTExamPoints.Physics, 7, 0));
-                }
-                
-                //Kimya: (Max 7, Min 0)
-                if (!(request.LastPracticeTYTExamPoints.Chemistry >= 0 && request.LastPracticeTYTExamPoints.Chemistry <= 7))
-                {
-                    return Result.Failure(CommonErrorDescriptor.InvalidRange("InvalidChemistryNet", "Kimya neti",
-                        request.LastPracticeTYTExamPoints.Chemistry, 7, 0));
-                }
-                
-                //Biyoloji: (Max 6, Min 0)
-                if (!(request.LastPracticeTYTExamPoints.Biology >= 0 && request.LastPracticeTYTExamPoints.Biology <= 6))
-                {
-                    return Result.Failure(CommonErrorDescriptor.InvalidRange("InvalidBiologyNet", "Biyoloji neti",
-                        request.LastPracticeTYTExamPoints.Biology, 6, 0));
-                }
-            }
-            
-            
-            //F Part
-            if (request.TYTGoalNet.HasValue && !(request.TYTGoalNet >= 0 && request.TYTGoalNet <= 120))
-            {
-                return Result.Failure(CommonErrorDescriptor.InvalidRange("InvalidTYTGoalNet", "TYT neti",
-                    request.TYTGoalNet.Value, 120, 0));
-            }
-            
-            if (request.AYTGoalNet.HasValue && !(request.AYTGoalNet >= 0 && request.AYTGoalNet <= 80))
-            {
-                return Result.Failure(CommonErrorDescriptor.InvalidRange("InvalidAYTGoalNet", "AYT neti",
-                    request.AYTGoalNet.Value, 80, 0));
-            }
-            
-            if (request.GoalRanking.HasValue && !(request.GoalRanking >= 1 && request.GoalRanking <= 5000000))
-            {
-                return Result.Failure(CommonErrorDescriptor.InvalidRange("InvalidGoalRanking", "Hedef sıralaması",
-                    request.GoalRanking.Value, 5000000, 1));
-            }
-            
-            //G Part
-            if (request.SupplementaryMaterials == null)
-            {
-                
-            }
-
-            if (request.SupplementaryMaterials.PrivateTutoring)
-            {
-                if (request.SupplementaryMaterials.PrivateTutoringAYT)
-                {
-                    if (request.ExamType.ToLower() == "tm" && request.SupplementaryMaterials.PrivateTutoringAYTLessons.TM == null)
-                    {
-                        
-                    }
-                    
-                    if (request.ExamType.ToLower() == "mf" && request.SupplementaryMaterials.PrivateTutoringAYTLessons.MF == null)
-                    {
-                        
-                    }
-                    
-                    if ((request.ExamType.ToLower() == "sozel" || request.ExamType.ToLower() == "sözel") && request.SupplementaryMaterials.PrivateTutoringAYTLessons.Sozel == null)
-                    {
-                        
-                    }
-                    
-                    if (request.ExamType.ToLower() == "dil" && request.SupplementaryMaterials.PrivateTutoringAYTLessons.Dil == null)
-                    {
-                        
-                    }
-                    
-                }
-            }
-            
-            return Result.Success();
         }
+
+        return errorDescriptors;
     }
-    
+
     private static async Task<InfoResponse> CreateInfoResponseAsync<TUser>(TUser user, UserManager<TUser> userManager)
         where TUser : class
     {
@@ -233,78 +835,73 @@ public static class Onboard
 
     public class OnboardStudent
     {
-        public Guid UserId { get; set; }
+        public ObjectId Id { get; set; }
+        
+        public string UserId { get; set; }
         
         public StudentOnboardRequest Data { get; set; }
     }
-    
-    public class StudentOnboardRequest
-    {
-        public string Name { get; set; }
-        
-        public string Surname { get; set; }
-        
-        public string Mobile { get; set; }
-        
-        public string Email { get; set; }
-        
-        //Alan -> MF,TM,Sözel,Dil,Tyt
+
+    /*
+     * //Alan -> MF,TM,Sözel,Dil,Tyt
         public string ExamType { get; set; }
         
         //Sınıf -> 9-10-11-12 ve Mezun
         public string Grade  { get; set; }
-        
-        public string ParentName { get; set; }
-        
-        public string ParentSurname { get; set; }
-        
-        public string ParentMobile { get; set; }
+     */
+    public record StudentGeneralInfo(string Name, string Surname, string Mobile, string Email, string ExamType, string Grade);
 
-        public string ParentEmail { get; set; }
-        
-        //Okuduğunuz lise
-        public string HighSchool { get; set; }
-        
-        //Lise orta öğretim başarı puanınız 0-100 arasında olmalı
-        public float HighSchoolGPA { get; set; }
+    public record ParentInfo(string Name, string Surname, string Mobile, string Email);
 
+    
+    //Okuduğunuz lise
+    //Lise orta öğretim başarı puanınız 0-100 arasında olmalı
+    public record AcademicSummary(string HighSchool, float HighSchoolGPA);
+
+    //TYT hedef netiniz: (Max 120, Min 0) (required değil)
+
+    //AYT hedef netiniz: (Max 80, Min 0) (required değil)
+
+    //Hedef sıralamanız: (1-SONSUZ rangeta integer alır) (required değil)
+
+    //Hedef meslek/okul/bölümünüz: (Free text string alır) (required değil)
+    public record StudentGoals(byte? TytGoalNet, byte? AytGoalNet, uint? GoalRanking, string DesiredProfessionSchoolField);
+
+    public class StudentOnboardRequest
+    {
+        public StudentGeneralInfo? StudentGeneralInfo { get; set; }
+        
+        public ParentInfo? ParentInfo { get; set; }
+        
+        public AcademicSummary? AcademicSummary { get; set; }
+        
         //Daha önce TYT denemesine girdiniz mi? True ise LastPracticeTytExamPoints dolu olmalı. False ise 
         public bool IsTryPracticeTYTExamBefore { get; set; }
         
-        public TYTAveragePoints LastPracticeTYTExamPoints { get; set; }
+        public TYTAveragePoints? LastPracticeTytExamPoints { get; set; }
         
         //Daha önce AYT denemesine girdiniz mi? True ise
         //LastPracticeTytExamPoints dolu olmalı. False ise 
         public bool IsTryPracticeAYTExamBefore { get; set; }
         
         //Daha önce AYT denemesine girdiniz mi? True ise && ExamType -> MF
-        public MFAveragePoints LastPracticeMFExamPoints { get; set; }
+        public MFAveragePoints? LastPracticeMfExamPoints { get; set; }
         
         //Daha önce AYT denemesine girdiniz mi? True ise && ExamType -> TM
-        public TMAveragePoints LastPracticeTMExamPoints { get; set; }
+        public TMAveragePoints? LastPracticeTmExamPoints { get; set; }
         
         //Daha önce AYT denemesine girdiniz mi? True ise && ExamType -> Sozel
-        public SozelAveragePoints LastPracticeSozelExamPoints { get; set; }
+        public SozelAveragePoints? LastPracticeSozelExamPoints { get; set; }
         
         //Daha önce AYT denemesine girdiniz mi? True ise && ExamType -> Dil
-        public DilAveragePoints LastPracticeDilExamPoints { get; set; }
+        public DilAveragePoints? LastPracticeDilExamPoints { get; set; }
         
-        //TYT hedef netiniz: (Max 120, Min 0) (required değil)
-        public byte? TYTGoalNet { get; set; }
+        public StudentGoals? StudentGoals { get; set; }
         
-        //AYT hedef netiniz: (Max 80, Min 0) (required değil)
-        public byte? AYTGoalNet { get; set; }
-        
-        //Hedef sıralamanız: (1-SONSUZ rangeta integer alır) (required değil)
-        public uint? GoalRanking { get; set; }
-        
-        //Hedef meslek/okul/bölümünüz: (Free text string alır) (required değil)
-        public string DesiredProfessionSchoolField { get; set; }
-
+        public SupplementaryMaterials? SupplementaryMaterials { get; set; }
+    
         //Koçluktan beklentin nedir? (Free text uzun paragraf)
         public string ExpectationsFromCoaching { get; set; }
-
-        public SupplementaryMaterials SupplementaryMaterials { get; set; }
     }
 
     public class TYTAveragePoints
@@ -336,54 +933,54 @@ public static class Onboard
     public class MFAveragePoints
     {
         //Matematik: (Max 30, Min 0)
-        public string Mathematics { get; set; }
+        public byte Mathematics { get; set; }
         //Geometri: (Max 10, Min 0)
-        public string Geometry { get; set; }
+        public byte Geometry { get; set; }
         //Fizik: (Max 14, Min 0)
-        public string Physics { get; set; }
+        public byte Physics { get; set; }
         //Kimya: (Max 13, Min 0)
-        public string Chemistry { get; set; }
+        public byte Chemistry { get; set; }
         //Biology: (Max 13, Min 0)
-        public string Biology { get; set; }
+        public byte Biology { get; set; }
     }
     
     public class TMAveragePoints
     {
         //Matematik: (Max 30, Min 0)
-        public string Mathematics { get; set; }
+        public byte Mathematics { get; set; }
         //Geometri: (Max 10, Min 0)
-        public string Geometry { get; set; }
+        public byte Geometry { get; set; }
         //Edebiyat: (Max 24, Min 0)
-        public string Literature { get; set; }
+        public byte Literature { get; set; }
         //Tarih: (Max 10, Min 0)
-        public string History { get; set; }
+        public byte History { get; set; }
         //Coğrafya: (Max 6, Min 0)
-        public string Geography { get; set; }
+        public byte Geography { get; set; }
     }
     
     //Sözel
     public class SozelAveragePoints
     {
         //Tarih-1: (Max 10, Min 0)
-        public string History1 { get; set; }
+        public byte History1 { get; set; }
         //Coğrafya: (Max 24, Min 0)
-        public string Geography1 { get; set; }
+        public byte Geography1 { get; set; }
         //Edebiyat-1: (Max 6, Min 0)
-        public string Literature1 { get; set; }
+        public byte Literature1 { get; set; }
         //Tarih-2: (Max 11, Min 0)
-        public string History2 { get; set; }
+        public byte History2 { get; set; }
         //Coğrafya-2: (Max 11, Min 0)
-        public string Geography2 { get; set; }
+        public byte Geography2 { get; set; }
         //Felsefe: (Max 12, Min 0)
-        public string Philosophy { get; set; }
+        public byte Philosophy { get; set; }
         //Din: (Max 6, Min 0)
-        public string Religion { get; set; }
+        public byte Religion { get; set; }
     }
     
     public class DilAveragePoints
     {
-        //YDT: (Max 80, Min 0)
-        public string YTD { get; set; }
+        //YDT: (Max 80, Min 0) Yabacnı Dil Testi
+        public byte YDT { get; set; }
     }
 
     public enum ExamType
@@ -406,13 +1003,13 @@ public static class Onboard
         //Alanına göre a partında seçtiği dersler gelir. Hangi alandan hangi derslerin geleceğini e partındaki netler kısmından ulaşabilirsiniz.
         public bool PrivateTutoring { get; set; }
         
-        public bool PrivateTutoringTYT { get; set; }
-        public PrivateTutoringTYT PrivateTutoringTYTLessons { get; set; }
+        public bool PrivateTutoringTyt { get; set; }
+        public PrivateTutoringTYT? PrivateTutoringTytLessons { get; set; }
         
-        public bool PrivateTutoringAYT { get; set; }
+        public bool PrivateTutoringAyt { get; set; }
         //AYT(Başlık):
         //Alanına göre a partında seçtiği dersler gelir. Hangi alandan hangi derslerin geleceğini e partındaki netler kısmından ulaşabilirsiniz.
-        public PrivateTutoringAYT PrivateTutoringAYTLessons { get; set; }
+        public PrivateTutoringAYT? PrivateTutoringAytLessons { get; set; }
         
         public bool Course { get; set; }
         public bool Youtube { get; set; }
@@ -434,10 +1031,10 @@ public static class Onboard
     
     public class PrivateTutoringAYT
     {
-        public MF MF { get; set; }
-        public TM TM { get; set; }
-        public Sozel Sozel { get; set; }
-        public Dil Dil { get; set; }
+        public MF? Mf { get; set; }
+        public TM? Tm { get; set; }
+        public Sozel? Sozel { get; set; }
+        public Dil? Dil { get; set; }
     }
     
     public class MF
@@ -486,142 +1083,5 @@ public static class Onboard
     {
         //YDT: (Max 80, Min 0)
         public bool YTD { get; set; }
-    }
-
-    public enum SupplementaryMaterial
-    {
-        School,
-        SpecialCourse,
-        Course,
-        Youtube
-    }
-
-    public static class CommonErrorDescriptor
-    {
-        public static ErrorDescriptor InvalidStudentName(string name)
-        {
-            return new ErrorDescriptor
-            {
-                Code = nameof(InvalidStudentName),
-                Description = $"Öğrenci isim '{name}' geçersiz"
-            };
-        }
-        
-        public static ErrorDescriptor InvalidStudentSurname(string surname)
-        {
-            return new ErrorDescriptor
-            {
-                Code = nameof(InvalidStudentSurname),
-                Description = $"Öğrenci soyisim '{surname}' geçersiz"
-            };
-        }
-        
-        public static ErrorDescriptor InvalidStudentMobile(string mobile)
-        {
-            return new ErrorDescriptor
-            {
-                Code = nameof(InvalidStudentMobile),
-                Description = $"Öğrenci mobile '{mobile}' geçersiz"
-            };
-        }
-        
-        public static ErrorDescriptor InvalidStudentEmail(string email)
-        {
-            return new ErrorDescriptor
-            {
-                Code = nameof(InvalidStudentEmail),
-                Description = $"Öğrenci email '{email}' geçersiz"
-            };
-        }
-        
-        public static ErrorDescriptor InvalidParentName(string name)
-        {
-            return new ErrorDescriptor
-            {
-                Code = nameof(InvalidParentName),
-                Description = $"Veli isim '{name}' geçersiz"
-            };
-        }
-        
-        public static ErrorDescriptor InvalidParentSurname(string surname)
-        {
-            return new ErrorDescriptor
-            {
-                Code = nameof(InvalidParentSurname),
-                Description = $"Veli soyisim '{surname}' geçersiz"
-            };
-        }
-        
-        public static ErrorDescriptor InvalidParentMobile(string mobile)
-        {
-            return new ErrorDescriptor
-            {
-                Code = nameof(InvalidParentMobile),
-                Description = $"Veli mobile '{mobile}' geçersiz"
-            };
-        }
-        
-        public static ErrorDescriptor InvalidParentEmail(string email)
-        {
-            return new ErrorDescriptor
-            {
-                Code = nameof(InvalidParentEmail),
-                Description = $"Veli email '{email}' geçersiz"
-            };
-        }
-        
-        public static ErrorDescriptor InvalidExamType(string examType)
-        {
-            return new ErrorDescriptor
-            {
-                Code = nameof(InvalidExamType),
-                Description = $"Alan bilgisi '{examType}' geçersiz"
-            };
-        }
-        
-        public static ErrorDescriptor InvalidGrade(string grade)
-        {
-            return new ErrorDescriptor
-            {
-                Code = nameof(InvalidGrade),
-                Description = $"Sınıf bilgisi '{grade}' geçersiz"
-            };
-        }
-        
-        public static ErrorDescriptor InvalidHighSchool(string highSchool)
-        {
-            return new ErrorDescriptor
-            {
-                Code = nameof(InvalidHighSchool),
-                Description = $"Sınıf bilgisi '{highSchool}' geçersiz"
-            };
-        }
-        
-        public static ErrorDescriptor InvalidHighSchoolGPA(float highSchoolGpa)
-        {
-            return new ErrorDescriptor
-            {
-                Code = nameof(InvalidHighSchoolGPA),
-                Description = $"Lise orta öğretim başarı puanı '{highSchoolGpa}' geçersiz.(0-100)"
-            };
-        }
-        
-        public static ErrorDescriptor InvalidRange(string code, string text, byte point, byte max, byte min)
-        {
-            return new ErrorDescriptor
-            {
-                Code = code,
-                Description = $"{text} '{point}' geçersiz.({min}-{max})"
-            };
-        }
-        
-        public static ErrorDescriptor InvalidRange(string code, string text, uint point, uint max, uint min)
-        {
-            return new ErrorDescriptor
-            {
-                Code = code,
-                Description = $"{text} '{point}' geçersiz.({min}-{max})"
-            };
-        }
     }
 }
