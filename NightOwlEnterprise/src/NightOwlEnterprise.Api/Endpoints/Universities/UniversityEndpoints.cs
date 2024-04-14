@@ -22,7 +22,7 @@ public static class UniversityEndpoints
                 universities.AddRange(await applicationDbContext.Universities.Select(x => new UniversityItem(x.Id, x.Name)).ToListAsync());
             }
 
-            universities.AddRange(await applicationDbContext.Universities.Where(x => x.Name.Contains(name))
+            universities.AddRange(await applicationDbContext.Universities.Where(x => x.Name.ToLower().Contains(name.ToLower()))
                 .Select(x => new UniversityItem(x.Id, x.Name)).ToListAsync());
             
             return TypedResults.Ok(universities);
@@ -51,7 +51,7 @@ public static class UniversityEndpoints
         }).ProducesProblem(StatusCodes.Status500InternalServerError);
         
         routeGroup.MapGet("/{universityId}/departments", async Task<Results<Ok<List<DepartmentItem>>, ProblemHttpResult>>
-            (Guid universityId, [FromServices] IServiceProvider sp) =>
+            ([FromRoute]Guid universityId, [FromServices] IServiceProvider sp) =>
         {
             var departmentItems = new List<DepartmentItem>();
             
@@ -69,7 +69,7 @@ public static class UniversityEndpoints
 
         endpoints.MapPost("/{universityId}/departments",
             async Task<Results<Ok<UniversityDepartmentItem>, ProblemHttpResult>>
-            ([FromQuery] Guid universityId, [FromBody] string name, HttpContext context,
+            ([FromRoute] Guid universityId, [FromBody] string name, HttpContext context,
                 [FromServices] IServiceProvider sp) =>
             {
                 var applicationDbContext = sp.GetRequiredService<ApplicationDbContext>();
