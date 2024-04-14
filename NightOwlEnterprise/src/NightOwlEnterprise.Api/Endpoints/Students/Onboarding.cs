@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.Data;
@@ -156,7 +157,7 @@ public static class Onboard
             .WithTags("Öğrenci Tanışma Formu İşlemleri");
 
         endpoints.MapPost("/onboard/suplementary-materials/{examType}", Results<Ok, ProblemHttpResult>
-            ([FromQuery] string examType, [FromBody] SupplementaryMaterials request,
+            ([FromQuery] ExamType examType, [FromBody] SupplementaryMaterials request,
                 [FromServices] IServiceProvider sp) =>
             {
                 var requestValidation = ValidateSupplementaryMaterials(examType, request);
@@ -299,29 +300,27 @@ public static class Onboard
                 errorDescriptors.AddRange(ValidateLastPracticeTytExamPoints(request.LastPracticeTytExamPoints));
             }
             
-            if (request.StudentGeneralInfo.ExamType.ToLower() != "tyt" && request.IsTryPracticeAYTExamBefore) // Alan Yeterlilik Testi
+            if (request.StudentGeneralInfo?.ExamType != ExamType.TYT && request.IsTryPracticeAYTExamBefore) // Alan Yeterlilik Testi
             {
-                if (request.StudentGeneralInfo != null)
-                    switch (request.StudentGeneralInfo.ExamType.ToLower())
-                    {
-                        case "tm":
-                            errorDescriptors.AddRange(
-                                ValidateLastPracticeTmExamPoints(request.LastPracticeTmExamPoints));
-                            break;
-                        case "mf":
-                            errorDescriptors.AddRange(
-                                ValidateLastPracticeMfExamPoints(request.LastPracticeMfExamPoints));
-                            break;
-                        case "sozel":
-                        case "sözel":
-                            errorDescriptors.AddRange(
-                                ValidateLastPracticeSozelExamPoints(request.LastPracticeSozelExamPoints));
-                            break;
-                        case "dil":
-                            errorDescriptors.AddRange(
-                                ValidateLastPracticeDilExamPoints(request.LastPracticeDilExamPoints));
-                            break;
-                    }
+                switch (request.StudentGeneralInfo.ExamType)
+                {
+                    case ExamType.TM:
+                        errorDescriptors.AddRange(
+                            ValidateLastPracticeTmExamPoints(request.LastPracticeTmExamPoints));
+                        break;
+                    case ExamType.MF:
+                        errorDescriptors.AddRange(
+                            ValidateLastPracticeMfExamPoints(request.LastPracticeMfExamPoints));
+                        break;
+                    case ExamType.Sozel:
+                        errorDescriptors.AddRange(
+                            ValidateLastPracticeSozelExamPoints(request.LastPracticeSozelExamPoints));
+                        break;
+                    case ExamType.Dil:
+                        errorDescriptors.AddRange(
+                            ValidateLastPracticeDilExamPoints(request.LastPracticeDilExamPoints));
+                        break;
+                }
             }
             
             //F Part
@@ -385,14 +384,14 @@ public static class Onboard
         return errorDescriptors;
     }
 
-    private static List<ErrorDescriptor> ValidateSupplementaryMaterials(string examType, SupplementaryMaterials? request)
+    private static List<ErrorDescriptor> ValidateSupplementaryMaterials(ExamType examType, SupplementaryMaterials? request)
     {
         var errorDescriptors = new List<ErrorDescriptor>();
         
-        if (string.IsNullOrEmpty(examType) || !examTypes.Contains(examType.ToLower()))
-        {
-            errorDescriptors.Add(CommonErrorDescriptor.InvalidExamType(examType));
-        }
+        // if (string.IsNullOrEmpty(examType) || !examTypes.Contains(examType.ToLower()))
+        // {
+        //     errorDescriptors.Add(CommonErrorDescriptor.InvalidExamType(examType));
+        // }
         
         if (request is null)
         {
@@ -410,19 +409,19 @@ public static class Onboard
                     }
                     else
                     {
-                        switch (examType.ToLower())
+                        switch (examType)
                         {
-                            case "tm" when request.PrivateTutoringAytLessons?.Tm is null:
+                            case ExamType.TM when request.PrivateTutoringAytLessons?.Tm is null:
                                 errorDescriptors.Add(CommonErrorDescriptor.EmptyTM());
                                 break;
-                            case "mf" when request.PrivateTutoringAytLessons?.Mf is null:
+                            case ExamType.MF when request.PrivateTutoringAytLessons?.Mf is null:
                                 errorDescriptors.Add(CommonErrorDescriptor.EmptyMF());
                                 break;
-                            case "sozel" or "sözel"
+                            case ExamType.Sozel
                                 when request.PrivateTutoringAytLessons?.Sozel is null:
                                 errorDescriptors.Add(CommonErrorDescriptor.EmptySozel());
                                 break;
-                            case "dil" when request.PrivateTutoringAytLessons?.Dil is null:
+                            case ExamType.Dil when request.PrivateTutoringAytLessons?.Dil is null:
                                 errorDescriptors.Add(CommonErrorDescriptor.EmptyDil());
                                 break;
                         }
@@ -811,15 +810,15 @@ public static class Onboard
                 }
             }    
             
-            if (string.IsNullOrEmpty(request.ExamType) || !examTypes.Contains(request.ExamType.ToLower()))
-            {
-                errorDescriptors.Add(CommonErrorDescriptor.InvalidExamType(request.ExamType));
-            }
-            
-            if (string.IsNullOrEmpty(request.Grade) || !gradeTypes.Contains(request.Grade.ToLower()))
-            {
-                errorDescriptors.Add(CommonErrorDescriptor.InvalidGrade(request.Grade));
-            }
+            // if (string.IsNullOrEmpty(request.ExamType) || !examTypes.Contains(request.ExamType.ToLower()))
+            // {
+            //     errorDescriptors.Add(CommonErrorDescriptor.InvalidExamType(request.ExamType));
+            // }
+            //
+            // if (string.IsNullOrEmpty(request.Grade) || !gradeTypes.Contains(request.Grade.ToLower()))
+            // {
+            //     errorDescriptors.Add(CommonErrorDescriptor.InvalidGrade(request.Grade));
+            // }
         }
 
         return errorDescriptors;
@@ -851,7 +850,37 @@ public static class Onboard
         //Sınıf -> 9-10-11-12 ve Mezun
         public string Grade  { get; set; }
      */
-    public record StudentGeneralInfo(string Name, string Surname, string Mobile, string Email, string ExamType, string Grade);
+    
+    public enum ExamType
+    {
+        TYT,
+        TM,
+        MF,
+        Sozel,
+        Dil,
+    }
+
+    public enum Grade
+    {
+        Dokuz,
+        On,
+        Onbir,
+        Oniki,
+        Mezun
+    }
+
+    public class StudentGeneralInfo
+    {
+        public string Name { get; set; }
+        public string Surname { get; set; }
+        public string Mobile { get; set; }
+        public string Email { get; set; }
+        
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public ExamType ExamType { get; set; }
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public Grade Grade { get; set; }
+    }
 
     public record ParentInfo(string Name, string Surname, string Mobile, string Email);
 
@@ -984,16 +1013,7 @@ public static class Onboard
         //YDT: (Max 80, Min 0) Yabacnı Dil Testi
         public byte YDT { get; set; }
     }
-
-    public enum ExamType
-    {
-        MF,
-        TM,
-        Sozel,
-        Dil,
-        Tyt,
-    }
-
+    
     public class SupplementaryMaterials
     {
         public bool School { get; set; }

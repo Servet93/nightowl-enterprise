@@ -58,39 +58,15 @@ public static class List
                     return TypedResults.Problem("Öğrenci kayıtlı değil.", statusCode: StatusCodes.Status400BadRequest);
                 }
 
-                var examType = onboardStudent.Data.StudentGeneralInfo.ExamType.ToLower();
-                
-                var tm = examType.ToLower() == "tm" ? true : false;
-                var mf = examType.ToLower() == "mf" ? true : false;
-                var sozel= examType.ToLower() == "sozel" ? true : false;
-                var dil = examType.ToLower() == "dil" ? true : false;
-                var tyt = examType.ToLower() == "tyt" ? true : false;
-           
-                if (tm)
+                coachQueryable = onboardStudent.Data.StudentGeneralInfo.ExamType switch
                 {
-                    coachQueryable = coachQueryable.Where(x => x.CoachDetail.Tm == true);
-                }
-                
-                if (mf)
-                {
-                    coachQueryable = coachQueryable.Where(x => x.CoachDetail.Mf == true);
-                }
-                
-                if (sozel)
-                {
-                    coachQueryable = coachQueryable.Where(x => x.CoachDetail.Sozel == true);
-                }
-                
-                if (dil)
-                {
-                    coachQueryable =  coachQueryable.Where(x => x.CoachDetail.Sozel == true);
-                }
-                
-                if (tyt)
-                {
-                    coachQueryable = coachQueryable.Where(x => x.CoachDetail.Sozel == true);
-                }
-         
+                    Onboard.ExamType.TM => coachQueryable.Where(x => x.CoachDetail.Tm == true),
+                    Onboard.ExamType.MF => coachQueryable.Where(x => x.CoachDetail.Mf == true),
+                    Onboard.ExamType.Sozel => coachQueryable.Where(x => x.CoachDetail.Sozel == true),
+                    Onboard.ExamType.Dil => coachQueryable.Where(x => x.CoachDetail.Sozel == true),
+                    Onboard.ExamType.TYT => coachQueryable.Where(x => x.CoachDetail.Sozel == true),
+                    _ => coachQueryable
+                };
             }
             else
             {
