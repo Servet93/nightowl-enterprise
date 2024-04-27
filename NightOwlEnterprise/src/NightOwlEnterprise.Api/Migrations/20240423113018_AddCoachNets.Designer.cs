@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -10,9 +11,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace NightOwlEnterprise.Api.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240423113018_AddCoachNets")]
+    partial class AddCoachNets
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -154,7 +157,7 @@ namespace NightOwlEnterprise.Api.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("BirthDate")
-                        .HasColumnType("date");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("ChangedDepartmentType")
                         .HasColumnType("boolean");
@@ -164,6 +167,9 @@ namespace NightOwlEnterprise.Api.Migrations
 
                     b.Property<int>("DepartmentType")
                         .HasColumnType("integer");
+
+                    b.Property<bool>("Dil")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -203,6 +209,9 @@ namespace NightOwlEnterprise.Api.Migrations
                     b.Property<bool>("Male")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("Mf")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Mobile")
                         .IsRequired()
                         .HasColumnType("text");
@@ -226,6 +235,9 @@ namespace NightOwlEnterprise.Api.Migrations
                     b.Property<bool>("School")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("Sozel")
+                        .HasColumnType("boolean");
+
                     b.Property<byte>("StudentQuota")
                         .HasColumnType("smallint");
 
@@ -239,11 +251,17 @@ namespace NightOwlEnterprise.Api.Migrations
                     b.Property<byte>("ThursdayQuota")
                         .HasColumnType("smallint");
 
+                    b.Property<bool>("Tm")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("ToDepartment")
                         .HasColumnType("integer");
 
                     b.Property<byte>("TuesdayQuota")
                         .HasColumnType("smallint");
+
+                    b.Property<bool>("Tyt")
+                        .HasColumnType("boolean");
 
                     b.Property<Guid>("UniversityId")
                         .HasColumnType("uuid");
@@ -431,9 +449,6 @@ namespace NightOwlEnterprise.Api.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
-
-                    b.Property<int>("DepartmentType")
-                        .HasColumnType("integer");
 
                     b.Property<string>("Name")
                         .IsRequired()

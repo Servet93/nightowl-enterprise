@@ -47,6 +47,60 @@
             };
         }
         
+        public static ErrorDescriptor EmptyPersonalInfo()
+        {
+            return new ErrorDescriptor
+            {
+                Code = nameof(EmptyPersonalInfo),
+                Description = $"Kişisel bilgilerinizi giriniz!"
+            };
+        }
+        
+        public static ErrorDescriptor InvalidPersonalName(string name)
+        {
+            return new ErrorDescriptor
+            {
+                Code = nameof(InvalidPersonalName),
+                Description = $"İsim '{name}' geçersiz"
+            };
+        }
+        
+        public static ErrorDescriptor InvalidPersonalSurname(string surname)
+        {
+            return new ErrorDescriptor
+            {
+                Code = nameof(InvalidPersonalSurname),
+                Description = $"Soyisim '{surname}' geçersiz"
+            };
+        }
+        
+        public static ErrorDescriptor InvalidPersonalMobile(string mobile)
+        {
+            return new ErrorDescriptor
+            {
+                Code = nameof(InvalidPersonalMobile),
+                Description = $"Mobile '{mobile}' geçersiz"
+            };
+        }
+        
+        public static ErrorDescriptor InvalidPersonalEmail(string email)
+        {
+            return new ErrorDescriptor
+            {
+                Code = nameof(InvalidPersonalEmail),
+                Description = $"Email '{email}' geçersiz"
+            };
+        }
+        
+        public static ErrorDescriptor InvalidBirthDate(string birthDate)
+        {
+            return new ErrorDescriptor
+            {
+                Code = nameof(InvalidBirthDate),
+                Description = $"Doğum tarihi '{birthDate}' geçersiz"
+            };
+        }
+        
         public static ErrorDescriptor EmptyParentInfo()
         {
             return new ErrorDescriptor
@@ -92,12 +146,12 @@
             };
         }
         
-        public static ErrorDescriptor InvalidExamType(string examType)
+        public static ErrorDescriptor InvalidAge(int age)
         {
             return new ErrorDescriptor
             {
-                Code = nameof(InvalidExamType),
-                Description = $"Alan bilgisi '{examType}' geçersiz"
+                Code = nameof(InvalidAge),
+                Description = $"Yaş '{age}' uygun değil. 21 yaşından büyük olmalısınız."
             };
         }
         
@@ -134,6 +188,77 @@
             {
                 Code = nameof(InvalidHighSchoolGPA),
                 Description = $"Lise orta öğretim başarı puanı '{highSchoolGpa}' geçersiz.(0-100)"
+            };
+        }
+        
+        public static ErrorDescriptor InvalidFirstTytNet(byte tytNet)
+        {
+            return new ErrorDescriptor
+            {
+                Code = nameof(InvalidFirstTytNet),
+                Description = $"İlk Tyt Netiniz '{tytNet}' geçersiz.(0-120)"
+            };
+        }
+        
+        public static ErrorDescriptor InvalidLastTytNet(byte tytNet)
+        {
+            return new ErrorDescriptor
+            {
+                Code = nameof(InvalidLastTytNet),
+                Description = $"Son Tyt Netiniz '{tytNet}' geçersiz.(0-120)"
+            };
+        }
+        
+        public static ErrorDescriptor InvalidFirstAytNet(byte aytNet)
+        {
+            return new ErrorDescriptor
+            {
+                Code = nameof(InvalidFirstAytNet),
+                Description = $"İlk Ayt Netiniz '{aytNet}' geçersiz.(0-80)"
+            };
+        }
+        
+        public static ErrorDescriptor InvalidLastAytNet(byte aytNet)
+        {
+            return new ErrorDescriptor
+            {
+                Code = nameof(InvalidLastAytNet),
+                Description = $"Son Ayt Netiniz '{aytNet}' geçersiz.(0-80)"
+            };
+        }
+        
+        public static ErrorDescriptor EmptyTytYear(int year)
+        {
+            return new ErrorDescriptor
+            {
+                Code = nameof(EmptyTytYear),
+                Description = $"Yty yıl {year} bilgisini giriniz"
+            };
+        }
+        
+        public static ErrorDescriptor NotEnterTytYear(uint year)
+        {
+            return new ErrorDescriptor
+            {
+                Code = nameof(EmptyTytYear),
+                Description = $"Yıl {year} tyt girilmedi!"
+            };
+        }
+        
+        public static ErrorDescriptor InvalidYksRanking(uint year, uint ranking)
+        {
+            return new ErrorDescriptor
+            {
+                Code = nameof(InvalidYksRanking),
+                Description = $"Sıralama bilgisi geçersiz! {ranking}, Yıl: {year}"
+            };
+        }
+        public static ErrorDescriptor InvalidYksRankingYear(uint year)
+        {
+            return new ErrorDescriptor
+            {
+                Code = nameof(InvalidYksRankingYear),
+                Description = $"YKS Yerleştirme Yıl bilgisi {year} geçersiz"
             };
         }
         

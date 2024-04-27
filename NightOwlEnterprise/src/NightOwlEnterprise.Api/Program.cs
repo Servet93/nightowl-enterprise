@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -16,15 +17,19 @@ using Newtonsoft.Json.Converters;
 using NightOwlEnterprise.Api;
 using NightOwlEnterprise.Api.Endpoints;
 using NightOwlEnterprise.Api.Endpoints.Coachs;
+using NightOwlEnterprise.Api.Endpoints.Invitations;
 using NightOwlEnterprise.Api.Endpoints.Students;
 using NightOwlEnterprise.Api.Endpoints.Universities;
+using NightOwlEnterprise.Api.Services;
 using NightOwlEnterprise.Api.Utils.Email;
 using NLog;
 using NLog.AWS.Logger;
 using NLog.Config;
 using NLog.Layouts;
 using NLog.Web;
+using Swashbuckle.AspNetCore.Filters;
 using JsonAttribute = NLog.Layouts.JsonAttribute;
+using Onboard = NightOwlEnterprise.Api.Endpoints.Coachs.Onboard;
 using Register = NightOwlEnterprise.Api.Endpoints.Coachs.Register;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -137,6 +142,8 @@ builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
     .AddErrorDescriber<TurkishIdentityErrorDescriber>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
+builder.Services.AddSingleton<GetCoachAvailabilityDays>();
+
 var stripeCredential = builder.Configuration.GetSection(StripeCredential.StripeSection).Get<StripeCredential>();
 
 // This is a public sample test API key.
@@ -203,7 +210,12 @@ if (jwtConfig is not null && !string.IsNullOrEmpty(jwtConfig.Key))
         };
     });
 
-    builder.Services.AddAuthorization();    
+    builder.Services.AddAuthorization(options =>
+    {
+        options.AddPolicy("Student", policy => policy.RequireRole("Student"));
+        options.AddPolicy("Coach", policy => policy.RequireRole("Coach"));
+        options.AddPolicy("Pdr", policy => policy.RequireRole("Pdr"));
+    });    
 }
 
 builder.Services.AddScoped<ApplicationUserManager>();
@@ -213,6 +225,8 @@ builder.Services.AddSingleton<TurkishIdentityErrorDescriber>();
 builder.Services.AddSingleton<StudentEmailSender>();
 
 builder.Services.AddSingleton<JwtHelper>();
+
+builder.Services.AddSingleton<LockManager>();
 
 builder.Services.AddSignalR();
 
@@ -257,8 +271,7 @@ builder.Services.Configure<IdentityOptions>(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(swaggerGenOptions => 
 {
-    // Enumların açıklayıcı değerlerini göstermek için
-    // swaggerGenOptions.UseAllOfToExtendReferenceSchemas();
+    swaggerGenOptions.ExampleFilters();
     
     // Endpoint gruplaması için
     swaggerGenOptions.TagActionsBy(api => api.GroupName);
@@ -288,7 +301,23 @@ builder.Services.AddSwaggerGen(swaggerGenOptions =>
             Array.Empty<string>()
         }
     });
+    
+    swaggerGenOptions.MapType<TimeSpan>(() => new OpenApiSchema
+    {
+        Type = "string",
+        Example = new OpenApiString("00:00")
+    });
+    
+    swaggerGenOptions.MapType<DateTime>(() => new OpenApiSchema
+    {
+        Type = "string",
+        Format = "date",
+        Example = new OpenApiDate(DateTime.Now.Date)
+    }); // Tarih formatını belirt
 });
+
+//Swagger örneklerini nerede arayacağını belirtiyoruz
+builder.Services.AddSwaggerExamplesFromAssemblyOf<Program>();
 
 builder.Services.AddProblemDetails();
 
@@ -343,7 +372,7 @@ app.UseStaticFiles();
 
 app.UseExceptionHandler();
 
-//app.UseStatusCodePages();
+app.UseStatusCodePages();
 
 // app.UseExceptionHandler(exceptionHandlerApp =>
 // {
@@ -442,9 +471,11 @@ app.MapGet("/", async context =>
 // app.MapGet("/todos/{id}", Results<Ok<User>, NotFound>(int id) =>
 //     id < 0 ? TypedResults.Ok(new User(id)) : TypedResults.NotFound());
 
+app.MapCommonIdentityApi();
 app.MapStudentsIdentityApi<ApplicationUser>();
 app.MapCoachsIdentityApi<ApplicationUser>();
-app.MapUniversity();
+app.MapInvitationsApi();
+app.MapUniversityApi();
 
 app.MapGet("/conf", async context =>
 {
@@ -487,16 +518,19 @@ void SeedDepartmentsAndUniversities(ApplicationDbContext dbContext)
 
     var departments = new List<Department>
     {
-        new Department { Name = "Bilgisayar Mühendisliği" },
-        new Department { Name = "Elektrik-Elektronik Mühendisliği" },
-        new Department { Name = "Makine Mühendisliği" },
-        new Department { Name = "Endüstri Mühendisliği" },
-        new Department { Name = "Sosyoloji" },
-        new Department { Name = "Tarih" },
-        new Department { Name = "Psikoloji" },
-        new Department { Name = "İngiliz Dili ve Edebiyatı" },
-        new Department { Name = "Fransız Dili ve Edebiyatı" },
-        new Department { Name = "Alman Dili ve Edebiyatı" },
+        new Department { Id = CommonVariables.ComputerEngineeringDepartmentId, Name = "Bilgisayar Mühendisliği", DepartmentType = DepartmentType.MF },
+        new Department { Id = CommonVariables.ElectricalAndElectronicsEngineeringDepartmentId, Name = "Elektrik-Elektronik Mühendisliği", DepartmentType = DepartmentType.MF },
+        new Department { Id = CommonVariables.MechanicalEngineeringDepartmentId, Name = "Makine Mühendisliği" , DepartmentType = DepartmentType.MF },
+        new Department { Id = CommonVariables.IndustrialEngineeringDepartmentId, Name = "Endüstri Mühendisliği", DepartmentType = DepartmentType.MF },
+        new Department { Id = CommonVariables.SociologyDepartmentId, Name = "Sosyoloji", DepartmentType = DepartmentType.TM },
+        new Department { Id = CommonVariables.HistoryDepartmentId, Name = "Tarih", DepartmentType = DepartmentType.Sozel },
+        new Department { Id = CommonVariables.PsychologyDepartmentId, Name = "Psikoloji", DepartmentType = DepartmentType.TM },
+        new Department { Id = CommonVariables.GazetecilikDepartmentId, Name = "Gazetecilik", DepartmentType = DepartmentType.Sozel },
+        new Department { Id = CommonVariables.ReklamcilikDepartmentId, Name = "Reklamcılık", DepartmentType = DepartmentType.Sozel },
+        new Department { Id = CommonVariables.IsletmeDepartmentId, Name = "İşletme", DepartmentType = DepartmentType.TM },
+        new Department { Id = CommonVariables.EnglishLanguageAndLiteratureDepartmentId, Name = "İngiliz Dili ve Edebiyatı", DepartmentType = DepartmentType.Dil },
+        new Department { Id = CommonVariables.FrenchLanguageAndLiteratureDepartmentId, Name = "Fransız Dili ve Edebiyatı", DepartmentType = DepartmentType.Dil },
+        new Department { Id = CommonVariables.GermanLanguageAndLiteratureDepartmentId, Name = "Alman Dili ve Edebiyatı", DepartmentType = DepartmentType.Dil},
         // Diğer departmanları buraya ekleyin
     };
     
@@ -512,15 +546,15 @@ void SeedDepartmentsAndUniversities(ApplicationDbContext dbContext)
     {
         new University
         {
-            Name = "Boğaziçi Üniversitesi",
+            Id = CommonVariables.BosphorusUniversityId, Name = "Boğaziçi Üniversitesi",
         },
         new University
         {
-            Name = "Orta Doğu Teknik Üniversitesi",
+            Id = CommonVariables.MiddleEastTechnicalUniversityId, Name = "Orta Doğu Teknik Üniversitesi",
         },
         new University
         {
-            Name = "İstanbul Teknik Üniversitesi",
+            Id = CommonVariables.IstanbulTechnicalUniversityId, Name = "İstanbul Teknik Üniversitesi",
         },
         // Diğer üniversiteleri buraya ekleyin
     };
@@ -572,13 +606,18 @@ async Task SeedCoachs(ApplicationDbContext dbContext, UserManager<ApplicationUse
 
     var index = 0;
 
-    var namesAndGender = Common.NamesAndGender.DistinctBy(x => x.Item1).ToList();
+    var namesAndGender = CommonVariables.NamesAndGender.DistinctBy(x => x.Item1).ToList();
     
     if (!hasAnyCoach)
     {
         var universities = dbContext.Universities.ToList();
 
         var departments = dbContext.Departments.ToList();
+
+        // universities * departments(39) * 5 = 195
+        var persons = PersonGenerator.GeneratePeople(195);
+
+        var counter = 0;
         
         foreach (var university in universities)
         {
@@ -586,35 +625,161 @@ async Task SeedCoachs(ApplicationDbContext dbContext, UserManager<ApplicationUse
             {
                 for (int i = 0; i < 5; i++)
                 {
+                    var x = (byte)rnd.Next(5);
+                    
+                    var mondayQuota = x == 0 ? (byte)1 : (byte)rnd.Next(5);
+                    var tuesdayQuota = x == 1 ? (byte)1 : (byte)rnd.Next(5);
+                    var wednesdayQuota = x == 2 ? (byte)1 : (byte)rnd.Next(5);
+                    var thursayQuota = x == 3 ? (byte)1 : (byte)rnd.Next(5);
+                    var fridayQuota = x == 4 ? (byte)1 : (byte)rnd.Next(5);
+
+                    var studentQuota = (byte)(mondayQuota + tuesdayQuota + wednesdayQuota + thursayQuota + fridayQuota);
+                    
                     var applicationUser = new ApplicationUser()
                     {
-                        Name = namesAndGender[index].Item1,
-                        UserName = namesAndGender[index].Item1,
-                        Email = $"{namesAndGender[index].Item1.ToLower()}@gmail.com",
-                        PhoneNumber = "533-333-33-33",
-                        City = "İstanbul",
-                        Address = "Cihangir",
+                        Id = persons[counter].Id,
+                        Name = persons[counter].FirstName +" "+ persons[counter].LastName,
+                        UserName = persons[counter].FirstName + persons[counter].LastName,
+                        Email = persons[counter].Email,
+                        PhoneNumber = persons[counter].Phone,
+                        City = persons[counter].City,
+                        Address = persons[counter].Address,
                         CoachDetail = new CoachDetail()
                         {
+                            Name = persons[counter].FirstName,
+                            Surname = persons[counter].LastName,
+                            Email = persons[counter].Email,
+                            Male = persons[counter].Gender,
+                            BirthDate = DateTime.Now,
+                            DepartmentType = department.DepartmentType,
+                            Mobile = persons[counter].Phone,
                             UniversityId = university.Id,
                             DepartmentId = department.Id,
-                            Quota = (byte)rnd.Next(5),
-                            FirstTytNet = (byte)rnd.Next(90, 140),
+                            FirstTytNet = (byte)rnd.Next(90, 120),
+                            LastTytNet = (byte)rnd.Next(90, 120),
+                            FirstAytNet = (byte)rnd.Next(60, 80),
+                            LastAytNet = (byte)rnd.Next(60, 80),
+                            School = rnd.Next(100) % 2 == 0,
                             UsedYoutube = rnd.Next(100) % 2 == 0,
                             GoneCramSchool = rnd.Next(100) % 2 == 0,
                             Rank = (uint)rnd.Next(5000),
                             IsGraduated = rnd.Next(6) != 1 ? true : false,
-                            ChangedSection = false,
-                            Tm = rnd.Next(100) % 2 == 0,
-                            Mf = rnd.Next(100) % 2 == 0,
-                            Dil = rnd.Next(100) % 2 == 0,
-                            Sozel = rnd.Next(100) % 2 == 0,
-                            Tyt = rnd.Next(100) % 2 == 0,
-                            Male = namesAndGender[index].Item2,
+                            HighSchool = persons[counter].HighSchoolName,
+                            HighSchoolGPA = persons[counter].HighSchoolScore,
+                            StudentQuota = studentQuota,
+                            MondayQuota = mondayQuota,
+                            TuesdayQuota = tuesdayQuota,
+                            WednesdayQuota = wednesdayQuota,
+                            ThursdayQuota = thursayQuota,
+                            FridayQuota = fridayQuota,
+                            PrivateTutoring = true,
+                        },
+                        CoachTytNets = new CoachTYTNets()
+                        {
+                            Biology = (byte)rnd.Next(6),
+                            Chemistry = (byte)rnd.Next(7),
+                            Geometry = (byte)rnd.Next(10),
+                            Physics = (byte)rnd.Next(7),
+                            Mathematics = (byte)rnd.Next(30),
+                            Geography = (byte)rnd.Next(5),
+                            Grammar = (byte)rnd.Next(10),
+                            History = (byte)rnd.Next(5),
+                            Philosophy = (byte)rnd.Next(5),
+                            Religion = (byte)rnd.Next(5),
+                            Semantics = (byte)rnd.Next(30),
                         },
                         UserType = UserType.Coach,
                     };
-                    index += 1;
+
+                    for (int j = 2016; j < 2024; j++)
+                    {
+                        var isEntered = rnd.Next(10) % 2 == 0;
+                        var rank = isEntered ? rnd.Next(5000) : 0;
+                        applicationUser.CoachYksRankings.Add(new CoachYksRanking()
+                            { Year = j.ToString(), Enter = isEntered, Rank = (uint)rank });
+                    }
+                    
+                    counter += 1;
+                    
+                    if (department.DepartmentType == DepartmentType.MF)
+                    {
+                        applicationUser.CoachMfNets = new CoachMFNets()
+                        {
+                            Biology = (byte)rnd.Next(13),
+                            Chemistry = (byte)rnd.Next(13),
+                            Geometry = (byte)rnd.Next(10),
+                            Physics = (byte)rnd.Next(14),
+                            Mathematics = (byte)rnd.Next(30),
+                        };
+
+                        applicationUser.PrivateTutoringMF = new PrivateTutoringMF()
+                        {
+                            Biology = rnd.Next(2) % 2 == 0,
+                            Chemistry = rnd.Next(2) % 2 == 0,
+                            Geometry = rnd.Next(2) % 2 == 0,
+                            Mathematics = rnd.Next(2) % 2 == 0,
+                            Physics = rnd.Next(2) % 2 == 0,
+                        };
+                        
+                    }
+                    else if (department.DepartmentType == DepartmentType.TM)
+                    {
+                        applicationUser.CoachTmNets = new CoachTMNets()
+                        {
+                            Geography = (byte)rnd.Next(6),
+                            History = (byte)rnd.Next(10),
+                            Geometry = (byte)rnd.Next(10),
+                            Literature = (byte)rnd.Next(24),
+                            Mathematics = (byte)rnd.Next(30),
+                        };
+                        
+                        applicationUser.PrivateTutoringTM = new PrivateTutoringTM()
+                        {
+                            Geography = rnd.Next(2) % 2 == 0,
+                            Geometry = rnd.Next(2) % 2 == 0,
+                            History = rnd.Next(2) % 2 == 0,
+                            Mathematics = rnd.Next(2) % 2 == 0,
+                            Literature = rnd.Next(2) % 2 == 0,
+                        };
+                    }
+                    else if (department.DepartmentType == DepartmentType.Sozel)
+                    {
+                        applicationUser.CoachSozelNets = new CoachSozelNets()
+                        {
+                            Geography1 = (byte)rnd.Next(24),
+                            Geography2 = (byte)rnd.Next(11),
+                            History1 = (byte)rnd.Next(10),
+                            History2 = (byte)rnd.Next(11),
+                            Literature1 = (byte)rnd.Next(6),
+                            Philosophy = (byte)rnd.Next(12),
+                            Religion = (byte)rnd.Next(6),
+                        };
+                        
+                        applicationUser.PrivateTutoringSozel = new PrivateTutoringSozel()
+                        {
+                            Geography1 = rnd.Next(2) % 2 == 0,
+                            Geography2 = rnd.Next(2) % 2 == 0,
+                            History1 = rnd.Next(2) % 2 == 0,
+                            History2 = rnd.Next(2) % 2 == 0,
+                            Literature1 = rnd.Next(2) % 2 == 0,
+                            Philosophy = rnd.Next(2) % 2 == 0,
+                            Religion = rnd.Next(2) % 2 == 0,
+                        };
+                        
+                    }
+                    else if (department.DepartmentType == DepartmentType.Dil)
+                    {
+                        applicationUser.CoachDilNets = new CoachDilNets()
+                        {
+                            YDT = (byte)rnd.Next(80),
+                        };                  
+                        
+                        applicationUser.PrivateTutoringDil = new PrivateTutoringDil()
+                        {
+                            YTD = rnd.Next(2) % 2 == 0,
+                        };
+                    }
+                    
                     try
                     {
                         await userManager.CreateAsync(applicationUser, "Aa123456");
@@ -632,15 +797,19 @@ async Task SeedCoachs(ApplicationDbContext dbContext, UserManager<ApplicationUse
 public class ApplicationDbContext : Microsoft.AspNetCore.Identity.EntityFrameworkCore.IdentityDbContext<ApplicationUser, ApplicationRole, Guid>
 {
     public DbSet<University> Universities { get; set; }
-    
     public DbSet<Department> Departments { get; set; }
-    
     public DbSet<UniversityDepartment> UniversityDepartments { get; set; }
-    public DbSet<ApplicationUser> Coachs { get; set; }
-    
-    public DbSet<CoachCalendar> CoachCalendars { get; set; }
+    public DbSet<CoachDetail> CoachDetail { get; set; }
+    public DbSet<CoachYksRanking> CoachYksRankings { get; set; }
+    public DbSet<Invitation> Invitations { get; set; }
     
     public DbSet<SubscriptionHistory> SubscriptionHistories { get; set; }
+    
+    public DbSet<PrivateTutoringTYT> PrivateTutoringTYT { get; set; }
+    public DbSet<PrivateTutoringMF> PrivateTutoringMF { get; set; }
+    public DbSet<PrivateTutoringTM> PrivateTutoringTM { get; set; }
+    public DbSet<PrivateTutoringSozel> PrivateTutoringSozel { get; set; }
+    public DbSet<PrivateTutoringDil> PrivateTutoringDil { get; set; }
     
     public ApplicationDbContext(Microsoft.EntityFrameworkCore.DbContextOptions<ApplicationDbContext> options) :
         base(options)
@@ -652,27 +821,35 @@ public class ApplicationDbContext : Microsoft.AspNetCore.Identity.EntityFramewor
 
         builder.Entity<ApplicationUser>().ToTable("Users");
         
-        // CoachCalendar ile Coach arasında ilişki
-        builder.Entity<CoachCalendar>()
+        // Invitation ile Coach arasında ilişki
+        builder.Entity<Invitation>()
             .HasOne(c => c.Coach)
-            .WithMany()
+            .WithMany(u => u.InvitationsAsCoach)
             .HasForeignKey(c => c.CoachId);
 
-        // CoachCalendar ile Student arasında ilişki
-        builder.Entity<CoachCalendar>()
+        // Invitation ile Student arasında ilişki
+        builder.Entity<Invitation>()
             .HasOne(c => c.Student)
-            .WithMany()
+            .WithMany(u => u.InvitationsAsStudent)
             .HasForeignKey(c => c.StudentId);
+        
+        builder.Entity<Invitation>()
+            .Property(cc => cc.Date)
+            .HasColumnType("date");
 
         // CoachDetail tablosunun ilişkilerini belirtiyoruz
         builder.Entity<CoachDetail>()
             .HasKey(cd => cd.CoachId); // Primary key'i belirtiyoruz
-
+        
         // CoachDetail ile ApplicationUser arasında ilişki
         builder.Entity<CoachDetail>()
             .HasOne(cd => cd.Coach)
             .WithOne(u => u.CoachDetail)
             .HasForeignKey<CoachDetail>(cd => cd.CoachId);
+        
+        builder.Entity<CoachDetail>()
+            .Property(cc => cc.BirthDate)
+            .HasColumnType("date");
         
         // CoachDetail tablosunun ilişkilerini belirtiyoruz
         builder.Entity<StudentDetail>()
@@ -683,6 +860,106 @@ public class ApplicationDbContext : Microsoft.AspNetCore.Identity.EntityFramewor
             .HasOne(cd => cd.Student)
             .WithOne(u => u.StudentDetail)
             .HasForeignKey<StudentDetail>(cd => cd.StudentId);
+        
+        // PrivateTutoringTYT tablosunun ilişkilerini belirtiyoruz
+        builder.Entity<PrivateTutoringTYT>()
+            .HasKey(cd => cd.CoachId); // Primary key'i belirtiyoruz
+        
+        // PrivateTutoringTYT ile ApplicationUser arasında ilişki
+        builder.Entity<PrivateTutoringTYT>()
+            .HasOne(cd => cd.Coach)
+            .WithOne(u => u.PrivateTutoringTYT)
+            .HasForeignKey<PrivateTutoringTYT>(cd => cd.CoachId);
+        
+        // PrivateTutoringMF tablosunun ilişkilerini belirtiyoruz
+        builder.Entity<PrivateTutoringMF>()
+            .HasKey(cd => cd.CoachId); // Primary key'i belirtiyoruz
+        
+        // PrivateTutoringMF ile ApplicationUser arasında ilişki
+        builder.Entity<PrivateTutoringMF>()
+            .HasOne(cd => cd.Coach)
+            .WithOne(u => u.PrivateTutoringMF)
+            .HasForeignKey<PrivateTutoringMF>(cd => cd.CoachId);
+        
+        // PrivateTutoringTM tablosunun ilişkilerini belirtiyoruz
+        builder.Entity<PrivateTutoringTM>()
+            .HasKey(cd => cd.CoachId); // Primary key'i belirtiyoruz
+        
+        // PrivateTutoringTM ile ApplicationUser arasında ilişki
+        builder.Entity<PrivateTutoringTM>()
+            .HasOne(cd => cd.Coach)
+            .WithOne(u => u.PrivateTutoringTM)
+            .HasForeignKey<PrivateTutoringTM>(cd => cd.CoachId);
+        
+        // PrivateTutoringSozel tablosunun ilişkilerini belirtiyoruz
+        builder.Entity<PrivateTutoringSozel>()
+            .HasKey(cd => cd.CoachId); // Primary key'i belirtiyoruz
+        
+        // PrivateTutoringSozel ile ApplicationUser arasında ilişki
+        builder.Entity<PrivateTutoringSozel>()
+            .HasOne(cd => cd.Coach)
+            .WithOne(u => u.PrivateTutoringSozel)
+            .HasForeignKey<PrivateTutoringSozel>(cd => cd.CoachId);
+        
+        // PrivateTutoringDil tablosunun ilişkilerini belirtiyoruz
+        builder.Entity<PrivateTutoringDil>()
+            .HasKey(cd => cd.CoachId); // Primary key'i belirtiyoruz
+        
+        // PrivateTutoringDil ile ApplicationUser arasında ilişki
+        builder.Entity<PrivateTutoringDil>()
+            .HasOne(cd => cd.Coach)
+            .WithOne(u => u.PrivateTutoringDil)
+            .HasForeignKey<PrivateTutoringDil>(cd => cd.CoachId);
+        
+        // CoachTYTNets tablosunun ilişkilerini belirtiyoruz
+        builder.Entity<CoachTYTNets>()
+            .HasKey(cd => cd.CoachId); // Primary key'i belirtiyoruz
+        
+        // CoachTYTNets ile ApplicationUser arasında ilişki
+        builder.Entity<CoachTYTNets>()
+            .HasOne(cd => cd.Coach)
+            .WithOne(u => u.CoachTytNets)
+            .HasForeignKey<CoachTYTNets>(cd => cd.CoachId);
+        
+        // CoachTMNets tablosunun ilişkilerini belirtiyoruz
+        builder.Entity<CoachTMNets>()
+            .HasKey(cd => cd.CoachId); // Primary key'i belirtiyoruz
+        
+        // CoachTMNets ile ApplicationUser arasında ilişki
+        builder.Entity<CoachTMNets>()
+            .HasOne(cd => cd.Coach)
+            .WithOne(u => u.CoachTmNets)
+            .HasForeignKey<CoachTMNets>(cd => cd.CoachId);
+        
+        // CoachMFNets tablosunun ilişkilerini belirtiyoruz
+        builder.Entity<CoachMFNets>()
+            .HasKey(cd => cd.CoachId); // Primary key'i belirtiyoruz
+        
+        // CoachMFNets ile ApplicationUser arasında ilişki
+        builder.Entity<CoachMFNets>()
+            .HasOne(cd => cd.Coach)
+            .WithOne(u => u.CoachMfNets)
+            .HasForeignKey<CoachMFNets>(cd => cd.CoachId);
+        
+        // CoachSozelNets tablosunun ilişkilerini belirtiyoruz
+        builder.Entity<CoachSozelNets>()
+            .HasKey(cd => cd.CoachId); // Primary key'i belirtiyoruz
+        
+        // CoachSozelNets ile ApplicationUser arasında ilişki
+        builder.Entity<CoachSozelNets>()
+            .HasOne(cd => cd.Coach)
+            .WithOne(u => u.CoachSozelNets)
+            .HasForeignKey<CoachSozelNets>(cd => cd.CoachId);
+        
+        // CoachDilNets tablosunun ilişkilerini belirtiyoruz
+        builder.Entity<CoachDilNets>()
+            .HasKey(cd => cd.CoachId); // Primary key'i belirtiyoruz
+        
+        // CoachDilNets ile ApplicationUser arasında ilişki
+        builder.Entity<CoachDilNets>()
+            .HasOne(cd => cd.Coach)
+            .WithOne(u => u.CoachDilNets)
+            .HasForeignKey<CoachDilNets>(cd => cd.CoachId);
         
         builder.Entity<UniversityDepartment>()
             .HasKey(ud => new { ud.UniversityId, ud.DepartmentId });
@@ -723,6 +1000,24 @@ public class ApplicationUser : Microsoft.AspNetCore.Identity.IdentityUser<Guid>
     
     public StudentDetail StudentDetail { get; set; }
     public ICollection<SubscriptionHistory> SubscriptionHistories { get; set; } = new List<SubscriptionHistory>();
+    
+    public ICollection<Invitation> InvitationsAsCoach { get; set; } = new List<Invitation>();
+    
+    public ICollection<Invitation> InvitationsAsStudent { get; set; } = new List<Invitation>();
+
+    public ICollection<CoachYksRanking> CoachYksRankings { get; set; } = new List<CoachYksRanking>();
+
+    public PrivateTutoringTYT PrivateTutoringTYT { get; set; } = new PrivateTutoringTYT();
+    public PrivateTutoringMF PrivateTutoringMF { get; set; } = new PrivateTutoringMF();
+    public PrivateTutoringTM PrivateTutoringTM { get; set; } = new PrivateTutoringTM();
+    public PrivateTutoringSozel PrivateTutoringSozel { get; set; } = new PrivateTutoringSozel();
+    public PrivateTutoringDil PrivateTutoringDil { get; set; } = new PrivateTutoringDil();
+    
+    public CoachTYTNets CoachTytNets { get; set; } = new CoachTYTNets();
+    public CoachTMNets CoachTmNets { get; set; } = new CoachTMNets();
+    public CoachMFNets CoachMfNets { get; set; } = new CoachMFNets();
+    public CoachSozelNets CoachSozelNets { get; set; } = new CoachSozelNets();
+    public CoachDilNets CoachDilNets { get; set; } = new CoachDilNets();
 }
 
 public class ApplicationRole : IdentityRole<Guid>
@@ -748,8 +1043,8 @@ public class SubscriptionHistory
 
 public enum SubscriptionType
 {
-    OnlyPdr = 0,
-    PdrWithCoach = 1,
+    Pdr = 0,
+    Coach = 1,
 }
 
 public class StudentDetail
@@ -762,26 +1057,120 @@ public class StudentDetail
     public StudentStatus Status { get; set; }
 }
 
+public enum DepartmentType
+{
+    TM,
+    MF,
+    Sozel,
+    Dil,
+}
+
+public class PrivateTutoringTYT
+{
+    public Guid CoachId { get; set; }
+    public ApplicationUser Coach { get; set; } // İlişkiyi burada tanımlıyoruz
+    
+    public bool Turkish { get; set; }
+    public bool Mathematics { get; set; }
+    public bool Geometry { get; set; }
+    public bool History { get; set; }
+    public bool Geography { get; set; }
+    public bool Philosophy { get; set; }
+    public bool Religion { get; set; }
+    public bool Physics { get; set; }
+    public bool Chemistry { get; set; }
+    public bool Biology { get; set; }
+}
+
+public class PrivateTutoringMF
+{
+    public Guid CoachId { get; set; }
+    public ApplicationUser Coach { get; set; } // İlişkiyi burada tanımlıyoruz
+    
+    public bool Mathematics { get; set; }
+    public bool Geometry { get; set; }
+    public bool Physics { get; set; }
+    public bool Chemistry { get; set; }
+    public bool Biology { get; set; }
+}
+    
+public class PrivateTutoringTM
+{
+    public Guid CoachId { get; set; }
+    public ApplicationUser Coach { get; set; } // İlişkiyi burada tanımlıyoruz
+    
+    //Matematik: (Max 30, Min 0)
+    public bool Mathematics { get; set; }
+    //Geometri: (Max 10, Min 0)
+    public bool Geometry { get; set; }
+    //Edebiyat: (Max 24, Min 0)
+    public bool Literature { get; set; }
+    //Tarih: (Max 10, Min 0)
+    public bool History { get; set; }
+    //Coğrafya: (Max 6, Min 0)
+    public bool Geography { get; set; }
+}
+    
+//Sözel
+public class PrivateTutoringSozel
+{
+    public Guid CoachId { get; set; }
+    public ApplicationUser Coach { get; set; } // İlişkiyi burada tanımlıyoruz
+    
+    //Tarih-1: (Max 10, Min 0)
+    public bool History1 { get; set; }
+    //Coğrafya: (Max 24, Min 0)
+    public bool Geography1 { get; set; }
+    //Edebiyat-1: (Max 6, Min 0)
+    public bool Literature1 { get; set; }
+    //Tarih-2: (Max 11, Min 0)
+    public bool History2 { get; set; }
+    //Coğrafya-2: (Max 11, Min 0)
+    public bool Geography2 { get; set; }
+    //Felsefe: (Max 12, Min 0)
+    public bool Philosophy { get; set; }
+    //Din: (Max 6, Min 0)
+    public bool Religion { get; set; }
+}
+    
+public class PrivateTutoringDil
+{
+    public Guid CoachId { get; set; }
+    public ApplicationUser Coach { get; set; } // İlişkiyi burada tanımlıyoruz
+    
+    //YDT: (Max 80, Min 0)
+    public bool YTD { get; set; }
+}
+
+public class CoachYksRanking
+{
+    public Guid Id { get; set; }
+    
+    public Guid CoachId { get; set; }
+    
+    public ApplicationUser Coach { get; set; } // İlişkiyi burada tanımlıyoruz
+
+    public string Year { get; set; }
+    
+    public bool Enter { get; set; }
+    
+    public uint Rank { get; set; }
+}
+
 public class CoachDetail
 {
     public Guid CoachId { get; set; }
     
     public ApplicationUser Coach { get; set; } // İlişkiyi burada tanımlıyoruz
-    
-    public bool Tm { get; set; }
-    public bool Mf { get; set; }
-    public bool Sozel { get; set; }
-    public bool Dil { get; set; }
-    public bool Tyt { get; set; }
 
-    public bool IsGraduated { get; set; }
+    public string Name { get; set; }
+    public string Surname { get; set; }
+    public string Mobile { get; set; }
+    public string Email { get; set; }
+    public DateTime BirthDate { get; set; }
+        
+    public DepartmentType DepartmentType { get; set; }
     
-    public byte FirstTytNet { get; set; }
-    
-    public bool UsedYoutube { get; set; }
-    
-    public bool GoneCramSchool { get; set; }
-
     public Guid UniversityId { get; set; }
     
     // Universite referansı
@@ -790,20 +1179,156 @@ public class CoachDetail
     public Guid DepartmentId { get; set; }
     
     // Department referansı
-    public Department Department { get; set; } 
+    public Department Department { get; set; }
+    
+    public string HighSchool { get; set; }
+
+    public float HighSchoolGPA { get; set; }
+    public byte FirstTytNet { get; set; }
+        
+    public byte LastTytNet { get; set; }
+        
+    public byte FirstAytNet { get; set; }
+        
+    public byte LastAytNet { get; set; }
+    
+    public bool ChangedDepartmentType { get; set; }
+
+    public DepartmentType FromDepartment { get; set; }
+        
+    public DepartmentType ToDepartment { get; set; }
+
+    // public bool Tm { get; set; }
+    // public bool Mf { get; set; }
+    // public bool Sozel { get; set; }
+    // public bool Dil { get; set; }
+    // public bool Tyt { get; set; }
+
+    public bool IsGraduated { get; set; }
+    
+    public bool UsedYoutube { get; set; }
+    
+    public bool GoneCramSchool { get; set; }
+    
+    public bool School { get; set; }
+    
+    public bool PrivateTutoring { get; set; }
     
     public bool Male { get; set; }
-    
-    //Alan değiştirdi mi
-    public bool ChangedSection { get; set; }
-    
-    public string? FromSection { get; set; }
-    
-    public string? ToSection { get; set; }
-    
     public uint Rank { get; set; }
+    public byte StudentQuota { get; set; }
+    public byte MondayQuota { get; set; }
+    
+    public byte TuesdayQuota { get; set; }
+    
+    public byte WednesdayQuota { get; set; }
+    
+    public byte ThursdayQuota { get; set; }
+    
+    public byte FridayQuota { get; set; }
+    
+    public byte SaturdayQuota { get; set; }
+    
+    public byte SundayQuota { get; set; }
+}
 
-    public byte Quota { get; set; }
+public class CoachTYTNets
+{
+    public Guid CoachId { get; set; }
+    
+    public ApplicationUser Coach { get; set; } // İlişkiyi burada tanımlıyoruz
+    
+    //Anlam Bilgisi: (Max 30, Min 0)
+    public byte Semantics { get; set; }
+    //Dil Bilgisi: (Max 10, Min 0)
+    public byte Grammar { get; set; }
+    //Matematik: (Max 30, Min 0)
+    public byte Mathematics { get; set; }
+    //Geometri: (Max 10, Min 0)
+    public byte Geometry { get; set; }
+    //Tarih: (Max 5, Min 0)
+    public byte History { get; set; }
+    //Coğrafya: (Max 5, Min 0)
+    public byte Geography { get; set; }
+    //Felsefe: (Max 5, Min 0)
+    public byte Philosophy { get; set; }
+    //Din: (Max 5, Min 0)
+    public byte Religion { get; set; }
+    //Fizik: (Max 7, Min 0)
+    public byte Physics { get; set; }
+    //Kimya: (Max 7, Min 0)
+    public byte Chemistry { get; set; }
+    //Biology: (Max 6, Min 0)
+    public byte Biology { get; set; }
+}
+    
+public class CoachMFNets
+{
+    public Guid CoachId { get; set; }
+    
+    public ApplicationUser Coach { get; set; } // İlişkiyi burada tanımlıyoruz
+    
+    //Matematik: (Max 30, Min 0)
+    public byte Mathematics { get; set; }
+    //Geometri: (Max 10, Min 0)
+    public byte Geometry { get; set; }
+    //Fizik: (Max 14, Min 0)
+    public byte Physics { get; set; }
+    //Kimya: (Max 13, Min 0)
+    public byte Chemistry { get; set; }
+    //Biology: (Max 13, Min 0)
+    public byte Biology { get; set; }
+}
+    
+public class CoachTMNets
+{
+    public Guid CoachId { get; set; }
+    
+    public ApplicationUser Coach { get; set; } // İlişkiyi burada tanımlıyoruz
+    
+    //Matematik: (Max 30, Min 0)
+    public byte Mathematics { get; set; }
+    //Geometri: (Max 10, Min 0)
+    public byte Geometry { get; set; }
+    //Edebiyat: (Max 24, Min 0)
+    public byte Literature { get; set; }
+    //Tarih: (Max 10, Min 0)
+    public byte History { get; set; }
+    //Coğrafya: (Max 6, Min 0)
+    public byte Geography { get; set; }
+}
+    
+//Sözel
+public class CoachSozelNets
+{
+    public Guid CoachId { get; set; }
+    
+    public ApplicationUser Coach { get; set; } // İlişkiyi burada tanımlıyoruz
+    
+    //Tarih-1: (Max 10, Min 0)
+    public byte History1 { get; set; }
+    //Coğrafya: (Max 24, Min 0)
+    public byte Geography1 { get; set; }
+    //Edebiyat-1: (Max 6, Min 0)
+    public byte Literature1 { get; set; }
+    //Tarih-2: (Max 11, Min 0)
+    public byte History2 { get; set; }
+    //Coğrafya-2: (Max 11, Min 0)
+    public byte Geography2 { get; set; }
+    //Felsefe: (Max 12, Min 0)
+    public byte Philosophy { get; set; }
+    //Din: (Max 6, Min 0)
+    public byte Religion { get; set; }
+}
+    
+public class CoachDilNets
+{
+    public Guid CoachId { get; set; }
+    
+    public ApplicationUser Coach { get; set; } // İlişkiyi burada tanımlıyoruz
+    
+    //YDT: (Max 80, Min 0) Yabacnı Dil Testi
+    public byte YDT { get; set; }
 }
 
 public class University
@@ -821,8 +1346,11 @@ public class Department
     
     public string Name { get; set; }
     
+    public DepartmentType DepartmentType { get; set; }
+    
     public ICollection<UniversityDepartment> UniversityDepartments { get; set; } = new List<UniversityDepartment>();
 }
+
 
 public class UniversityDepartment
 {
@@ -833,7 +1361,7 @@ public class UniversityDepartment
     public Department Department { get; set; }
 }
 
-public class CoachCalendar
+public class Invitation
 {
     public Guid Id { get; set; }
     public Guid CoachId { get; set; }
@@ -842,8 +1370,30 @@ public class CoachCalendar
     public ApplicationUser Student { get; set; }
     public DateTime Date { get; set; }
     public TimeSpan StartTime { get; set; }
+    
     public TimeSpan EndTime { get; set; }
-    public bool IsAvailable { get; set; } // true ise müsait, false ise dolu
+
+    public InvitationType Type { get; set; }
+    
+    public InvitationState State { get; set; }
+    
+    public bool IsAvailable { get; set; } // true ise görüşme aktif, false ise zamanı gelmedi // 5 dakika kala burası açılır
+}
+
+public enum InvitationType
+{
+    VideoCall,
+    VoiceCall,
+}
+
+public enum InvitationState
+{
+    SpecifyHour, // Saat Belirle(Sadece Koç belirleyebiliyor)
+    WaitingApprove,
+    Approved, // Görüşülecek
+    Cancelled, //İptal edildi
+    Open, // Açık
+    Done, //Tamamlandı
 }
 
 public enum StudentStatus
@@ -852,8 +1402,6 @@ public enum StudentStatus
     PaymentAwaiting,
     [Description("Onboard Progress")]
     OnboardProgress,
-    [Description("Onboard Completed")]
-    OnboardCompleted,
     [Description("Coach Select")]
     CoachSelect,
     [Description("Active")]
@@ -864,6 +1412,7 @@ public enum UserType
 {
     Student,
     Coach,
+    Pdr,
 }
 
 

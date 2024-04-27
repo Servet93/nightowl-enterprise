@@ -23,15 +23,14 @@ public static class StudentIdentityEndpoints
         routeGroup.MapRegister<ApplicationUser>((IEmailSender<ApplicationUser>)emailSender,
             linkGenerator);
         routeGroup.MapPayment<ApplicationUser>(stripeCredentialSigningSecret);
-        routeGroup.MapLogin<ApplicationUser>(jwtHelper);
-        routeGroup.MapRefresh<ApplicationUser>(jwtHelper);
+        // routeGroup.MapLogin<ApplicationUser>(jwtHelper);
+        // routeGroup.MapRefresh<ApplicationUser>(jwtHelper);
         //routeGroup.MapConfirmEmail<ApplicationUser>();
         //routeGroup.MapResendConfirmationEmail<TUser>(emailSender, linkGenerator);
         routeGroup.MapForgotPassword<ApplicationUser>((IEmailSender<ApplicationUser>)emailSender);
         routeGroup.MapResetPassword<ApplicationUser>();
         routeGroup.MapManageInfo<TUser>();
         routeGroup.MapOnboard();
-        routeGroup.MapAssignCoach();
 
         return new IdentityEndpointsConventionBuilder(routeGroup).WithDescription("Onboard formunu submit et");
     }

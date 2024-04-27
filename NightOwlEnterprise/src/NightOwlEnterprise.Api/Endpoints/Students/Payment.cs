@@ -109,7 +109,7 @@ public static class Payment
             }
             
             return TypedResults.Ok(confirmPaymentResult);
-        }).ProducesProblem(StatusCodes.Status400BadRequest);
+        }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags("Öğrenci");
         
         
         endpoints.MapPost("/subscribe", async Task<Results<Ok<ConfirmIntentResult>, ProblemHttpResult>>
@@ -225,7 +225,7 @@ public static class Payment
             }
 
             return TypedResults.Ok(createSubscriptionResult.Item3);
-        }).ProducesProblem(StatusCodes.Status400BadRequest);
+        }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags("Öğrenci");
 
         // const string stripeCredentialSigningSecret = "whsec_7YBhw4M9aSypQq7K6fVCJnhcbduPb6yN";
 
@@ -435,7 +435,7 @@ public static class Payment
             }
 
             return TypedResults.Empty;
-        });
+        }).WithOpenApi().WithTags("Öğrenci");
     }
 
     private static async Task<ApplicationUser> GetUser(ILogger logger, ApplicationDbContext dbContext, UserManager<ApplicationUser> userManager, Dictionary<string, string> metadata)

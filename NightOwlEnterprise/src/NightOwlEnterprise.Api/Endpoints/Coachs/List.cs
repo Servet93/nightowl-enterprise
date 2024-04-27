@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Encodings.Web;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -14,6 +15,7 @@ using MongoDB.Driver;
 using NightOwlEnterprise.Api.Endpoints.Students;
 using Stripe;
 using Swashbuckle.AspNetCore.Annotations;
+using Swashbuckle.AspNetCore.Filters;
 
 namespace NightOwlEnterprise.Api.Endpoints.Coachs;
 
@@ -37,19 +39,33 @@ public static class List
             Guid.TryParse(strUserId, out var userId);
             
             var coachAppUsers = new List<ApplicationUser>();
-            
-            IQueryable<ApplicationUser> coachQueryable = dbContext.Coachs.Include(x => x.CoachDetail)
+
+            var now = DateTime.Now;
+
+            var weekDays = now.GetWeekDays();
+
+            IQueryable<ApplicationUser> coachQueryable = dbContext.Users
+                .Include(x => x.CoachDetail)
                 .Include(x => x.CoachDetail.University)
                 .Include(x => x.CoachDetail.Department)
-                .Where(x => x.CoachDetail.Quota != 0);
+                .Include(x => x.InvitationsAsCoach)
+                .Where(x => x.UserType == UserType.Coach)
+                .Where(x =>
+                    (x.InvitationsAsCoach.Where(i => i.Date == weekDays[0]).Count() < x.CoachDetail.SundayQuota) ||
+                    (x.InvitationsAsCoach.Where(i => i.Date == weekDays[1]).Count() < x.CoachDetail.MondayQuota) ||
+                    (x.InvitationsAsCoach.Where(i => i.Date == weekDays[2]).Count() < x.CoachDetail.TuesdayQuota) ||
+                    (x.InvitationsAsCoach.Where(i => i.Date == weekDays[3]).Count() < x.CoachDetail.WednesdayQuota) ||
+                    (x.InvitationsAsCoach.Where(i => i.Date == weekDays[4]).Count() < x.CoachDetail.ThursdayQuota) ||
+                    (x.InvitationsAsCoach.Where(i => i.Date == weekDays[5]).Count() < x.CoachDetail.FridayQuota) ||
+                    (x.InvitationsAsCoach.Where(i => i.Date == weekDays[6]).Count() < x.CoachDetail.SaturdayQuota));
 
             if (filter is null)
             {
                 var mongoDatabase = sp.GetRequiredService<IMongoDatabase>();
 
-                var onboardStudentCollection = mongoDatabase.GetCollection<Onboard.OnboardStudent>("onboardStudents");
+                var onboardStudentCollection = mongoDatabase.GetCollection<Students.Onboard.OnboardStudent>("onboardStudents");
 
-                var docFilter = Builders<Onboard.OnboardStudent>.Filter.Eq(s => s.UserId, strUserId);
+                var docFilter = Builders<Students.Onboard.OnboardStudent>.Filter.Eq(s => s.UserId, strUserId);
 
                 var onboardStudent = await onboardStudentCollection.Find(docFilter).FirstOrDefaultAsync();
 
@@ -60,11 +76,11 @@ public static class List
 
                 coachQueryable = onboardStudent.Data.StudentGeneralInfo.ExamType switch
                 {
-                    Onboard.ExamType.TM => coachQueryable.Where(x => x.CoachDetail.Tm == true),
-                    Onboard.ExamType.MF => coachQueryable.Where(x => x.CoachDetail.Mf == true),
-                    Onboard.ExamType.Sozel => coachQueryable.Where(x => x.CoachDetail.Sozel == true),
-                    Onboard.ExamType.Dil => coachQueryable.Where(x => x.CoachDetail.Sozel == true),
-                    Onboard.ExamType.TYT => coachQueryable.Where(x => x.CoachDetail.Sozel == true),
+                    Students.Onboard.ExamType.TM => coachQueryable.Where(x => x.CoachDetail.Department.DepartmentType == DepartmentType.TM),
+                    Students.Onboard.ExamType.MF => coachQueryable.Where(x => x.CoachDetail.Department.DepartmentType == DepartmentType.MF),
+                    Students.Onboard.ExamType.Sozel => coachQueryable.Where(x => x.CoachDetail.Department.DepartmentType == DepartmentType.Sozel),
+                    Students.Onboard.ExamType.Dil => coachQueryable.Where(x => x.CoachDetail.Department.DepartmentType == DepartmentType.Dil),
+                    Students.Onboard.ExamType.TYT => coachQueryable,
                     _ => coachQueryable
                 };
             }
@@ -76,8 +92,7 @@ public static class List
                     .WhereIf(x => x.CoachDetail.GoneCramSchool == filter.GoneCramSchool, filter.GoneCramSchool.HasValue)
                     .WhereIf(x => x.CoachDetail.Male == filter.Male, filter.Male.HasValue)
                     .WhereIf(x => x.CoachDetail.IsGraduated == filter.IsGraduated, filter.IsGraduated.HasValue)
-                    .WhereIf(x => x.CoachDetail.UniversityId == filter.UniversityId.Value, filter.UniversityId.HasValue)
-                    .WhereIf(x => x.CoachDetail.DepartmentId == filter.DepartmentId.Value, filter.DepartmentId.HasValue);    
+                    .WhereIf(x => x.CoachDetail.UniversityId == filter.UniversityId.Value, filter.UniversityId.HasValue);    
             }
 
             var totalCount = await coachQueryable.CountAsync();
@@ -91,22 +106,18 @@ public static class List
             {
                 Id = x.Id,
                 Name = x.Name,
-                Quota = x.CoachDetail.Quota,
+                //Quota = x.CoachDetail.StudentQuota,
                 UniversityName = x.CoachDetail.University.Name,
                 DepartmentName = x.CoachDetail.Department.Name,
-                Dil = x.CoachDetail.Dil,
-                Mf = x.CoachDetail.Mf,
-                Tm = x.CoachDetail.Tm,
-                Sozel = x.CoachDetail.Sozel,
-                Tyt = x.CoachDetail.Tyt,
+                DepartmentType = x.CoachDetail.Department.DepartmentType,
                 Male = x.CoachDetail.Male,
                 Rank = x.CoachDetail.Rank,
                 IsGraduated = x.CoachDetail.IsGraduated,
                 GoneCramSchool = x.CoachDetail.GoneCramSchool,
                 UsedYoutube = x.CoachDetail.UsedYoutube,
-                ChangedSection = x.CoachDetail.ChangedSection,
-                FromSection = x.CoachDetail.FromSection,
-                ToSection = x.CoachDetail.ToSection,
+                ChangedDepartmentType = x.CoachDetail.ChangedDepartmentType,
+                FromDepartment = x.CoachDetail.FromDepartment,
+                ToDepartment = x.CoachDetail.ToDepartment,
             }));
                 
             var pagedResponse = PagedResponse<Coach>.CreatePagedResponse(
@@ -115,14 +126,14 @@ public static class List
 
             return TypedResults.Ok(pagedResponse);
             
-        }).ProducesProblem(StatusCodes.Status400BadRequest).WithTags("Koç");
+        }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags("Öğrencinin Koç ile yapabileceği işlemler").RequireAuthorization("Student");
         
         endpoints.MapGet("/{coachId}", async Task<Results<Ok<Coach>, ProblemHttpResult>>
             ([FromQuery] Guid coachId, ClaimsPrincipal claimsPrincipal, HttpContext httpContext, [FromServices] IServiceProvider sp) =>
         {
             var dbContext = sp.GetRequiredService<ApplicationDbContext>();
             
-            var coachApplicationUser = dbContext.Coachs.Include(x => x.CoachDetail)
+            var coachApplicationUser = dbContext.Users.Include(x => x.CoachDetail)
                 .Include(x => x.CoachDetail.University)
                 .Include(x => x.CoachDetail.Department)
                 .FirstOrDefault(x => x.Id == coachId && x.UserType == UserType.Coach);
@@ -136,47 +147,36 @@ public static class List
             {
                 Id = coachApplicationUser.Id,
                 Name = coachApplicationUser.Name,
-                Quota = coachApplicationUser.CoachDetail.Quota,
+                //Quota = coachApplicationUser.CoachDetail.Quota,
                 UniversityName = coachApplicationUser.CoachDetail.University.Name,
                 DepartmentName = coachApplicationUser.CoachDetail.Department.Name,
-                Dil = coachApplicationUser.CoachDetail.Dil,
-                Mf = coachApplicationUser.CoachDetail.Mf,
-                Tm = coachApplicationUser.CoachDetail.Tm,
-                Sozel = coachApplicationUser.CoachDetail.Sozel,
-                Tyt = coachApplicationUser.CoachDetail.Tyt,
+                DepartmentType = coachApplicationUser.CoachDetail.Department.DepartmentType,
                 Male = coachApplicationUser.CoachDetail.Male,
                 Rank = coachApplicationUser.CoachDetail.Rank,
                 IsGraduated = coachApplicationUser.CoachDetail.IsGraduated,
                 GoneCramSchool = coachApplicationUser.CoachDetail.GoneCramSchool,
                 UsedYoutube = coachApplicationUser.CoachDetail.UsedYoutube,
-                ChangedSection = coachApplicationUser.CoachDetail.ChangedSection,
-                FromSection = coachApplicationUser.CoachDetail.FromSection,
-                ToSection = coachApplicationUser.CoachDetail.ToSection,
+                ChangedDepartmentType = coachApplicationUser.CoachDetail.ChangedDepartmentType,
+                FromDepartment = coachApplicationUser.CoachDetail.FromDepartment,
+                ToDepartment = coachApplicationUser.CoachDetail.ToDepartment,
             };
 
             return TypedResults.Ok(coach);
             
-        }).ProducesProblem(StatusCodes.Status400BadRequest);
+        }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags("Öğrencinin Koç ile yapabileceği işlemler").RequireAuthorization("Student");
     }
 
     public sealed class CoachFilterRequest
     {
         public bool? IsGraduated { get; set; }
-    
         public byte? FirstTytNet { get; set; }
-        
         public bool? GoneCramSchool { get; set; }
     
         public bool? UsedYoutube { get; set; }
         
         public uint? Rank { get; set; }
-
         public Guid? UniversityId { get; set; }
-    
-        public Guid? DepartmentId { get; set; }
-    
         public bool? Male { get; set; }
-    
         //Alan değiştirdi mi
         public bool? ChangedSection { get; set; }
     
@@ -192,18 +192,15 @@ public static class List
         public Guid Id { get; set; }
         public string Name { get; set; }
         
-        public int Quota { get; set; }
+        //public int Quota { get; set; }
 
         public string UniversityName { get; set; }
         
         public string DepartmentName { get; set; }
         
-        public bool Tm { get; set; }
-        public bool Mf { get; set; }
-        public bool Sozel { get; set; }
-        public bool Dil { get; set; }
-        public bool Tyt { get; set; }
-
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public DepartmentType DepartmentType { get; set; }
+        
         public bool IsGraduated { get; set; }
     
         public byte FirstTytNet { get; set; }
@@ -215,12 +212,34 @@ public static class List
         public bool Male { get; set; }
     
         //Alan değiştirdi mi
-        public bool ChangedSection { get; set; }
+        public bool ChangedDepartmentType { get; set; }
     
-        public string? FromSection { get; set; }
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public DepartmentType FromDepartment { get; set; }
     
-        public string? ToSection { get; set; }
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public DepartmentType ToDepartment { get; set; }
         
         public uint Rank { get; set; }
+    }
+
+    public class CoachFilterRequestExamples : IMultipleExamplesProvider<CoachFilterRequest>
+    {
+        public IEnumerable<SwaggerExample<CoachFilterRequest>> GetExamples()
+        {
+            CoachFilterRequest? nullBody = null;
+            
+            yield return SwaggerExample.Create("null", nullBody);
+            
+            yield return SwaggerExample.Create("IsGraduated:true", new CoachFilterRequest()
+            {
+                IsGraduated = true, 
+            });
+            
+            yield return SwaggerExample.Create("GoneCramSchool:true", new CoachFilterRequest()
+            {
+                GoneCramSchool = true
+            });
+        }
     }
 }

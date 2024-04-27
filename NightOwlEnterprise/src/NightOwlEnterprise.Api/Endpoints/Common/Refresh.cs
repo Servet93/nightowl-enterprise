@@ -5,12 +5,11 @@ using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
-namespace NightOwlEnterprise.Api.Endpoints.Students;
+namespace NightOwlEnterprise.Api.Endpoints.Common;
 
 public static class Refresh
 {
-    public static void MapRefresh<TUser>(this IEndpointRouteBuilder endpoints, JwtHelper jwtHelper)
-        where TUser : class, new()
+    public static void MapRefresh(this IEndpointRouteBuilder endpoints, JwtHelper jwtHelper)
     {
         var timeProvider = endpoints.ServiceProvider.GetRequiredService<TimeProvider>();
         var bearerTokenOptions = endpoints.ServiceProvider.GetRequiredService<IOptionsMonitor<BearerTokenOptions>>();

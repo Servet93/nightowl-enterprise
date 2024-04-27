@@ -1,6 +1,6 @@
 ﻿namespace NightOwlEnterprise.Api;
 
-public class Common
+public class CommonVariables
 {
     public static List<string> Cities = new List<string>()
     {
@@ -75,4 +75,21 @@ public class Common
         ("Fırat", true), ("Yavuz", true)
     };
 
+    public static Guid ComputerEngineeringDepartmentId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+    public static Guid ElectricalAndElectronicsEngineeringDepartmentId = Guid.Parse("00000000-0000-0000-0000-000000000002");
+    public static Guid MechanicalEngineeringDepartmentId = Guid.Parse("00000000-0000-0000-0000-000000000003");
+    public static Guid IndustrialEngineeringDepartmentId = Guid.Parse("00000000-0000-0000-0000-000000000004");
+    public static Guid SociologyDepartmentId = Guid.Parse("00000000-0000-0000-0000-000000000005");
+    public static Guid HistoryDepartmentId = Guid.Parse("00000000-0000-0000-0000-000000000006");
+    public static Guid PsychologyDepartmentId = Guid.Parse("00000000-0000-0000-0000-000000000007");
+    public static Guid EnglishLanguageAndLiteratureDepartmentId = Guid.Parse("00000000-0000-0000-0000-000000000008");
+    public static Guid FrenchLanguageAndLiteratureDepartmentId = Guid.Parse("00000000-0000-0000-0000-000000000009");
+    public static Guid GermanLanguageAndLiteratureDepartmentId = Guid.Parse("00000000-0000-0000-0000-00000000000a");
+    public static Guid GazetecilikDepartmentId = Guid.Parse("00000000-0000-0000-0000-00000000000b");
+    public static Guid IsletmeDepartmentId = Guid.Parse("00000000-0000-0000-0000-00000000000c");
+    public static Guid ReklamcilikDepartmentId = Guid.Parse("00000000-0000-0000-0000-00000000000d");
+
+    public static Guid IstanbulTechnicalUniversityId = Guid.Parse("00000000-0000-0000-0000-00000000a001");
+    public static Guid BosphorusUniversityId = Guid.Parse("00000000-0000-0000-0000-00000000a002");
+    public static Guid MiddleEastTechnicalUniversityId = Guid.Parse("00000000-0000-0000-0000-0000000a0003");
 }

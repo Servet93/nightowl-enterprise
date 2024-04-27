@@ -36,7 +36,7 @@ public static class ManageInfo
             // }
 
             return TypedResults.Ok(CreateInfoResponseAsync(user!));
-        }).RequireAuthorization().ProducesProblem(StatusCodes.Status404NotFound);
+        }).RequireAuthorization("Student").ProducesProblem(StatusCodes.Status404NotFound).WithOpenApi().WithTags("Öğrenci");
     }
     
     private static InfoResponse CreateInfoResponseAsync(ApplicationUser user)

@@ -93,6 +93,6 @@ public static class ResetPassword
             await userManager.UpdateAsync(user);
             
             return TypedResults.Ok();
-        }).ProducesValidationProblem(StatusCodes.Status400BadRequest);
+        }).ProducesValidationProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags("Öğrenci");
     }
 }

@@ -3,12 +3,14 @@ using System.ComponentModel.DataAnnotations;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Encodings.Web;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Stripe;
 using Swashbuckle.AspNetCore.Annotations;
+using Swashbuckle.AspNetCore.Filters;
 
 namespace NightOwlEnterprise.Api.Endpoints.Coachs;
 
@@ -68,23 +70,12 @@ public static class Register
                 //return errorDescriber.RequiredAddress().CreateProblem();
             }
             
-            if (!Common.Cities.Contains(city))
+            if (!CommonVariables.Cities.Contains(city))
             {
                 identityErrors.Add(errorDescriber.InvalidCity(city));
                 //return IdentityResult.Failed(errorDescriber.InvalidCity(city)).CreateValidationProblem();
             }
-
-            if (registration.Tm == false &&
-                registration.Mf == false &&
-                registration.Sozel == false &&
-                registration.Dil == false &&
-                registration.Tyt == false)
-            {
-                var requiredExamTypeError = CommonErrorDescriptor.RequiredExamTypes();
-                identityErrors.Add(new IdentityError()
-                    { Code = requiredExamTypeError.Code, Description = requiredExamTypeError.Description });
-            }
-
+            
             var userName = email.Split('@')[0];
             
             var user = new ApplicationUser()
@@ -94,15 +85,7 @@ public static class Register
                 Email = email,
                 Address = address,
                 City = city,
-                UserType = UserType.Coach,
-                CoachDetail = new CoachDetail()
-                {
-                    Tm = registration.Tm,
-                    Mf = registration.Mf,
-                    Dil = registration.Dil,
-                    Sozel = registration.Sozel,
-                    Tyt = registration.Tyt,
-                }
+                UserType = registration.CoachType == CoachType.Coach ? UserType.Coach : UserType.Pdr,
             };
             
             var result = await userManager.CreateAsync(user, registration.Password);
@@ -119,7 +102,7 @@ public static class Register
             }
             
             return TypedResults.Ok();
-        }).ProducesProblem(StatusCodes.Status400BadRequest).WithTags("Koç");
+        }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags("Koç");
     }
 
     public sealed class CoachRegisterRequest
@@ -143,41 +126,64 @@ public static class Register
         [DefaultValue("İstanbul")]
         public required string City { get; init; }
 
-        [DefaultValue(true)]
-        public required bool Tm { get; set; }
-        [DefaultValue(false)]
-        public required bool Mf { get; set; }
-        [DefaultValue(false)]
-        public required bool Sozel { get; set; }
-        [DefaultValue(false)]
-        public required bool Dil { get; set; }
-        [DefaultValue(false)]
-        public required bool Tyt { get; set; }
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public CoachType CoachType { get; set; }
+    }
 
-        public bool IsGraduated { get; set; }
+    public enum CoachType
+    {
+        Coach,
+        Pdr
+    }
     
-        public byte FirstTytNet { get; set; }
-    
-        public bool UsedYoutube { get; set; }
-    
-        public bool GoneCramSchool { get; set; }
-
-        public Guid UniversityId { get; set; }
-    
-        public Guid DepartmentId { get; set; }
-    
-        public bool Male { get; set; }
-    
-        //Alan değiştirdi mi
-        public bool ChangedSection { get; set; }
-    
-        public string FromSection { get; set; }
-    
-        public string ToSection { get; set; }
-    
-        public uint Rank { get; set; }
-
-        public byte Quota { get; set; }
-        
+    public class CoachRegisterRequestExamples : IMultipleExamplesProvider<CoachRegisterRequest>
+    {
+        public IEnumerable<SwaggerExample<CoachRegisterRequest>> GetExamples()
+        {
+            yield return SwaggerExample.Create("Servet,CoachType:Coach", new CoachRegisterRequest()
+            {
+                Name = "Servet", Address = "Bağcılar", City = "İstanbul", Email = "servet-coach@gmail.com",
+                Password = "Aa123456", PhoneNumber = "533-333-33-33", CoachType = CoachType.Coach
+            });
+            
+            yield return SwaggerExample.Create("Servet,CoachType:Pdr", new CoachRegisterRequest()
+            {
+                Name = "Servet", Address = "Bağcılar", City = "İstanbul", Email = "servet-pdr@gmail.com",
+                Password = "Aa123456", PhoneNumber = "533-333-33-33", CoachType = CoachType.Pdr
+            });
+            
+            yield return SwaggerExample.Create("Burak,Package:Coach", new CoachRegisterRequest()
+            {
+                Name = "Burak", Address = "Güngören", City = "İstanbul", Email = "burak-coach@gmail.com",
+                Password = "Aa123456", PhoneNumber = "533-333-33-33", CoachType = CoachType.Coach,
+            });
+            
+            yield return SwaggerExample.Create("Burak,Package:Pdr", new CoachRegisterRequest()
+            {
+                Name = "Burak", Address = "Güngören", City = "İstanbul", Email = "burak-pdr@gmail.com",
+                Password = "Aa123456", PhoneNumber = "533-333-33-33", CoachType = CoachType.Pdr,
+            });
+            yield return SwaggerExample.Create("Eren,Package:Coach", new CoachRegisterRequest()
+            {
+                Name = "Eren", Address = "Maltepe", City = "İstanbul", Email = "eren-koc@gmail.com",
+                Password = "Aa123456", PhoneNumber = "533-333-33-33", CoachType = CoachType.Coach,
+            });
+            
+            yield return SwaggerExample.Create("Eren,Package:Pdr", new CoachRegisterRequest()
+            {
+                Name = "Eren", Address = "Maltepe", City = "İstanbul", Email = "eren-pdr@gmail.com",
+                Password = "Aa123456", PhoneNumber = "533-333-33-33", CoachType = CoachType.Pdr,
+            });
+            yield return SwaggerExample.Create("Turgay,Package:Coach", new CoachRegisterRequest()
+            {
+                Name = "Turgay", Address = "Maltepe", City = "İstanbul", Email = "turgay-koc@gmail.com",
+                Password = "Aa123456", PhoneNumber = "533-333-33-33", CoachType = CoachType.Coach,
+            });
+            yield return SwaggerExample.Create("Turgay,Package:Pdr", new CoachRegisterRequest()
+            {
+                Name = "Turgay", Address = "Maltepe", City = "İstanbul", Email = "turgay-pdr@gmail.com",
+                Password = "Aa123456", PhoneNumber = "533-333-33-33", CoachType = CoachType.Pdr,
+            });
+        }
     }
 }

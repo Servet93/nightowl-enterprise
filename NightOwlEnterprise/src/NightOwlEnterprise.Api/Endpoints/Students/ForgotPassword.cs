@@ -44,7 +44,7 @@ public static class ForgotPassword
             // Don't reveal that the user does not exist or is not confirmed, so don't return a 200 if we would have
             // returned a 400 for an invalid code given a valid user email.
             return TypedResults.Ok();
-        });
+        }).WithOpenApi().WithTags("Öğrenci");
     }
     
     public class PasswordGenerator

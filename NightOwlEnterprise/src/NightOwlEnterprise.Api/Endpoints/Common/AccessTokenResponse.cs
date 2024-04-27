@@ -1,4 +1,4 @@
-﻿namespace NightOwlEnterprise.Api.Endpoints.Students;
+﻿namespace NightOwlEnterprise.Api.Endpoints.Common;
 
 public class AccessTokenResponse
 {

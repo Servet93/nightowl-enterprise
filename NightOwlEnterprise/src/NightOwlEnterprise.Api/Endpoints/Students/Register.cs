@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Stripe;
 using Swashbuckle.AspNetCore.Annotations;
+using Swashbuckle.AspNetCore.Filters;
 
 namespace NightOwlEnterprise.Api.Endpoints.Students;
 
@@ -30,7 +31,7 @@ public static class Register
             var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
             var errorDescriber = sp.GetRequiredService<TurkishIdentityErrorDescriber>();
             var studentEmailSender = sp.GetRequiredService<StudentEmailSender>();
-
+            
             if (!userManager.SupportsUserEmail)
             {
                 throw new NotSupportedException($"{nameof(MapRegister)} requires a user store with email support.");
@@ -74,7 +75,7 @@ public static class Register
                 //return IdentityResult.Failed(errorDescriber.RequiredAddress()).CreateValidationProblem();
             }
             
-            if (!Common.Cities.Contains(city))
+            if (!CommonVariables.Cities.Contains(city))
             {
                 identityErrors.Add(errorDescriber.InvalidCity(city));
                 //return IdentityResult.Failed(errorDescriber.InvalidCity(city)).CreateValidationProblem();
@@ -129,7 +130,7 @@ public static class Register
             }
             
             return TypedResults.Ok();
-        }).ProducesProblem(StatusCodes.Status400BadRequest);
+        }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags("Öğrenci");
         
         async Task SendConfirmationEmailAsync(ApplicationUser user, UserManager<ApplicationUser> userManager, HttpContext context, string email, bool isChange = false)
         {
@@ -163,7 +164,7 @@ public static class Register
         }
     }
 
-    private sealed class StudentRegisterRequest
+    public sealed class StudentRegisterRequest
     {
         [DefaultValue("NightOwl")]
         public required string Name { get; init; }
@@ -184,5 +185,55 @@ public static class Register
         
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public required SubscriptionType SubscriptionType { get; init; }
+    }
+    public class StudentRegisterRequestExamples : IMultipleExamplesProvider<StudentRegisterRequest>
+    {
+        public IEnumerable<SwaggerExample<StudentRegisterRequest>> GetExamples()
+        {
+            yield return SwaggerExample.Create("Servet,Package:Coach", new StudentRegisterRequest()
+            {
+                Name = "Servet", Address = "Bağcılar", City = "İstanbul", Email = "servet-package-coach@gmail.com",
+                Password = "Aa123456", PhoneNumber = "533-333-33-33", SubscriptionType = SubscriptionType.Coach,
+            });
+            
+            yield return SwaggerExample.Create("Servet,Package:Pdr", new StudentRegisterRequest()
+            {
+                Name = "Servet", Address = "Bağcılar", City = "İstanbul", Email = "servet-package-pdr@gmail.com",
+                Password = "Aa123456", PhoneNumber = "533-333-33-33", SubscriptionType = SubscriptionType.Pdr,
+            });
+            
+            yield return SwaggerExample.Create("Burak,Package:Coach", new StudentRegisterRequest()
+            {
+                Name = "Burak", Address = "Güngören", City = "İstanbul", Email = "burak-package-coach@gmail.com",
+                Password = "Aa123456", PhoneNumber = "533-333-33-33", SubscriptionType = SubscriptionType.Coach,
+            });
+            
+            yield return SwaggerExample.Create("Burak,Package:Pdr", new StudentRegisterRequest()
+            {
+                Name = "Burak", Address = "Güngören", City = "İstanbul", Email = "burak-package-pdr@gmail.com",
+                Password = "Aa123456", PhoneNumber = "533-333-33-33", SubscriptionType = SubscriptionType.Pdr,
+            });
+            yield return SwaggerExample.Create("Eren,Package:Coach", new StudentRegisterRequest()
+            {
+                Name = "Eren", Address = "Maltepe", City = "İstanbul", Email = "eren-package-coach@gmail.com",
+                Password = "Aa123456", PhoneNumber = "533-333-33-33", SubscriptionType = SubscriptionType.Coach,
+            });
+            
+            yield return SwaggerExample.Create("Eren,Package:Pdr", new StudentRegisterRequest()
+            {
+                Name = "Eren", Address = "Maltepe", City = "İstanbul", Email = "eren-package-pdr@gmail.com",
+                Password = "Aa123456", PhoneNumber = "533-333-33-33", SubscriptionType = SubscriptionType.Pdr,
+            });
+            yield return SwaggerExample.Create("Turgay,Package:Coach", new StudentRegisterRequest()
+            {
+                Name = "Turgay", Address = "Maltepe", City = "İstanbul", Email = "turgay-package-coach@gmail.com",
+                Password = "Aa123456", PhoneNumber = "533-333-33-33", SubscriptionType = SubscriptionType.Coach,
+            });
+            yield return SwaggerExample.Create("Turgay,Package:Pdr", new StudentRegisterRequest()
+            {
+                Name = "Turgay", Address = "Maltepe", City = "İstanbul", Email = "turgay-package-pdr@gmail.com",
+                Password = "Aa123456", PhoneNumber = "533-333-33-33", SubscriptionType = SubscriptionType.Pdr,
+            });
+        }
     }
 }

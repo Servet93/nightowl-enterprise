@@ -18,25 +18,14 @@ public static class CoachIdentityEndpoints
         var jwtHelper = endpoints.ServiceProvider.GetRequiredService<JwtHelper>();
         //var jwtConfig = endpoints.ServiceProvider.GetRequiredService<IOptions<JwtConfig>>()?.Value;
         
-        var routeGroup = endpoints.MapGroup("coachs").WithOpenApi().WithTags("Koç");
+        var routeGroup = endpoints.MapGroup("coachs");
 
         routeGroup.MapRegister<ApplicationUser>((IEmailSender<ApplicationUser>)emailSender,
             linkGenerator);
         routeGroup.MapList();
         routeGroup.MapCalendar();
-        // routeGroup.MapPayment<ApplicationUser>(stripeCredentialSigningSecret);
-        // routeGroup.MapLogin<ApplicationUser>(jwtHelper);
-        // routeGroup.MapRefresh<ApplicationUser>(jwtHelper);
-        //routeGroup.MapConfirmEmail<ApplicationUser>();
-        //routeGroup.MapResendConfirmationEmail<TUser>(emailSender, linkGenerator);
-        // routeGroup.MapForgotPassword<ApplicationUser>((IEmailSender<ApplicationUser>)emailSender);
-        // routeGroup.MapResetPassword<ApplicationUser>();
-        // routeGroup.MapManageInfo<TUser>();
-        // routeGroup.MapOnboard();
+        routeGroup.MapOnboard();
 
         return new IdentityEndpointsConventionBuilder(routeGroup);
     }
-
-
-    
 }

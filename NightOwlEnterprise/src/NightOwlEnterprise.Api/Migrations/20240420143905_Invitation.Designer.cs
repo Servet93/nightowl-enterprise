@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -10,9 +11,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace NightOwlEnterprise.Api.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240420143905_Invitation")]
+    partial class Invitation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -153,24 +156,14 @@ namespace NightOwlEnterprise.Api.Migrations
                     b.Property<Guid>("CoachId")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime>("BirthDate")
-                        .HasColumnType("date");
-
-                    b.Property<bool>("ChangedDepartmentType")
+                    b.Property<bool>("ChangedSection")
                         .HasColumnType("boolean");
 
                     b.Property<Guid>("DepartmentId")
                         .HasColumnType("uuid");
 
-                    b.Property<int>("DepartmentType")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<byte>("FirstAytNet")
-                        .HasColumnType("smallint");
+                    b.Property<bool>("Dil")
+                        .HasColumnType("boolean");
 
                     b.Property<byte>("FirstTytNet")
                         .HasColumnType("smallint");
@@ -178,44 +171,23 @@ namespace NightOwlEnterprise.Api.Migrations
                     b.Property<byte>("FridayQuota")
                         .HasColumnType("smallint");
 
-                    b.Property<int>("FromDepartment")
-                        .HasColumnType("integer");
+                    b.Property<string>("FromSection")
+                        .HasColumnType("text");
 
                     b.Property<bool>("GoneCramSchool")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("HighSchool")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<float>("HighSchoolGPA")
-                        .HasColumnType("real");
-
                     b.Property<bool>("IsGraduated")
                         .HasColumnType("boolean");
-
-                    b.Property<byte>("LastAytNet")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte>("LastTytNet")
-                        .HasColumnType("smallint");
 
                     b.Property<bool>("Male")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("Mobile")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<bool>("Mf")
+                        .HasColumnType("boolean");
 
                     b.Property<byte>("MondayQuota")
                         .HasColumnType("smallint");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<bool>("PrivateTutoring")
-                        .HasColumnType("boolean");
 
                     b.Property<long>("Rank")
                         .HasColumnType("bigint");
@@ -223,7 +195,7 @@ namespace NightOwlEnterprise.Api.Migrations
                     b.Property<byte>("SaturdayQuota")
                         .HasColumnType("smallint");
 
-                    b.Property<bool>("School")
+                    b.Property<bool>("Sozel")
                         .HasColumnType("boolean");
 
                     b.Property<byte>("StudentQuota")
@@ -232,18 +204,20 @@ namespace NightOwlEnterprise.Api.Migrations
                     b.Property<byte>("SundayQuota")
                         .HasColumnType("smallint");
 
-                    b.Property<string>("Surname")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<byte>("ThursdayQuota")
                         .HasColumnType("smallint");
 
-                    b.Property<int>("ToDepartment")
-                        .HasColumnType("integer");
+                    b.Property<bool>("Tm")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ToSection")
+                        .HasColumnType("text");
 
                     b.Property<byte>("TuesdayQuota")
                         .HasColumnType("smallint");
+
+                    b.Property<bool>("Tyt")
+                        .HasColumnType("boolean");
 
                     b.Property<Guid>("UniversityId")
                         .HasColumnType("uuid");
@@ -263,177 +237,11 @@ namespace NightOwlEnterprise.Api.Migrations
                     b.ToTable("CoachDetail");
                 });
 
-            modelBuilder.Entity("CoachDilNets", b =>
-                {
-                    b.Property<Guid>("CoachId")
-                        .HasColumnType("uuid");
-
-                    b.Property<byte>("YDT")
-                        .HasColumnType("smallint");
-
-                    b.HasKey("CoachId");
-
-                    b.ToTable("CoachDilNets");
-                });
-
-            modelBuilder.Entity("CoachMFNets", b =>
-                {
-                    b.Property<Guid>("CoachId")
-                        .HasColumnType("uuid");
-
-                    b.Property<byte>("Biology")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte>("Chemistry")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte>("Geometry")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte>("Mathematics")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte>("Physics")
-                        .HasColumnType("smallint");
-
-                    b.HasKey("CoachId");
-
-                    b.ToTable("CoachMFNets");
-                });
-
-            modelBuilder.Entity("CoachSozelNets", b =>
-                {
-                    b.Property<Guid>("CoachId")
-                        .HasColumnType("uuid");
-
-                    b.Property<byte>("Geography1")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte>("Geography2")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte>("History1")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte>("History2")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte>("Literature1")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte>("Philosophy")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte>("Religion")
-                        .HasColumnType("smallint");
-
-                    b.HasKey("CoachId");
-
-                    b.ToTable("CoachSozelNets");
-                });
-
-            modelBuilder.Entity("CoachTMNets", b =>
-                {
-                    b.Property<Guid>("CoachId")
-                        .HasColumnType("uuid");
-
-                    b.Property<byte>("Geography")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte>("Geometry")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte>("History")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte>("Literature")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte>("Mathematics")
-                        .HasColumnType("smallint");
-
-                    b.HasKey("CoachId");
-
-                    b.ToTable("CoachTMNets");
-                });
-
-            modelBuilder.Entity("CoachTYTNets", b =>
-                {
-                    b.Property<Guid>("CoachId")
-                        .HasColumnType("uuid");
-
-                    b.Property<byte>("Biology")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte>("Chemistry")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte>("Geography")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte>("Geometry")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte>("Grammar")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte>("History")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte>("Mathematics")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte>("Philosophy")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte>("Physics")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte>("Religion")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte>("Semantics")
-                        .HasColumnType("smallint");
-
-                    b.HasKey("CoachId");
-
-                    b.ToTable("CoachTYTNets");
-                });
-
-            modelBuilder.Entity("CoachYksRanking", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("CoachId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("Enter")
-                        .HasColumnType("boolean");
-
-                    b.Property<long>("Rank")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Year")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CoachId");
-
-                    b.ToTable("CoachYksRankings");
-                });
-
             modelBuilder.Entity("Department", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
-
-                    b.Property<int>("DepartmentType")
-                        .HasColumnType("integer");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -480,7 +288,7 @@ namespace NightOwlEnterprise.Api.Migrations
 
                     b.HasIndex("StudentId");
 
-                    b.ToTable("Invitations");
+                    b.ToTable("CoachCalendars");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
@@ -586,140 +394,6 @@ namespace NightOwlEnterprise.Api.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("PrivateTutoringDil", b =>
-                {
-                    b.Property<Guid>("CoachId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("YTD")
-                        .HasColumnType("boolean");
-
-                    b.HasKey("CoachId");
-
-                    b.ToTable("PrivateTutoringDil");
-                });
-
-            modelBuilder.Entity("PrivateTutoringMF", b =>
-                {
-                    b.Property<Guid>("CoachId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("Biology")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("Chemistry")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("Geometry")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("Mathematics")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("Physics")
-                        .HasColumnType("boolean");
-
-                    b.HasKey("CoachId");
-
-                    b.ToTable("PrivateTutoringMF");
-                });
-
-            modelBuilder.Entity("PrivateTutoringSozel", b =>
-                {
-                    b.Property<Guid>("CoachId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("Geography1")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("Geography2")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("History1")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("History2")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("Literature1")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("Philosophy")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("Religion")
-                        .HasColumnType("boolean");
-
-                    b.HasKey("CoachId");
-
-                    b.ToTable("PrivateTutoringSozel");
-                });
-
-            modelBuilder.Entity("PrivateTutoringTM", b =>
-                {
-                    b.Property<Guid>("CoachId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("Geography")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("Geometry")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("History")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("Literature")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("Mathematics")
-                        .HasColumnType("boolean");
-
-                    b.HasKey("CoachId");
-
-                    b.ToTable("PrivateTutoringTM");
-                });
-
-            modelBuilder.Entity("PrivateTutoringTYT", b =>
-                {
-                    b.Property<Guid>("CoachId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("Biology")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("Chemistry")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("Geography")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("Geometry")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("History")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("Mathematics")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("Philosophy")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("Physics")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("Religion")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("Turkish")
-                        .HasColumnType("boolean");
-
-                    b.HasKey("CoachId");
-
-                    b.ToTable("PrivateTutoringTYT");
-                });
-
             modelBuilder.Entity("StudentDetail", b =>
                 {
                     b.Property<Guid>("StudentId")
@@ -820,82 +494,16 @@ namespace NightOwlEnterprise.Api.Migrations
                     b.Navigation("University");
                 });
 
-            modelBuilder.Entity("CoachDilNets", b =>
-                {
-                    b.HasOne("ApplicationUser", "Coach")
-                        .WithOne("CoachDilNets")
-                        .HasForeignKey("CoachDilNets", "CoachId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Coach");
-                });
-
-            modelBuilder.Entity("CoachMFNets", b =>
-                {
-                    b.HasOne("ApplicationUser", "Coach")
-                        .WithOne("CoachMfNets")
-                        .HasForeignKey("CoachMFNets", "CoachId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Coach");
-                });
-
-            modelBuilder.Entity("CoachSozelNets", b =>
-                {
-                    b.HasOne("ApplicationUser", "Coach")
-                        .WithOne("CoachSozelNets")
-                        .HasForeignKey("CoachSozelNets", "CoachId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Coach");
-                });
-
-            modelBuilder.Entity("CoachTMNets", b =>
-                {
-                    b.HasOne("ApplicationUser", "Coach")
-                        .WithOne("CoachTmNets")
-                        .HasForeignKey("CoachTMNets", "CoachId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Coach");
-                });
-
-            modelBuilder.Entity("CoachTYTNets", b =>
-                {
-                    b.HasOne("ApplicationUser", "Coach")
-                        .WithOne("CoachTytNets")
-                        .HasForeignKey("CoachTYTNets", "CoachId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Coach");
-                });
-
-            modelBuilder.Entity("CoachYksRanking", b =>
-                {
-                    b.HasOne("ApplicationUser", "Coach")
-                        .WithMany("CoachYksRankings")
-                        .HasForeignKey("CoachId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Coach");
-                });
-
             modelBuilder.Entity("Invitation", b =>
                 {
                     b.HasOne("ApplicationUser", "Coach")
-                        .WithMany("InvitationsAsCoach")
+                        .WithMany()
                         .HasForeignKey("CoachId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("ApplicationUser", "Student")
-                        .WithMany("InvitationsAsStudent")
+                        .WithMany()
                         .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -956,61 +564,6 @@ namespace NightOwlEnterprise.Api.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("PrivateTutoringDil", b =>
-                {
-                    b.HasOne("ApplicationUser", "Coach")
-                        .WithOne("PrivateTutoringDil")
-                        .HasForeignKey("PrivateTutoringDil", "CoachId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Coach");
-                });
-
-            modelBuilder.Entity("PrivateTutoringMF", b =>
-                {
-                    b.HasOne("ApplicationUser", "Coach")
-                        .WithOne("PrivateTutoringMF")
-                        .HasForeignKey("PrivateTutoringMF", "CoachId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Coach");
-                });
-
-            modelBuilder.Entity("PrivateTutoringSozel", b =>
-                {
-                    b.HasOne("ApplicationUser", "Coach")
-                        .WithOne("PrivateTutoringSozel")
-                        .HasForeignKey("PrivateTutoringSozel", "CoachId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Coach");
-                });
-
-            modelBuilder.Entity("PrivateTutoringTM", b =>
-                {
-                    b.HasOne("ApplicationUser", "Coach")
-                        .WithOne("PrivateTutoringTM")
-                        .HasForeignKey("PrivateTutoringTM", "CoachId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Coach");
-                });
-
-            modelBuilder.Entity("PrivateTutoringTYT", b =>
-                {
-                    b.HasOne("ApplicationUser", "Coach")
-                        .WithOne("PrivateTutoringTYT")
-                        .HasForeignKey("PrivateTutoringTYT", "CoachId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Coach");
-                });
-
             modelBuilder.Entity("StudentDetail", b =>
                 {
                     b.HasOne("ApplicationUser", "Student")
@@ -1055,42 +608,6 @@ namespace NightOwlEnterprise.Api.Migrations
             modelBuilder.Entity("ApplicationUser", b =>
                 {
                     b.Navigation("CoachDetail")
-                        .IsRequired();
-
-                    b.Navigation("CoachDilNets")
-                        .IsRequired();
-
-                    b.Navigation("CoachMfNets")
-                        .IsRequired();
-
-                    b.Navigation("CoachSozelNets")
-                        .IsRequired();
-
-                    b.Navigation("CoachTmNets")
-                        .IsRequired();
-
-                    b.Navigation("CoachTytNets")
-                        .IsRequired();
-
-                    b.Navigation("CoachYksRankings");
-
-                    b.Navigation("InvitationsAsCoach");
-
-                    b.Navigation("InvitationsAsStudent");
-
-                    b.Navigation("PrivateTutoringDil")
-                        .IsRequired();
-
-                    b.Navigation("PrivateTutoringMF")
-                        .IsRequired();
-
-                    b.Navigation("PrivateTutoringSozel")
-                        .IsRequired();
-
-                    b.Navigation("PrivateTutoringTM")
-                        .IsRequired();
-
-                    b.Navigation("PrivateTutoringTYT")
                         .IsRequired();
 
                     b.Navigation("StudentDetail")

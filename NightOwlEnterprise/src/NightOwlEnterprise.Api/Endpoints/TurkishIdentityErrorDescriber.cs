@@ -66,6 +66,15 @@ public class TurkishIdentityErrorDescriber : IdentityErrorDescriber
             Description = $"Email '{email}' geçersiz"
         };
     }
+    
+    public IdentityError EmptyEmail()
+    {
+        return new IdentityError
+        {
+            Code = nameof(EmptyEmail),
+            Description = $"Email bilgisi boş"
+        };
+    }
 
     public override IdentityError DuplicateRoleName(string role)
     {
@@ -100,6 +109,15 @@ public class TurkishIdentityErrorDescriber : IdentityErrorDescriber
         {
             Code = nameof(InvalidPasswordResetCode),
             Description = $"Password Reset Code geçersiz"
+        };
+    }
+    
+    public IdentityError EmptyPassword()
+    {
+        return new IdentityError
+        {
+            Code = nameof(EmptyPassword),
+            Description = $"Password bilgisi boş"
         };
     }
 
@@ -253,6 +271,15 @@ public class TurkishIdentityErrorDescriber : IdentityErrorDescriber
         {
             Code = nameof(InvalidMobile),
             Description = $"Mobile '{mobile}' geçersiz"
+        };
+    }
+    
+    public IdentityError WrongEmailOrPassword()
+    {
+        return new IdentityError
+        {
+            Code = nameof(WrongEmailOrPassword),
+            Description = $"Email veya Password bilgisi hatalı!"
         };
     }
 }

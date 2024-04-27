@@ -6,7 +6,7 @@ namespace NightOwlEnterprise.Api.Endpoints.Universities;
 
 public static class UniversityEndpoints
 {
-    public static IEndpointConventionBuilder MapUniversity(this IEndpointRouteBuilder endpoints)
+    public static IEndpointConventionBuilder MapUniversityApi(this IEndpointRouteBuilder endpoints)
     {
         var routeGroup = endpoints.MapGroup("universities");
 
