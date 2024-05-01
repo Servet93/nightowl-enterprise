@@ -12,4 +12,8 @@ public class StripeCredential
     
     //For Webhook
     public string? SigningSecret { get; set; }
+    
+    public string? DereceliKocPriceId { get; set; }
+    
+    public string? PdrPriceId { get; set; }
 }

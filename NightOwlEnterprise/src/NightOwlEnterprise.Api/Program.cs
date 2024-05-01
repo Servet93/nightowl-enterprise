@@ -305,7 +305,7 @@ builder.Services.AddSwaggerGen(swaggerGenOptions =>
     swaggerGenOptions.MapType<TimeSpan>(() => new OpenApiSchema
     {
         Type = "string",
-        Example = new OpenApiString("00:00")
+        Example = new OpenApiString("00:00:00.000")
     });
     
     swaggerGenOptions.MapType<DateTime>(() => new OpenApiSchema
@@ -1039,6 +1039,16 @@ public class SubscriptionHistory
     public DateTime? SubscriptionEndDate { get; set; } // Abonelik bitiş tarihi
 
     public SubscriptionType Type { get; set; } // Abonelik tipi (örneğin, ücretsiz, standart, premium)
+
+    public string SubscriptionId { get; set; }
+    
+    public string InvoiceId { get; set; }
+    
+    public string SubscriptionState { get; set; }
+    
+    public string InvoiceState { get; set; }
+    
+    public string LastError { get; set; }
 }
 
 public enum SubscriptionType

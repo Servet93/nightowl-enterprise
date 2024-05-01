@@ -39,6 +39,14 @@
         </select>
     </div>
     
+    <div class="form-group">
+        <label for="subscriptionType">Paket</label>
+        <select class="form-control" id="subscriptionType">
+            <option value="@(SubscriptionType.Coach.ToString())">Dereceli</option>
+            <option value="@(SubscriptionType.Pdr.ToString())">Normal</option>
+        </select>
+    </div>
+    
     <div id="payment-element">
         <!--Stripe.js injects the Payment Element-->
     </div>
@@ -175,12 +183,14 @@
               Email: $("#email").val(),
               Address: $("#address").val(),
               City: $("#city").val(),
+              SubscriptionType: $("#subscriptionType").val(),
             }),
           });
              
         const resSubscriptionData = await resSubscription.json();
         
         if (!resSubscription.ok){
+            console.log(JSON.stringify(resSubscriptionData))
             handleValidationProblem(resSubscriptionData);
             submitBtn.disabled = false;
             return;
@@ -281,13 +291,9 @@
     function convertValidationProblemToHtml(validationProblem) {
         let html = "<ul>";
 
-        for (const [key, errors] of Object.entries(validationProblem.errors)) {
-            for (const error of errors) {
-                // console.log("key -> " + key);
-                // console.log("error -> " + error);
-                html += `<!--<li><strong>${key}:</strong> ${error}</li>-->`;
-                html += `<li><strong>${error}</strong></li>`;
-            }
+        for (var item of validationProblem.errors) {
+            console.log(item.code + " " + item.description);
+            html += `<li><strong>${item.code}</strong> -> ${item.description}</li>`;
         }
 
         html += "</ul>";

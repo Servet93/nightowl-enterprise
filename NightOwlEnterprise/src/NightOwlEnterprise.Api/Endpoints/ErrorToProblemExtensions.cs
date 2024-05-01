@@ -41,7 +41,7 @@ public static class IdentityResultExtensions
         return TypedResults.Problem(detail, statusCode: StatusCodes.Status400BadRequest, extensions:dictExtensions);
     }
     
-    public static ProblemHttpResult CreateProblem(this ErrorDescriptor errorDescriptor, string?detail = null)
+    public static ProblemHttpResult CreateProblem(this ErrorDescriptor errorDescriptor, string? detail = null)
     {
         var dictExtensions = new Dictionary<string, object?>()
         {

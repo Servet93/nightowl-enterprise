@@ -22,7 +22,7 @@ public static class StudentIdentityEndpoints
 
         routeGroup.MapRegister<ApplicationUser>((IEmailSender<ApplicationUser>)emailSender,
             linkGenerator);
-        routeGroup.MapPayment<ApplicationUser>(stripeCredentialSigningSecret);
+        routeGroup.MapPayment<ApplicationUser>(stripeCredential);
         // routeGroup.MapLogin<ApplicationUser>(jwtHelper);
         // routeGroup.MapRefresh<ApplicationUser>(jwtHelper);
         //routeGroup.MapConfirmEmail<ApplicationUser>();

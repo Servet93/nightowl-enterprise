@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.IO.Pipelines;
 using System.Runtime.InteropServices.JavaScript;
 using System.Security.Cryptography;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -15,10 +16,9 @@ public static class Payment
 {
     private static readonly EmailAddressAttribute _emailAddressAttribute = new();
     
-    public static void MapPayment<TUser>(this IEndpointRouteBuilder endpoints, string stripeCredentialSigningSecret)
+    public static void MapPayment<TUser>(this IEndpointRouteBuilder endpoints, StripeCredential stripeCredential)
         where TUser : class, new()
     {
-        
         // NOTE: We cannot inject UserManager<TUser> directly because the TUser generic parameter is currently unsupported by RDG.
         // https://github.com/dotnet/aspnetcore/issues/47338
         endpoints.MapPost("/payment", async Task<Results<Ok<ConfirmIntentResult>, ProblemHttpResult>>
@@ -117,7 +117,8 @@ public static class Payment
         {
             var identityErrors = new List<IdentityError>();
 
-            var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
+            var dbContext = sp.GetRequiredService<ApplicationDbContext>();
+            UserManager<ApplicationUser?> userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
             var errorDescriber = sp.GetRequiredService<TurkishIdentityErrorDescriber>();
 
             if (!userManager.SupportsUserEmail)
@@ -153,66 +154,83 @@ public static class Payment
                 identityErrors.Add(errorDescriber.InvalidCity(city));
                 //return IdentityResult.Failed(errorDescriber.InvalidCity(city)).CreateValidationProblem();
             }
-
-            var userName = email.Split('@')[0];
             
-            var user = new ApplicationUser()
-            {
-                Name = name,
-                UserName = userName,
-                Email = email,
-                Address = address,
-                City = city,
-                UserType = UserType.Student,
-                StudentDetail = new StudentDetail()
-                {
-                    Status = StudentStatus.PaymentAwaiting, 
-                }
-            };
-            
-            var result = await userManager.CreateAsync(user);
-
-            if (!result.Succeeded)
-            {
-                identityErrors.AddRange(result.Errors);
-                //return result.CreateValidationProblem();
-            }
-
             if (identityErrors.Any())
             {
-                return identityErrors.CreateProblem("Öğrenci kaydetme işlemi başarısız.");
+                return identityErrors.CreateProblem("Öğrenci kaydetme işlemi başarısız");
             }
 
-            var userId = user.Id;
+            ApplicationUser? user = null;
             
-            var createCustomerResult = CreateCustomer(user);
+            user = dbContext.Users.FirstOrDefault(x => x.Email == email);
 
-            if (!createCustomerResult.Item1)
+            if (user is null)
             {
-                await userManager.DeleteAsync(user);
+                var userName = email.Split('@')[0];
+            
+                user = new ApplicationUser()
+                {
+                    Name = name,
+                    UserName = userName,
+                    Email = email,
+                    Address = address,
+                    City = city,
+                    UserType = UserType.Student,
+                    StudentDetail = new StudentDetail()
+                    {
+                        Status = StudentStatus.PaymentAwaiting,
+                    }
+                };
+            
+                var result = await userManager.CreateAsync(user);
 
-                var error = new ErrorDescriptor("CreateCustomerOnStripeError", createCustomerResult.Item2);
+                if (!result.Succeeded)
+                {
+                    identityErrors.AddRange(result.Errors);
+                    //return result.CreateValidationProblem();
+                }
 
-                return error.CreateProblem("Öğrenci kaydetme işlemi başarısız.");
+                if (identityErrors.Any())
+                {
+                    return identityErrors.CreateProblem("Öğrenci kaydetme işlemi başarısız.");
+                }
                 
-                // return TypedResults.ValidationProblem(new Dictionary<string, string[]>()
-                // {
-                //     { "CreateCustomerOnStripeError", new string[] {createCustomerResult.Item2}},
-                // });
+                var userId = user.Id;
+            
+                var createCustomerResult = CreateCustomer(user);
+
+                if (!createCustomerResult.Item1)
+                {
+                    await userManager.DeleteAsync(user);
+
+                    var error = new ErrorDescriptor("CreateCustomerOnStripeError", createCustomerResult.Item2);
+
+                    return error.CreateProblem("Öğrenci kaydetme işlemi başarısız.");
+                
+                    // return TypedResults.ValidationProblem(new Dictionary<string, string[]>()
+                    // {
+                    //     { "CreateCustomerOnStripeError", new string[] {createCustomerResult.Item2}},
+                    // });
+                }
+                
+                var customerId = createCustomerResult.Item3.Id;
+
+                user.CustomerId = customerId;
+            
+                await userManager.UpdateAsync(user);
+                
             }
 
-            var customerId = createCustomerResult.Item3.Id;
-
-            user.CustomerId = customerId;
+            var priceId = registration.SubscriptionType == SubscriptionType.Coach
+                ? stripeCredential.DereceliKocPriceId
+                : stripeCredential.PdrPriceId;            
             
-            await userManager.UpdateAsync(user);
-            
-            var createSubscriptionResult = CreateSubscription(user.Email, customerId, "price_1OvFmMEyxtA03PfNmgnvxwSu",
+            var createSubscriptionResult = CreateSubscription(user.Email, user.CustomerId, priceId,
                 user.Id, registration.PaymentMethodId, context);
 
             if (!createSubscriptionResult.Item1)
             {
-                await userManager.DeleteAsync(user);
+                // await userManager.DeleteAsync(user);
              
                 var error = new ErrorDescriptor("CreateSubscriptionOnStripeError", createSubscriptionResult.Item2);
 
@@ -241,7 +259,7 @@ public static class Payment
                 var json = await new StreamReader(httpContext.Request.Body).ReadToEndAsync();
 
                 var stripeEvent = EventUtility.ConstructEvent(json,
-                    httpContext.Request.Headers["Stripe-Signature"], stripeCredentialSigningSecret);
+                    httpContext.Request.Headers["Stripe-Signature"], stripeCredential.SigningSecret);
 
                 if (stripeEvent?.Data?.Object is null)
                 {
@@ -250,107 +268,24 @@ public static class Payment
                 }
 
                 var customerService = new CustomerService();
+                var subscriptionService = new SubscriptionService();
+                var invoiceService = new InvoiceService();
+                var paymentIntentService = new PaymentIntentService();
+                
                 Customer customer = null;
+                Subscription subscription = null;
                 ApplicationUser user = null;
-                PaymentIntent intent = null;
+                PaymentIntent paymentIntent = null;
                 Invoice invoice = null;
-                string userId;
-
+                string strUserId = null;
+                Guid userId;
+                SubscriptionType? subscriptionType = null;
+                
                 var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
                 var dbContext = sp.GetRequiredService<ApplicationDbContext>();
 
                 switch (stripeEvent.Type)
                 {
-                    case "payment_intent.succeeded":
-
-                        intent = (PaymentIntent)stripeEvent.Data.Object;
-                        
-                        logger.LogInformation(
-                            "Payment Succeeded. PaymentIntentId: {PaymentIntentId}, CustomerId: {CustomerId}",
-                            intent.Id, intent.CustomerId);
-
-                        customer = customerService.Get(intent.CustomerId);
-
-                        customer.Metadata?.TryGetValue("UserId", out userId);
-
-                        user = await GetUser(logger, dbContext, userManager, customer.Metadata);
-
-                        if (user is null)
-                        {
-                            logger.LogWarning("User not found. ReceiptEmail: {ReceiptEmail}", intent.ReceiptEmail);
-                            return TypedResults.Empty;
-                        }
-
-                        var generatedPassword = PasswordGenerator.GeneratePassword(8);
-
-                        var addPasswordAsyncResult = await userManager.AddPasswordAsync(user!, generatedPassword);
-
-                        if (!addPasswordAsyncResult.Succeeded)
-                        {
-                            var descriptions = addPasswordAsyncResult.Errors.Select(x => x.Description);
-                            var errMsg = string.Join(",", descriptions);
-                            logger.LogWarning(
-                                "User password couldn't added. PaymentIntentId: {PaymentIntentId}, CustomerId: {CustomerId}, UserId: {UserId}, Message: {Message}",
-                                intent.Id, intent.CustomerId, user.Id, errMsg);
-
-                            return TypedResults.Empty;
-                        }
-
-                        var studentEmailSender = sp.GetRequiredService<StudentEmailSender>();
-
-                        user.StudentDetail.Status = StudentStatus.Active;
-
-                        var updateAsyncResult = await userManager.UpdateAsync(user);
-
-                        if (!updateAsyncResult.Succeeded)
-                        {
-                            var descriptions = updateAsyncResult.Errors.Select(x => x.Description);
-                            var errMsg = string.Join(",", descriptions);
-                            logger.LogWarning(
-                                "User couldn't updated. PaymentIntentId: {PaymentIntentId}, CustomerId: {CustomerId}, UserId: {UserId}, Message: {Message}",
-                                intent.Id, user.CustomerId, user.Id,
-                                errMsg);
-
-                            return TypedResults.Empty;
-                        }
-
-                        await studentEmailSender.SendSignInInfo(user!, generatedPassword);
-
-                        break;
-                    case "payment_intent.payment_failed":
-
-                        intent = (PaymentIntent)stripeEvent.Data.Object;
-
-                        logger.LogInformation(
-                            "Payment Failure. PaymentIntentId: {PaymentIntentId}, CustomerId: {CustomerId}", intent.Id,
-                            intent.CustomerId);
-
-                        customer = customerService.Get(intent.CustomerId);
-
-                        customer.Metadata?.TryGetValue("UserId", out userId);
-
-                        user = await GetUser(logger, dbContext, userManager, customer.Metadata);
-
-                        if (user is null)
-                        {
-                            logger.LogWarning("User not found. ReceiptEmail: {ReceiptEmail}", intent.ReceiptEmail);
-                            return TypedResults.Empty;
-                        }
-
-                        // Notify the customer that payment failed
-
-                        var deleteAsyncResult = await userManager.DeleteAsync(user!);
-
-                        if (!deleteAsyncResult.Succeeded)
-                        {
-                            var descriptions = deleteAsyncResult.Errors.Select(x => x.Description);
-                            var errMsg = string.Join(",", descriptions);
-                            logger.LogWarning(
-                                "User couldn't deleted. PaymentIntentId: {PaymentIntentId}, UserId: {UserId}, Message: {Message}",
-                                intent, user.Id, errMsg);
-                        }
-
-                        break;
                     case "invoice.paid":
                         // Used to provision services after the trial has ended.
                         // The status of the invoice will show up as paid. Store the status in your
@@ -358,25 +293,101 @@ public static class Payment
                         // limits.
                         invoice = (Invoice)stripeEvent.Data.Object;
 
-                        customer = customerService.Get(invoice.CustomerId);
+                        //customer = customerService.Get(invoice.CustomerId);
+                        
+                        invoice.SubscriptionDetails.Metadata.TryGetValue("UserId", out strUserId);
 
-                        customer.Metadata.TryGetValue("UserId", out userId);
+                        Guid.TryParse(strUserId, out userId);
+                        // customer.Metadata.TryGetValue("UserId", out strUserId);
                         
                         logger.LogInformation(
                             "Invoice Paid. SubscriptionId: {SubscriptionId}, InvoiceId: {InvoiceId}, CustomerId: {CustomerId}, UserId: {UserId}",
-                            invoice.SubscriptionId, invoice.Id, invoice.CustomerId, userId);
+                            invoice.SubscriptionId, invoice.Id, invoice.CustomerId, strUserId);
 
-                        user = await GetUser(logger, dbContext, userManager, customer.Metadata);
+                        user = await GetUser(logger, dbContext, userManager, invoice.SubscriptionDetails.Metadata);
 
                         if (user is null)
                         {
                             return TypedResults.Empty;
                         }
 
-                        user.StudentDetail.Status = StudentStatus.Active;
-                        user.SubscriptionId = invoice.SubscriptionId;
+                        var subscriptionPriceId = invoice.Lines.FirstOrDefault()?.Price.Id;
                         
-                        await userManager.UpdateAsync(user);
+                        subscription = subscriptionService.Get(invoice.SubscriptionId);
+                        
+                        subscriptionType = subscriptionPriceId == stripeCredential.DereceliKocPriceId
+                            ? SubscriptionType.Coach
+                            : SubscriptionType.Pdr;
+                        
+                        //Hesap oluşturulmuş password atanmamış
+                        if (string.IsNullOrEmpty(user.PasswordHash))
+                        {
+                            var generatedPassword = PasswordGenerator.GeneratePassword(8);
+
+                            var addPasswordAsyncResult = await userManager.AddPasswordAsync(user!, generatedPassword);
+                            
+                            if (!addPasswordAsyncResult.Succeeded)
+                            {
+                                var descriptions = addPasswordAsyncResult.Errors.Select(x => x.Description);
+                                var errMsg = string.Join(",", descriptions);
+                                logger.LogWarning(
+                                    "User password couldn't added. PaymentIntentId: {PaymentIntentId}, CustomerId: {CustomerId}, UserId: {UserId}, Message: {Message}",
+                                    paymentIntent.Id, paymentIntent.CustomerId, user.Id, errMsg);
+
+                                return TypedResults.Empty;
+                            }
+                            
+                            var studentEmailSender = sp.GetRequiredService<StudentEmailSender>();
+
+                            user.StudentDetail.Status = StudentStatus.OnboardProgress;
+
+                            var updateAsyncResult = await userManager.UpdateAsync(user);
+
+                            if (!updateAsyncResult.Succeeded)
+                            {
+                                var descriptions = updateAsyncResult.Errors.Select(x => x.Description);
+                                var errMsg = string.Join(",", descriptions);
+                                logger.LogWarning(
+                                    "User couldn't updated. PaymentIntentId: {PaymentIntentId}, CustomerId: {CustomerId}, UserId: {UserId}, Message: {Message}",
+                                    paymentIntent.Id, user.CustomerId, user.Id,
+                                    errMsg);
+
+                                return TypedResults.Empty;
+                            }
+
+                            await studentEmailSender.SendSignInInfo(user!, generatedPassword);
+                        }
+                        
+                        var subscriptionHistory = dbContext.SubscriptionHistories
+                            .FirstOrDefault(x => x.UserId == userId && x.SubscriptionId == invoice.SubscriptionId && x.InvoiceId == invoice.Id);
+                        
+                        if (subscriptionHistory is not null)
+                        {
+                            subscriptionHistory.InvoiceState = invoice.Status;
+                            subscriptionHistory.SubscriptionState = subscription.Status;
+                            subscriptionHistory.SubscriptionStartDate = subscription.CurrentPeriodStart;
+                            subscriptionHistory.SubscriptionEndDate = subscription.CurrentPeriodEnd;
+                            subscriptionHistory.Type = subscriptionType.Value;
+                            subscriptionHistory.LastError = string.Empty;
+                            
+                            user.StudentDetail.Status = StudentStatus.Active;
+                        }
+                        else
+                        {
+                            dbContext.SubscriptionHistories.Add(new SubscriptionHistory()
+                            {
+                                UserId = userId,
+                                InvoiceId = invoice.Id,
+                                SubscriptionId = invoice.SubscriptionId,
+                                InvoiceState = invoice.Status,
+                                SubscriptionState = subscription.Status,
+                                SubscriptionStartDate = subscription.CurrentPeriodStart,
+                                SubscriptionEndDate = subscription.CurrentPeriodEnd,
+                                Type = subscriptionType.Value,
+                            });    
+                        }
+
+                        await dbContext.SaveChangesAsync();
 
                         break;
 
@@ -387,27 +398,91 @@ public static class Payment
                         // limits.
                         invoice = (Invoice)stripeEvent.Data.Object;
 
-                        customer = customerService.Get(invoice.CustomerId);
+                        // customer = customerService.Get(invoice.CustomerId);
+                        //
+                        // customer.Metadata.TryGetValue("UserId", out strUserId);
+                        
+                        invoice.SubscriptionDetails.Metadata.TryGetValue("UserId", out strUserId);
 
-                        customer.Metadata.TryGetValue("UserId", out userId);
+                        Guid.TryParse(strUserId, out userId);
 
                         logger.LogInformation(
                             "Invoice Payment Failed. SubscriptionId: {SubscriptionId}, InvoiceId: {InvoiceId}, CustomerId: {CustomerId}, UserId: {UserId}",
-                            invoice.SubscriptionId, invoice.Id, invoice.CustomerId, userId);
+                            invoice.SubscriptionId, invoice.Id, invoice.CustomerId, strUserId);
 
-                        user = await GetUser(logger, dbContext, userManager, customer.Metadata);
+                        user = await GetUser(logger, dbContext, userManager, invoice.SubscriptionDetails.Metadata);
 
                         if (user is null)
                         {
                             return TypedResults.Empty;
                         }
+                        
+                        // Notify the customer that payment failed
+                        // Hesap ilk oluşturmada bir şekilde ödeme alınamazsa kullanıcıyı sil. 
+                        // Diyelimki hesap oluşturuldu 1 ay kullanıldı ödeme günü geldi.Mail gönderildi ve ödeme isteniyor
+                        //Ödeme alamadığında islinmemesi için password ataması yapılıp yapılmadığına bakıyoruz
+                        //Yapılmamışsa ilk kayıt aşamasıdır diyebiliriz
+                        
+                        subscriptionPriceId = invoice.Lines.FirstOrDefault()?.Price.Id;
+                    
+                        //subscription = subscriptionService.Get(invoice.SubscriptionId);
+                    
+                        subscriptionType = subscriptionPriceId == stripeCredential.DereceliKocPriceId
+                            ? SubscriptionType.Coach
+                            : SubscriptionType.Pdr;
+                        
+                        subscription = subscriptionService.Get(invoice.SubscriptionId);
+
+                        var _subscriptionHistory = dbContext.SubscriptionHistories
+                            .FirstOrDefault(x =>
+                                x.UserId == userId && x.SubscriptionId == invoice.SubscriptionId &&
+                                x.InvoiceId == invoice.Id);
+
+                        paymentIntent = paymentIntentService.Get(invoice.PaymentIntentId);
+                        
+                        // subscriptionType =
+                        //     subscription.Items.FirstOrDefault().Price.Id == stripeCredential.DereceliKocPriceId
+                        //         ? SubscriptionType.Coach
+                        //         : SubscriptionType.Pdr;
+
+                        var lastError = string.Empty;
+
+                        if (paymentIntent?.LastPaymentError is not null)
+                        {
+                            lastError =
+                                $"{paymentIntent.LastPaymentError.Code}, {paymentIntent.LastPaymentError.Message}, {paymentIntent.LastPaymentError.ErrorDescription}";
+                        }else if (paymentIntent?.Status is not null)
+                        {
+                            lastError = paymentIntent.Status;
+                        }
+                        
+                        if (_subscriptionHistory is null)
+                        {
+                            dbContext.SubscriptionHistories.Add(new SubscriptionHistory()
+                            {
+                                UserId = userId,
+                                InvoiceId = invoice.Id,
+                                SubscriptionId = invoice.SubscriptionId,
+                                InvoiceState = invoice.Status,
+                                SubscriptionState = subscription.Status,
+                                SubscriptionStartDate = subscription.CurrentPeriodStart,
+                                SubscriptionEndDate = subscription.CurrentPeriodEnd,
+                                Type = subscriptionType.Value,
+                                LastError = lastError
+                            });
+                        }
+                        else
+                        {
+                            _subscriptionHistory.LastError = lastError;
+                            _subscriptionHistory.SubscriptionState = subscription.Status;
+                            _subscriptionHistory.InvoiceState = invoice.Status;
+                        }
 
                         user.StudentDetail.Status = StudentStatus.PaymentAwaiting;
 
-                        await userManager.UpdateAsync(user);
-
+                        await dbContext.SaveChangesAsync();
+                        
                         break;
-
                     case "customer.subscription.deleted":
                         // Used to provision services after the trial has ended.
                         // The status of the invoice will show up as paid. Store the status in your
@@ -450,7 +525,9 @@ public static class Payment
         {
             Guid.TryParse(strUserId, out var userId);
 
-            user = dbContext.Users.Include(x => x.StudentDetail).FirstOrDefault(x => x.Id == userId);
+            user = dbContext.Users
+                .Include(x => x.StudentDetail)
+                .FirstOrDefault(x => x.Id == userId);
 
             if (user is null)
             {
@@ -462,7 +539,7 @@ public static class Payment
         return user;
     }
     
-    private static (bool, string, Customer) CreateCustomer(ApplicationUser user)
+    private static (bool, string, Customer) CreateCustomer(ApplicationUser? user)
     {
         var errorMessage = string.Empty;
         
@@ -497,8 +574,11 @@ public static class Payment
                     {"UserId", user.Id.ToString()}
                 }
             };
+            
             var service = new CustomerService();
+            
             var customer = service.Create(options);
+            
             return (true, errorMessage, customer);
         }
         catch (Exception e)
@@ -668,6 +748,8 @@ public static class Payment
         
         public required string PaymentMethodId { get; init; }
         
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public required SubscriptionType SubscriptionType { get; init; }
     } 
     
     public class PasswordGenerator
