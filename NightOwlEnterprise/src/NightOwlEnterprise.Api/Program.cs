@@ -495,6 +495,8 @@ app.MapGet("/conf", async context =>
     sb.AppendLine($"Stripe.PublishableKey -> {stripeCredential.PublishableKey}");
     sb.AppendLine($"Stripe.SecretKey -> {stripeCredential.SecretKey}");
     sb.AppendLine($"Stripe.SigningSecret -> {stripeCredential.SigningSecret}");
+    sb.AppendLine($"Stripe.DereceliKocPriceId -> {stripeCredential.DereceliKocPriceId}");
+    sb.AppendLine($"Stripe.PdrPriceId -> {stripeCredential.PdrPriceId}");
     sb.AppendLine($"JwtConfig.Audience -> {jwtConfig!.Audience}");
     sb.AppendLine($"JwtConfig.Issuer -> {jwtConfig.Issuer}");
     sb.AppendLine($"JwtConfig.Key -> {jwtConfig.Key}");
