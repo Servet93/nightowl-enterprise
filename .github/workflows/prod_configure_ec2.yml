@@ -44,6 +44,8 @@ jobs:
             sudo sed -i "/^Stripe__SecretKey=/d" /etc/environment
             sudo sed -i "/^Stripe__PublishableKey=/d" /etc/environment
             sudo sed -i "/^Stripe__SigningSecret=/d" /etc/environment
+            sudo sed -i "/^Stripe__DereceliKocPriceId=/d" /etc/environment
+            sudo sed -i "/^Stripe__PdrPriceId=/d" /etc/environment
             #Remove Jwt configs
             sudo sed -i "/^Jwt__Issuer=/d" /etc/environment
             sudo sed -i "/^Jwt__Audience=/d" /etc/environment
@@ -72,6 +74,8 @@ jobs:
             echo 'Stripe__SecretKey="${{ vars.PROD_STRIPE__SECRETKEY }}"' | sudo tee -a /etc/environment
             echo 'Stripe__PublishableKey="${{ vars.PROD_STRIPE__PUBLISHABLEKEY }}"' | sudo tee -a /etc/environment
             echo 'Stripe__SigningSecret="${{ vars.PROD_STRIPE__SIGNINGSECRET }}"' | sudo tee -a /etc/environment
+            echo 'Stripe__DereceliKocPriceId="${{ vars.PROD_STRIPE__DERECELIKOCPRICEID }}"' | sudo tee -a /etc/environment
+            echo 'Stripe__PdrPriceId="${{ vars.PROD_STRIPE__NORMALPRICEID }}"' | sudo tee -a /etc/environment
             #Define Jwt configs
             echo 'Jwt__Issuer="${{ vars.PROD_JWT__ISSUER }}"' | sudo tee -a /etc/environment
             echo 'Jwt__Audience="${{ vars.PROD_JWT__AUDIENCE }}"' | sudo tee -a /etc/environment
