@@ -253,9 +253,10 @@ public static class Payment
 
             var logger = loggerFactory.CreateLogger("Payment-Webhook");
 
+            var stripeEventType = "Common";
+            
             try
             {
-
                 var json = await new StreamReader(httpContext.Request.Body).ReadToEndAsync();
 
                 var stripeEvent = EventUtility.ConstructEvent(json,
@@ -284,6 +285,8 @@ public static class Payment
                 var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
                 var dbContext = sp.GetRequiredService<ApplicationDbContext>();
 
+                stripeEventType = stripeEvent.Type;
+                
                 switch (stripeEvent.Type)
                 {
                     case "invoice.paid":
@@ -384,6 +387,7 @@ public static class Payment
                                 SubscriptionStartDate = subscription.CurrentPeriodStart,
                                 SubscriptionEndDate = subscription.CurrentPeriodEnd,
                                 Type = subscriptionType.Value,
+                                LastError = string.Empty,
                             });    
                         }
 
@@ -502,11 +506,11 @@ public static class Payment
             }
             catch (StripeException e)
             {
-                logger.LogError(e, "StripeException - Payment Webhook has an error");
+                logger.LogError(e, "StripeException - Payment Webhook has an error, {StripeEventType}", stripeEventType);
             }
             catch (Exception e)
             {
-                logger.LogError(e, "Exception - Payment Webhook has an error");
+                logger.LogError(e, "Exception - Payment Webhook has an error, {StripeEventType}", stripeEventType);
             }
 
             return TypedResults.Empty;
@@ -623,7 +627,6 @@ public static class Payment
             try
             {
                 Subscription subscription = subscriptionService.Create(subscriptionOptions);
-
                 var paymentIntentService = new PaymentIntentService();
                 var paymentIntentConfirmOptions = new PaymentIntentConfirmOptions()
                 {
