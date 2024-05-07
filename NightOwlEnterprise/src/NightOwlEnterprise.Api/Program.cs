@@ -142,6 +142,14 @@ builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
     .AddErrorDescriber<TurkishIdentityErrorDescriber>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policyBuilder =>
+    {
+        policyBuilder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+    });
+});
+
 builder.Services.AddSingleton<GetCoachAvailabilityDays>();
 
 var stripeCredential = builder.Configuration.GetSection(StripeCredential.StripeSection).Get<StripeCredential>();
@@ -367,6 +375,8 @@ if (isPostgresEnabled)
     SeedDepartmentsAndUniversities(db);
     await SeedCoachs(db, userManager);
 }
+
+app.UseCors("AllowAll");
 
 app.UseStaticFiles();
 
