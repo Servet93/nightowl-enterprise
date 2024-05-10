@@ -19,7 +19,6 @@ public static class Invite
 {
     public static void MapInviteOperationForCoach(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapInvitationDetailList();
         endpoints.MapSpecifyHour();
     }
 }

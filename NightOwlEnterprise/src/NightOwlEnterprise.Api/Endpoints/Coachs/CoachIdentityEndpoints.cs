@@ -12,6 +12,7 @@ public static class CoachIdentityEndpoints
         
         var emailSender = endpoints.ServiceProvider.GetRequiredService<IEmailSender<TUser>>();
         var linkGenerator = endpoints.ServiceProvider.GetRequiredService<LinkGenerator>();
+        var coachConfig = endpoints.ServiceProvider.GetRequiredService<IOptions<CoachConfig>>()?.Value;
         var stripeCredential = endpoints.ServiceProvider.GetRequiredService<IOptions<StripeCredential>>()?.Value;
         var stripeCredentialSigningSecret = stripeCredential?.SigningSecret;
         
@@ -23,8 +24,11 @@ public static class CoachIdentityEndpoints
         routeGroup.MapRegister<ApplicationUser>((IEmailSender<ApplicationUser>)emailSender,
             linkGenerator);
         routeGroup.MapList();
-        routeGroup.MapCalendar();
         routeGroup.MapOnboard();
+        routeGroup.MapQuota(coachConfig);
+        routeGroup.MapReserveCoach();
+        routeGroup.MapReservationDays();
+        routeGroup.MapInvitationDetailList();
 
         return new IdentityEndpointsConventionBuilder(routeGroup);
     }

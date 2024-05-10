@@ -186,64 +186,247 @@ public static class Onboard
                         });
                 }
 
+                var studentId = claimsPrincipal.GetId();
+
                 var dbContext = sp.GetRequiredService<ApplicationDbContext>();
 
-                var mongoDatabase = sp.GetRequiredService<IMongoDatabase>();
+                // var mongoDatabase = sp.GetRequiredService<IMongoDatabase>();
+                //
+                // var onboardStudentCollection = mongoDatabase.GetCollection<OnboardStudent>("onboardStudents");
 
-                var onboardStudentCollection = mongoDatabase.GetCollection<OnboardStudent>("onboardStudents");
+                // var strUserId = claimsPrincipal.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier).Value;
+                //
+                // var filter = Builders<OnboardStudent>.Filter.Eq(s => s.UserId, strUserId);
 
-                var strUserId = claimsPrincipal.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier).Value;
+                // var onboardStudent = await onboardStudentCollection.Find(filter).FirstOrDefaultAsync();
 
-                var filter = Builders<OnboardStudent>.Filter.Eq(s => s.UserId, strUserId);
-
-                var onboardStudent = await onboardStudentCollection.Find(filter).FirstOrDefaultAsync();
-
-                if (onboardStudent is null)
-                {
-                    await onboardStudentCollection.InsertOneAsync(new OnboardStudent()
-                    {
-                        UserId = strUserId,
-                        Data = request,
-                    });
-
-                    Guid.TryParse(strUserId, out var userId);
-
-                    var user = await dbContext.Users
+                var student =
+                    await dbContext.Users
                         .Include(x => x.StudentDetail)
                         .Include(x => x.SubscriptionHistories)
-                        .FirstOrDefaultAsync(x => x.Id == userId);
+                        .FirstOrDefaultAsync(x => x.Id == studentId && x.UserType == UserType.Student);
 
-                    if (user is not null)
+                student.StudentDetail.Name = request.StudentGeneralInfo.Name;
+                student.StudentDetail.Surname = request.StudentGeneralInfo.Surname;
+                student.StudentDetail.Email = request.StudentGeneralInfo.Email;
+                student.StudentDetail.Mobile = request.StudentGeneralInfo.Mobile;
+                student.StudentDetail.Grade = request.StudentGeneralInfo.Grade;
+                student.StudentDetail.ExamType = request.StudentGeneralInfo.ExamType;
+                
+                student.StudentDetail.ParentName = request.ParentInfo.Name;
+                student.StudentDetail.ParentSurname = request.ParentInfo.Surname;
+                student.StudentDetail.ParentEmail = request.ParentInfo.Email;
+                student.StudentDetail.ParentMobile = request.ParentInfo.Mobile;
+                
+                student.StudentDetail.HighSchool = request.AcademicSummary.HighSchool;
+                student.StudentDetail.HighSchoolGPA = request.AcademicSummary.HighSchoolGPA;
+
+                student.StudentDetail.GoalRanking = request.StudentGoals.GoalRanking;
+                student.StudentDetail.TytGoalNet = request.StudentGoals.TytGoalNet;
+                student.StudentDetail.AytGoalNet = request.StudentGoals.AytGoalNet;
+                student.StudentDetail.DesiredProfessionSchoolField = request.StudentGoals.DesiredProfessionSchoolField;
+
+                student.StudentDetail.ExpectationsFromCoaching = request.ExpectationsFromCoaching;
+
+                student.StudentDetail.Course = request.SupplementaryMaterials.Course;
+                student.StudentDetail.School = request.SupplementaryMaterials.School;
+                student.StudentDetail.Youtube = request.SupplementaryMaterials.Youtube;
+
+                if (request.SupplementaryMaterials.PrivateTutoring)
+                {
+                    student.StudentDetail.PrivateTutoringTyt = request.SupplementaryMaterials.PrivateTutoringTyt;
+                    student.StudentDetail.PrivateTutoringAyt = request.SupplementaryMaterials.PrivateTutoringAyt;
+                    
+                    if (request.SupplementaryMaterials.PrivateTutoringTyt)
                     {
-                        var subscription = user.SubscriptionHistories.Where(x => x.SubscriptionEndDate != null)
-                            .OrderBy(x => x.SubscriptionEndDate.Value)
-                            .FirstOrDefault(x => x.SubscriptionEndDate.Value > DateTime.UtcNow);
-                        
-                        if (subscription.Type == SubscriptionType.Pdr)
+                        student.PrivateTutoringTYT = new PrivateTutoringTYT()
                         {
-                            user!.StudentDetail.Status = StudentStatus.Active;    
-                        }else if (subscription.Type == SubscriptionType.Coach)
+                            Biology = request.SupplementaryMaterials.PrivateTutoringTytLessons.Biology,
+                            Chemistry = request.SupplementaryMaterials.PrivateTutoringTytLessons.Chemistry,
+                            Geography = request.SupplementaryMaterials.PrivateTutoringTytLessons.Geography,
+                            Geometry = request.SupplementaryMaterials.PrivateTutoringTytLessons.Geometry,
+                            History = request.SupplementaryMaterials.PrivateTutoringTytLessons.History,
+                            Mathematics = request.SupplementaryMaterials.PrivateTutoringTytLessons.Mathematics,
+                            Philosophy = request.SupplementaryMaterials.PrivateTutoringTytLessons.Philosophy,
+                            Physics = request.SupplementaryMaterials.PrivateTutoringTytLessons.Physics,
+                            Religion = request.SupplementaryMaterials.PrivateTutoringTytLessons.Religion,
+                            Turkish = request.SupplementaryMaterials.PrivateTutoringTytLessons.Turkish,
+                        };
+                    }
+
+                    if (request.SupplementaryMaterials.PrivateTutoringAyt)
+                    {
+                        if (student.StudentDetail.ExamType == ExamType.TM)
                         {
-                            user!.StudentDetail.Status = StudentStatus.CoachSelect;
+                            student.PrivateTutoringTM = new PrivateTutoringTM()
+                            {
+                                Geography = request.SupplementaryMaterials.PrivateTutoringAytLessons.Tm.Geography,
+                                Geometry = request.SupplementaryMaterials.PrivateTutoringAytLessons.Tm.Geometry,
+                                History = request.SupplementaryMaterials.PrivateTutoringAytLessons.Tm.History,
+                                Literature = request.SupplementaryMaterials.PrivateTutoringAytLessons.Tm.Literature,
+                                Mathematics = request.SupplementaryMaterials.PrivateTutoringAytLessons.Tm.Mathematics,
+                            };
                         }
-                        
-                        await dbContext.SaveChangesAsync();
+                        else if (student.StudentDetail.ExamType == ExamType.MF)
+                        {
+                            student.PrivateTutoringMF = new PrivateTutoringMF()
+                            {
+                                Biology = request.SupplementaryMaterials.PrivateTutoringAytLessons.Mf.Biology,
+                                Chemistry = request.SupplementaryMaterials.PrivateTutoringAytLessons.Mf.Chemistry,
+                                Geometry = request.SupplementaryMaterials.PrivateTutoringAytLessons.Mf.Geometry,
+                                Mathematics = request.SupplementaryMaterials.PrivateTutoringAytLessons.Mf.Mathematics,
+                                Physics = request.SupplementaryMaterials.PrivateTutoringAytLessons.Mf.Physics,
+                            };
+                        }
+                        else if (student.StudentDetail.ExamType == ExamType.Sozel)
+                        {
+                            student.PrivateTutoringSozel = new PrivateTutoringSozel()
+                            {
+                                Geography1 = request.SupplementaryMaterials.PrivateTutoringAytLessons.Sozel.Geography1,
+                                Geography2 = request.SupplementaryMaterials.PrivateTutoringAytLessons.Sozel.Geography2,
+                                History1 = request.SupplementaryMaterials.PrivateTutoringAytLessons.Sozel.History1,
+                                History2 = request.SupplementaryMaterials.PrivateTutoringAytLessons.Sozel.History2,
+                                Literature1 = request.SupplementaryMaterials.PrivateTutoringAytLessons.Sozel.Literature1,
+                                Philosophy = request.SupplementaryMaterials.PrivateTutoringAytLessons.Sozel.Philosophy,
+                                Religion = request.SupplementaryMaterials.PrivateTutoringAytLessons.Sozel.Religion,
+                            };
+                        }
+                        else if (student.StudentDetail.ExamType == ExamType.Dil)
+                        {
+                            student.PrivateTutoringDil = new PrivateTutoringDil()
+                            {
+                                YTD = request.SupplementaryMaterials.PrivateTutoringAytLessons.Dil.YTD
+                            };
+                        }
                     }
                 }
-                else
+                
+                if (request.IsTryPracticeTYTExamBefore)
                 {
-                    filter = Builders<OnboardStudent>.Filter.Eq(s => s.Id, onboardStudent.Id);
-
-                    await onboardStudentCollection.ReplaceOneAsync(filter, new OnboardStudent()
+                    student.TytNets = new TYTNets()
                     {
-                        Id = onboardStudent.Id,
-                        UserId = strUserId,
-                        Data = request,
-                    });
+                        Biology = request.LastPracticeTytExamPoints.Biology,
+                        Chemistry = request.LastPracticeTytExamPoints.Chemistry,
+                        Geography = request.LastPracticeTytExamPoints.Geography,
+                        Geometry = request.LastPracticeTytExamPoints.Geometry,
+                        Grammar = request.LastPracticeTytExamPoints.Grammar,
+                        History = request.LastPracticeTytExamPoints.History,
+                        Mathematics = request.LastPracticeTytExamPoints.Mathematics,
+                        Philosophy = request.LastPracticeTytExamPoints.Philosophy,
+                        Physics = request.LastPracticeTytExamPoints.Physics,
+                        Religion = request.LastPracticeTytExamPoints.Religion,
+                        Semantics = request.LastPracticeTytExamPoints.Semantics,
+                    };
                 }
 
+                if (request.IsTryPracticeAYTExamBefore)
+                {
+                    if (request.StudentGeneralInfo.ExamType == ExamType.TM)
+                    {
+                        student.TmNets = new TMNets()
+                        {
+                            Geography = request.LastPracticeTmExamPoints.Geography,
+                            Geometry = request.LastPracticeTmExamPoints.Geometry,
+                            History = request.LastPracticeTmExamPoints.History,
+                            Literature = request.LastPracticeTmExamPoints.Literature,
+                            Mathematics = request.LastPracticeTmExamPoints.Mathematics,
+                        };
+                    }
+                    else if (request.StudentGeneralInfo.ExamType == ExamType.MF)
+                    {
+                        student.MfNets = new MFNets()
+                        {
+                            Biology = request.LastPracticeMfExamPoints.Biology,
+                            Chemistry = request.LastPracticeMfExamPoints.Chemistry,
+                            Geometry = request.LastPracticeMfExamPoints.Geometry,
+                            Mathematics = request.LastPracticeMfExamPoints.Mathematics,
+                            Physics = request.LastPracticeMfExamPoints.Physics,
+                        };
+                    }
+                    else if (request.StudentGeneralInfo.ExamType == ExamType.Sozel)
+                    {
+                        student.SozelNets = new SozelNets()
+                        {
+                            Geography1 = request.LastPracticeSozelExamPoints.Geography1,
+                            Geography2 = request.LastPracticeSozelExamPoints.Geography2,
+                            History1 = request.LastPracticeSozelExamPoints.History1,
+                            History2 = request.LastPracticeSozelExamPoints.History2,
+                            Literature1 = request.LastPracticeSozelExamPoints.Literature1,
+                            Philosophy = request.LastPracticeSozelExamPoints.Philosophy,
+                            Religion = request.LastPracticeSozelExamPoints.Religion,
+                        };
+                    }
+                    else if (request.StudentGeneralInfo.ExamType == ExamType.Dil)
+                    {
+                        student.DilNets = new DilNets()
+                        {
+                            YDT = request.LastPracticeDilExamPoints.YDT,
+                        };
+                    }
+                }
+                
+                var subscription = student.SubscriptionHistories.Where(x => x.SubscriptionEndDate != null)
+                    .OrderBy(x => x.SubscriptionEndDate.Value)
+                    .FirstOrDefault(x => x.SubscriptionEndDate.Value > DateTime.UtcNow);
+
+                if (subscription.Type == SubscriptionType.Pdr)
+                {
+                    student!.StudentDetail.Status = StudentStatus.Active;
+                }
+                else if (subscription.Type == SubscriptionType.Coach)
+                {
+                    student!.StudentDetail.Status = StudentStatus.CoachSelect;
+                }
+
+                await dbContext.SaveChangesAsync();
+
+                // if (onboardStudent is null)
+                // {
+                //     await onboardStudentCollection.InsertOneAsync(new OnboardStudent()
+                //     {
+                //         UserId = strUserId,
+                //         Data = request,
+                //     });
+                //
+                //     Guid.TryParse(strUserId, out var userId);
+                //
+                //     var user = await dbContext.Users
+                //         .Include(x => x.StudentDetail)
+                //         .Include(x => x.SubscriptionHistories)
+                //         .FirstOrDefaultAsync(x => x.Id == userId);
+                //
+                //     if (user is not null)
+                //     {
+                //         var subscription = user.SubscriptionHistories.Where(x => x.SubscriptionEndDate != null)
+                //             .OrderBy(x => x.SubscriptionEndDate.Value)
+                //             .FirstOrDefault(x => x.SubscriptionEndDate.Value > DateTime.UtcNow);
+                //         
+                //         if (subscription.Type == SubscriptionType.Pdr)
+                //         {
+                //             user!.StudentDetail.Status = StudentStatus.Active;    
+                //         }else if (subscription.Type == SubscriptionType.Coach)
+                //         {
+                //             user!.StudentDetail.Status = StudentStatus.CoachSelect;
+                //         }
+                //         
+                //         await dbContext.SaveChangesAsync();
+                //     }
+                // }
+                // else
+                // {
+                //     filter = Builders<OnboardStudent>.Filter.Eq(s => s.Id, onboardStudent.Id);
+                //
+                //     await onboardStudentCollection.ReplaceOneAsync(filter, new OnboardStudent()
+                //     {
+                //         Id = onboardStudent.Id,
+                //         UserId = strUserId,
+                //         Data = request,
+                //     });
+                // }
+
                 return TypedResults.Ok();
-            }).RequireAuthorization().Produces<ProblemHttpResult>(400).WithOpenApi()
+            }).RequireAuthorization("Student").Produces<ProblemHttpResult>(StatusCodes.Status400BadRequest)
+            .WithOpenApi()
             .WithTags("Öğrenci Tanışma Formu İşlemleri");
         
         // endpoints.MapPost("/onboard/terms-and-conditions-accepted", async Task<Results<Ok, ProblemHttpResult>>
@@ -849,24 +1032,7 @@ public static class Onboard
         public string Grade  { get; set; }
      */
     
-    public enum ExamType
-    {
-        TYT,
-        TM,
-        MF,
-        Sozel,
-        Dil,
-    }
-
-    public enum Grade
-    {
-        Dokuz,
-        On,
-        Onbir,
-        Oniki,
-        Mezun
-    }
-
+    
     public class StudentGeneralInfo
     {
         public string Name { get; set; }
@@ -1071,18 +1237,18 @@ public static class Onboard
         public bool PrivateTutoring { get; set; }
         
         public bool PrivateTutoringTyt { get; set; }
-        public PrivateTutoringTYT? PrivateTutoringTytLessons { get; set; }
+        public PrivateTutoringTYTObject? PrivateTutoringTytLessons { get; set; }
         
         public bool PrivateTutoringAyt { get; set; }
         //AYT(Başlık):
         //Alanına göre a partında seçtiği dersler gelir. Hangi alandan hangi derslerin geleceğini e partındaki netler kısmından ulaşabilirsiniz.
-        public PrivateTutoringAYT? PrivateTutoringAytLessons { get; set; }
+        public PrivateTutoringAYTObject? PrivateTutoringAytLessons { get; set; }
         
         public bool Course { get; set; }
         public bool Youtube { get; set; }
     }
 
-    public class PrivateTutoringTYT
+    public class PrivateTutoringTYTObject
     {
         public bool Turkish { get; set; }
         public bool Mathematics { get; set; }
@@ -1096,7 +1262,7 @@ public static class Onboard
         public bool Biology { get; set; }
     }
     
-    public class PrivateTutoringAYT
+    public class PrivateTutoringAYTObject
     {
         public MF? Mf { get; set; }
         public TM? Tm { get; set; }
@@ -1241,7 +1407,7 @@ public static class Onboard
             Youtube = false,
             School = true,
             PrivateTutoringTyt = true,
-            PrivateTutoringTytLessons = new PrivateTutoringTYT()
+            PrivateTutoringTytLessons = new PrivateTutoringTYTObject()
             {
                 Turkish = true,
                 Mathematics = true,

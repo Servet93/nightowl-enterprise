@@ -30,6 +30,8 @@ public static class StudentIdentityEndpoints
         routeGroup.MapForgotPassword<ApplicationUser>((IEmailSender<ApplicationUser>)emailSender);
         routeGroup.MapResetPassword<ApplicationUser>();
         routeGroup.MapManageInfo<TUser>();
+        routeGroup.MapCoachInfo();
+        routeGroup.MapCallInfo();
         routeGroup.MapOnboard();
 
         return new IdentityEndpointsConventionBuilder(routeGroup).WithDescription("Onboard formunu submit et");

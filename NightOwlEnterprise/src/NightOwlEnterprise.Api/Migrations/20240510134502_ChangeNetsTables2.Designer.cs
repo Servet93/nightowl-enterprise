@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -10,9 +11,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace NightOwlEnterprise.Api.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240510134502_ChangeNetsTables2")]
+    partial class ChangeNetsTables2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -386,9 +389,6 @@ namespace NightOwlEnterprise.Api.Migrations
 
                     b.HasIndex("StudentId");
 
-                    b.HasIndex("ZoomMeetDetailId")
-                        .IsUnique();
-
                     b.ToTable("Invitations");
                 });
 
@@ -705,9 +705,6 @@ namespace NightOwlEnterprise.Api.Migrations
                     b.Property<int>("ExamType")
                         .HasColumnType("integer");
 
-                    b.Property<string>("ExpectationsFromCoaching")
-                        .HasColumnType("text");
-
                     b.Property<long?>("GoalRanking")
                         .HasColumnType("bigint");
 
@@ -959,7 +956,10 @@ namespace NightOwlEnterprise.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ZoomMeetDetails");
+                    b.HasIndex("InvitationId")
+                        .IsUnique();
+
+                    b.ToTable("ZoomMeetDetail");
                 });
 
             modelBuilder.Entity("CoachDetail", b =>
@@ -1044,15 +1044,9 @@ namespace NightOwlEnterprise.Api.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ZoomMeetDetail", "ZoomMeetDetail")
-                        .WithOne("Invitation")
-                        .HasForeignKey("Invitation", "ZoomMeetDetailId");
-
                     b.Navigation("Coach");
 
                     b.Navigation("Student");
-
-                    b.Navigation("ZoomMeetDetail");
                 });
 
             modelBuilder.Entity("MFNets", b =>
@@ -1246,6 +1240,17 @@ namespace NightOwlEnterprise.Api.Migrations
                     b.Navigation("University");
                 });
 
+            modelBuilder.Entity("ZoomMeetDetail", b =>
+                {
+                    b.HasOne("Invitation", "Invitation")
+                        .WithOne("ZoomMeetDetail")
+                        .HasForeignKey("ZoomMeetDetail", "InvitationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Invitation");
+                });
+
             modelBuilder.Entity("ApplicationUser", b =>
                 {
                     b.Navigation("CoachDetail")
@@ -1302,15 +1307,15 @@ namespace NightOwlEnterprise.Api.Migrations
                     b.Navigation("UniversityDepartments");
                 });
 
+            modelBuilder.Entity("Invitation", b =>
+                {
+                    b.Navigation("ZoomMeetDetail")
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("University", b =>
                 {
                     b.Navigation("UniversityDepartments");
-                });
-
-            modelBuilder.Entity("ZoomMeetDetail", b =>
-                {
-                    b.Navigation("Invitation")
-                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

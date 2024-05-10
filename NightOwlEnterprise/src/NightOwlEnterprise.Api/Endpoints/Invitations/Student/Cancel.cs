@@ -12,14 +12,12 @@ public static class Cancel
         endpoints.MapPost("/{invitationId}/cancel", async Task<Results<Ok, ProblemHttpResult>>
             ([FromRoute] Guid invitationId, ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
         {
-            var strCoachId = claimsPrincipal?.Claims?.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
-
-            Guid.TryParse(strCoachId, out var coachId);
+            var studentId = claimsPrincipal.GetId();
             
             var dbContext = sp.GetRequiredService<ApplicationDbContext>();
             
             var invitationEntity = await dbContext.Invitations.Include(x => x.Student)
-                .Where(x => x.CoachId == coachId &&
+                .Where(x => x.StudentId == studentId &&
                             x.Id == invitationId &&
                             x.State == InvitationState.WaitingApprove)
                 .FirstOrDefaultAsync();

@@ -104,8 +104,13 @@ public static class Register
                     new SubscriptionHistory()
                     {
                         Type = registration.SubscriptionType,
+                        SubscriptionId = "test-sub_1PCHn7Gw8vCPSCnNvqs5FoVD",
+                        SubscriptionState = "active",
                         SubscriptionStartDate = dt,
                         SubscriptionEndDate = dt.AddMonths(1),
+                        InvoiceId = "test-in_1PCHn7Gw8vCPSCnN8AoUDZhb",
+                        InvoiceState = "paid",
+                        LastError = String.Empty
                     }
                 },
                 StudentDetail = new StudentDetail()

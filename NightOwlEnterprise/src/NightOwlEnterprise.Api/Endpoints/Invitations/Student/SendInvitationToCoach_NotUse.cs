@@ -18,9 +18,9 @@ using Swashbuckle.AspNetCore.Filters;
 
 namespace NightOwlEnterprise.Api.Endpoints.Invitations.Student;
 
-public static class SendInvitationToCoach
+public static class SendInvitationToCoach_NotUse
 {
-    public static void MapSendInvitationToCoach(this IEndpointRouteBuilder endpoints)
+    public static void MapSendInvitationToCoach_NotUse(this IEndpointRouteBuilder endpoints)
     {
         //Öğrenci Koça Gün gönderiyor.
         endpoints.MapPost("/{coachId}/invite", Results<Ok, ProblemHttpResult>

@@ -49,11 +49,11 @@ public static class Onboard
                     .Include(x => x.PrivateTutoringMF)
                     .Include(x => x.PrivateTutoringSozel)
                     .Include(x => x.PrivateTutoringDil)
-                    .Include(x => x.CoachTytNets)
-                    .Include(x => x.CoachMfNets)
-                    .Include(x => x.CoachTmNets)
-                    .Include(x => x.CoachDilNets)
-                    .Include(x => x.CoachSozelNets)
+                    .Include(x => x.TytNets)
+                    .Include(x => x.MfNets)
+                    .Include(x => x.TmNets)
+                    .Include(x => x.DilNets)
+                    .Include(x => x.SozelNets)
                     .FirstOrDefault(x => x.Id == coachId && x.UserType == UserType.Coach);
 
                 if (coach.CoachDetail is null)
@@ -197,69 +197,69 @@ public static class Onboard
                     }
                 }
 
-                if (coach.CoachTytNets is null)
+                if (coach.TytNets is null)
                 {
-                    coach.CoachTytNets = new CoachTYTNets();
+                    coach.TytNets = new TYTNets();
                 }
                 
-                coach.CoachTytNets.Biology = request.TytNets.Biology;
-                coach.CoachTytNets.Chemistry = request.TytNets.Chemistry;
-                coach.CoachTytNets.Geography = request.TytNets.Geography;
-                coach.CoachTytNets.Geometry = request.TytNets.Geometry;
-                coach.CoachTytNets.Grammar = request.TytNets.Grammar;
-                coach.CoachTytNets.History = request.TytNets.History;
-                coach.CoachTytNets.Mathematics = request.TytNets.Mathematics;
-                coach.CoachTytNets.Philosophy = request.TytNets.Philosophy;
-                coach.CoachTytNets.Physics = request.TytNets.Physics;
-                coach.CoachTytNets.Religion = request.TytNets.Religion;
-                coach.CoachTytNets.Semantics = request.TytNets.Semantics;
+                coach.TytNets.Biology = request.TytNets.Biology;
+                coach.TytNets.Chemistry = request.TytNets.Chemistry;
+                coach.TytNets.Geography = request.TytNets.Geography;
+                coach.TytNets.Geometry = request.TytNets.Geometry;
+                coach.TytNets.Grammar = request.TytNets.Grammar;
+                coach.TytNets.History = request.TytNets.History;
+                coach.TytNets.Mathematics = request.TytNets.Mathematics;
+                coach.TytNets.Philosophy = request.TytNets.Philosophy;
+                coach.TytNets.Physics = request.TytNets.Physics;
+                coach.TytNets.Religion = request.TytNets.Religion;
+                coach.TytNets.Semantics = request.TytNets.Semantics;
 
                 if (request.DepartmentAndExamInfo.DepartmentType == DepartmentType.TM)
                 {
-                    if (coach.CoachTmNets is null)
+                    if (coach.TmNets is null)
                     {
-                        coach.CoachTmNets = new CoachTMNets();
+                        coach.TmNets = new TMNets();
                     }
                     
-                    coach.CoachTmNets.Geography = request.TmNets.Geography;
-                    coach.CoachTmNets.Geometry = request.TmNets.Geometry;
-                    coach.CoachTmNets.History = request.TmNets.History;
-                    coach.CoachTmNets.Literature = request.TmNets.Literature;
-                    coach.CoachTmNets.Mathematics = request.TmNets.Mathematics;
+                    coach.TmNets.Geography = request.TmNets.Geography;
+                    coach.TmNets.Geometry = request.TmNets.Geometry;
+                    coach.TmNets.History = request.TmNets.History;
+                    coach.TmNets.Literature = request.TmNets.Literature;
+                    coach.TmNets.Mathematics = request.TmNets.Mathematics;
                 }else if (request.DepartmentAndExamInfo.DepartmentType == DepartmentType.MF)
                 {
-                    if (coach.CoachMfNets is null)
+                    if (coach.MfNets is null)
                     {
-                        coach.CoachMfNets = new CoachMFNets();
+                        coach.MfNets = new MFNets();
                     }
                     
-                    coach.CoachMfNets.Biology = request.MfNets.Biology;
-                    coach.CoachMfNets.Chemistry = request.MfNets.Chemistry;
-                    coach.CoachMfNets.Geometry = request.MfNets.Geometry;
-                    coach.CoachMfNets.Mathematics = request.MfNets.Mathematics;
-                    coach.CoachMfNets.Physics = request.MfNets.Physics;
+                    coach.MfNets.Biology = request.MfNets.Biology;
+                    coach.MfNets.Chemistry = request.MfNets.Chemistry;
+                    coach.MfNets.Geometry = request.MfNets.Geometry;
+                    coach.MfNets.Mathematics = request.MfNets.Mathematics;
+                    coach.MfNets.Physics = request.MfNets.Physics;
                 }else if (request.DepartmentAndExamInfo.DepartmentType == DepartmentType.Sozel)
                 {
-                    if (coach.CoachSozelNets is null)
+                    if (coach.SozelNets is null)
                     {
-                        coach.CoachSozelNets = new global::CoachSozelNets();
+                        coach.SozelNets = new global::SozelNets();
                     }
                     
-                    coach.CoachSozelNets.Geography1 = request.SozelNets.Geography1;
-                    coach.CoachSozelNets.Geography2 = request.SozelNets.Geography2;
-                    coach.CoachSozelNets.History1 = request.SozelNets.History1;
-                    coach.CoachSozelNets.History2 = request.SozelNets.History2;
-                    coach.CoachSozelNets.Literature1 = request.SozelNets.Literature1;
-                    coach.CoachSozelNets.Philosophy = request.SozelNets.Philosophy;
-                    coach.CoachSozelNets.Religion = request.SozelNets.Religion;
+                    coach.SozelNets.Geography1 = request.SozelNets.Geography1;
+                    coach.SozelNets.Geography2 = request.SozelNets.Geography2;
+                    coach.SozelNets.History1 = request.SozelNets.History1;
+                    coach.SozelNets.History2 = request.SozelNets.History2;
+                    coach.SozelNets.Literature1 = request.SozelNets.Literature1;
+                    coach.SozelNets.Philosophy = request.SozelNets.Philosophy;
+                    coach.SozelNets.Religion = request.SozelNets.Religion;
                 }else if (request.DepartmentAndExamInfo.DepartmentType == DepartmentType.Dil)
                 {
-                    if (coach.CoachDilNets is null)
+                    if (coach.DilNets is null)
                     {
-                        coach.CoachDilNets = new global::CoachDilNets();
+                        coach.DilNets = new global::DilNets();
                     }
                     
-                    coach.CoachDilNets.YDT = request.DilNets.YDT;
+                    coach.DilNets.YDT = request.DilNets.YDT;
                 }
                 
                 await dbContext.SaveChangesAsync();

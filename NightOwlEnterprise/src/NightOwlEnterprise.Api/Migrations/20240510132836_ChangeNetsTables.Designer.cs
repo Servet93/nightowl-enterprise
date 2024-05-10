@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -10,9 +11,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace NightOwlEnterprise.Api.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240510132836_ChangeNetsTables")]
+    partial class ChangeNetsTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -290,6 +293,49 @@ namespace NightOwlEnterprise.Api.Migrations
                     b.ToTable("CoachStudentTrainingSchedules");
                 });
 
+            modelBuilder.Entity("CoachTYTNets", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<byte?>("Biology")
+                        .HasColumnType("smallint");
+
+                    b.Property<byte?>("Chemistry")
+                        .HasColumnType("smallint");
+
+                    b.Property<byte?>("Geography")
+                        .HasColumnType("smallint");
+
+                    b.Property<byte?>("Geometry")
+                        .HasColumnType("smallint");
+
+                    b.Property<byte?>("Grammar")
+                        .HasColumnType("smallint");
+
+                    b.Property<byte?>("History")
+                        .HasColumnType("smallint");
+
+                    b.Property<byte?>("Mathematics")
+                        .HasColumnType("smallint");
+
+                    b.Property<byte?>("Philosophy")
+                        .HasColumnType("smallint");
+
+                    b.Property<byte?>("Physics")
+                        .HasColumnType("smallint");
+
+                    b.Property<byte?>("Religion")
+                        .HasColumnType("smallint");
+
+                    b.Property<byte?>("Semantics")
+                        .HasColumnType("smallint");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("CoachTYTNets");
+                });
+
             modelBuilder.Entity("CoachYksRanking", b =>
                 {
                     b.Property<Guid>("Id")
@@ -385,9 +431,6 @@ namespace NightOwlEnterprise.Api.Migrations
                     b.HasIndex("CoachId");
 
                     b.HasIndex("StudentId");
-
-                    b.HasIndex("ZoomMeetDetailId")
-                        .IsUnique();
 
                     b.ToTable("Invitations");
                 });
@@ -702,17 +745,8 @@ namespace NightOwlEnterprise.Api.Migrations
                     b.Property<string>("Email")
                         .HasColumnType("text");
 
-                    b.Property<int>("ExamType")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("ExpectationsFromCoaching")
-                        .HasColumnType("text");
-
                     b.Property<long?>("GoalRanking")
                         .HasColumnType("bigint");
-
-                    b.Property<int>("Grade")
-                        .HasColumnType("integer");
 
                     b.Property<string>("HighSchool")
                         .HasColumnType("text");
@@ -836,49 +870,6 @@ namespace NightOwlEnterprise.Api.Migrations
                     b.ToTable("TMNets");
                 });
 
-            modelBuilder.Entity("TYTNets", b =>
-                {
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<byte?>("Biology")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte?>("Chemistry")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte?>("Geography")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte?>("Geometry")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte?>("Grammar")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte?>("History")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte?>("Mathematics")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte?>("Philosophy")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte?>("Physics")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte?>("Religion")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte?>("Semantics")
-                        .HasColumnType("smallint");
-
-                    b.HasKey("UserId");
-
-                    b.ToTable("TYTNets");
-                });
-
             modelBuilder.Entity("University", b =>
                 {
                     b.Property<Guid>("Id")
@@ -959,7 +950,10 @@ namespace NightOwlEnterprise.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ZoomMeetDetails");
+                    b.HasIndex("InvitationId")
+                        .IsUnique();
+
+                    b.ToTable("ZoomMeetDetail");
                 });
 
             modelBuilder.Entity("CoachDetail", b =>
@@ -1008,6 +1002,17 @@ namespace NightOwlEnterprise.Api.Migrations
                     b.Navigation("Student");
                 });
 
+            modelBuilder.Entity("CoachTYTNets", b =>
+                {
+                    b.HasOne("ApplicationUser", "User")
+                        .WithOne("CoachTytNets")
+                        .HasForeignKey("CoachTYTNets", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("CoachYksRanking", b =>
                 {
                     b.HasOne("ApplicationUser", "Coach")
@@ -1044,15 +1049,9 @@ namespace NightOwlEnterprise.Api.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ZoomMeetDetail", "ZoomMeetDetail")
-                        .WithOne("Invitation")
-                        .HasForeignKey("Invitation", "ZoomMeetDetailId");
-
                     b.Navigation("Coach");
 
                     b.Navigation("Student");
-
-                    b.Navigation("ZoomMeetDetail");
                 });
 
             modelBuilder.Entity("MFNets", b =>
@@ -1216,17 +1215,6 @@ namespace NightOwlEnterprise.Api.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("TYTNets", b =>
-                {
-                    b.HasOne("ApplicationUser", "User")
-                        .WithOne("TytNets")
-                        .HasForeignKey("TYTNets", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("UniversityDepartment", b =>
                 {
                     b.HasOne("Department", "Department")
@@ -1246,12 +1234,26 @@ namespace NightOwlEnterprise.Api.Migrations
                     b.Navigation("University");
                 });
 
+            modelBuilder.Entity("ZoomMeetDetail", b =>
+                {
+                    b.HasOne("Invitation", "Invitation")
+                        .WithOne("ZoomMeetDetail")
+                        .HasForeignKey("ZoomMeetDetail", "InvitationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Invitation");
+                });
+
             modelBuilder.Entity("ApplicationUser", b =>
                 {
                     b.Navigation("CoachDetail")
                         .IsRequired();
 
                     b.Navigation("CoachStudentTrainingSchedules");
+
+                    b.Navigation("CoachTytNets")
+                        .IsRequired();
 
                     b.Navigation("CoachYksRankings");
 
@@ -1292,9 +1294,6 @@ namespace NightOwlEnterprise.Api.Migrations
 
                     b.Navigation("TmNets")
                         .IsRequired();
-
-                    b.Navigation("TytNets")
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("Department", b =>
@@ -1302,15 +1301,15 @@ namespace NightOwlEnterprise.Api.Migrations
                     b.Navigation("UniversityDepartments");
                 });
 
+            modelBuilder.Entity("Invitation", b =>
+                {
+                    b.Navigation("ZoomMeetDetail")
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("University", b =>
                 {
                     b.Navigation("UniversityDepartments");
-                });
-
-            modelBuilder.Entity("ZoomMeetDetail", b =>
-                {
-                    b.Navigation("Invitation")
-                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

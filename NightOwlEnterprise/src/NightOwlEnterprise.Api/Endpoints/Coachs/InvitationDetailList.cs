@@ -14,28 +14,26 @@ using Microsoft.EntityFrameworkCore;
 using Stripe;
 using Swashbuckle.AspNetCore.Annotations;
 
-namespace NightOwlEnterprise.Api.Endpoints.Invitations.Coach;
+namespace NightOwlEnterprise.Api.Endpoints.Coachs;
 
 public static class InvitationDetailList
 {
     public static void MapInvitationDetailList(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapGet("/", async Task<Results<Ok<List<InvitationResponse>>, ProblemHttpResult>>
+        endpoints.MapGet("/invitations", async Task<Results<Ok<List<InvitationResponse>>, ProblemHttpResult>>
             (ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
         {
-            var strCoachId = claimsPrincipal?.Claims?.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
-
-            Guid.TryParse(strCoachId, out var coachId);
+            var coachId = claimsPrincipal.GetId();
             
             var dbContext = sp.GetRequiredService<ApplicationDbContext>();
 
             var openStates = new InvitationState[2]
             {
-                InvitationState.SpecifyHour, InvitationState.WaitingApprove
+                InvitationState.SpecifyHour, InvitationState.WaitingApprove, 
             };
 
             var invitationEntities = await dbContext.Invitations.Include(x => x.Student)
-                .Where(x => x.CoachId == coachId && x.Date <= DateTime.Now)
+                .Where(x => x.CoachId == coachId)
                 .ToListAsync();
 
             var invitations = invitationEntities.Select(invitationEntity => new InvitationResponse()
@@ -53,15 +51,13 @@ public static class InvitationDetailList
 
             return TypedResults.Ok(invitations);
             
-        }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithDescription("Koçun davetiyelerini çeker.").WithTags("Koç").RequireAuthorization("Coach");
+        }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithDescription("Koç davetiyelerini çeker.").WithTags("Koç").RequireAuthorization("Coach");
         
-        endpoints.MapGet("/{invitationId}", async Task<Results<Ok<InvitationResponse>, ProblemHttpResult>>
+        endpoints.MapGet("invitations/{invitationId}", async Task<Results<Ok<InvitationResponse>, ProblemHttpResult>>
             ([FromRoute] Guid invitationId, ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
         {
-            var strCoachId = claimsPrincipal?.Claims?.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            var coachId = claimsPrincipal.GetId();
 
-            Guid.TryParse(strCoachId, out var coachId);
-            
             var dbContext = sp.GetRequiredService<ApplicationDbContext>();
             
             var invitationEntity = await dbContext.Invitations.Include(x => x.Student)
