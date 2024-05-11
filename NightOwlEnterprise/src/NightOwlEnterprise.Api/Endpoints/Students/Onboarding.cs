@@ -169,7 +169,7 @@ public static class Onboard
         //     }).RequireAuthorization().Produces<ProblemHttpResult>(400).WithOpenApi()
         //     .WithTags("Öğrenci Tanışma Formu İşlemleri");
 
-        endpoints.MapPost("/onboard", async Task<Results<Ok, ProblemHttpResult>>
+        endpoints.MapPost("/me/onboard", async Task<Results<Ok, ProblemHttpResult>>
                 (StudentOnboardRequest request, ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
             {
                 var requestValidation = RequestValidation(request);
@@ -427,7 +427,7 @@ public static class Onboard
                 return TypedResults.Ok();
             }).RequireAuthorization("Student").Produces<ProblemHttpResult>(StatusCodes.Status400BadRequest)
             .WithOpenApi()
-            .WithTags("Öğrenci Tanışma Formu İşlemleri");
+            .WithTags(TagConstants.StudentsMeOnboard);
         
         // endpoints.MapPost("/onboard/terms-and-conditions-accepted", async Task<Results<Ok, ProblemHttpResult>>
         //         (ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>

@@ -18,7 +18,6 @@ using Newtonsoft.Json.Linq;
 using NightOwlEnterprise.Api;
 using NightOwlEnterprise.Api.Endpoints;
 using NightOwlEnterprise.Api.Endpoints.Coachs;
-using NightOwlEnterprise.Api.Endpoints.Invitations;
 using NightOwlEnterprise.Api.Endpoints.Students;
 using NightOwlEnterprise.Api.Endpoints.Universities;
 using NightOwlEnterprise.Api.Services;
@@ -492,7 +491,6 @@ app.MapGet("/", async context =>
 app.MapCommonIdentityApi();
 app.MapStudentsIdentityApi<ApplicationUser>();
 app.MapCoachsIdentityApi<ApplicationUser>();
-app.MapInvitationsApi();
 app.MapUniversityApi();
 
 app.MapGet("/conf", async context =>

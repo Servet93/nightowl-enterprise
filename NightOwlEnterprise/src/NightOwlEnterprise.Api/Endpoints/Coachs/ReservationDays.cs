@@ -130,7 +130,7 @@ public static class ReservationDays
                     return TypedResults.Ok(daysAvailability);
 
                 }).ProducesProblem(StatusCodes.Status400BadRequest).RequireAuthorization("Student").WithOpenApi()
-            .WithTags("Öğrencinin Koç ile yapabileceği işlemler");
+            .WithTags(TagConstants.StudentsCoachListAndReserve);
     }
     
     public sealed class CoachDaysQuota

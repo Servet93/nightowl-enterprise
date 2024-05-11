@@ -27,22 +27,22 @@ public static class Register
             ([FromBody] CoachRegisterRequest registration, HttpContext context, [FromServices] IServiceProvider sp) =>
         {
             var identityErrors = new List<IdentityError>();
-            
+
             var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
             var errorDescriber = sp.GetRequiredService<TurkishIdentityErrorDescriber>();
-            
+
             var name = registration.Name;
             var email = registration.Email;
             var phoneNumber = registration.PhoneNumber;
             var address = registration.Address;
             var city = registration.City;
-            
+
             if (string.IsNullOrEmpty(email) || !_emailAddressAttribute.IsValid(email))
             {
                 identityErrors.Add(userManager.ErrorDescriber.InvalidEmail(email));
                 //return userManager.ErrorDescriber.InvalidEmail(email).CreateProblem();
             }
-            
+
             if (string.IsNullOrEmpty(name) || name.Length < 3) // :)
             {
                 identityErrors.Add(errorDescriber.InvalidName(name));
@@ -56,7 +56,7 @@ public static class Register
                 phoneNumber.Split("-")[0].First() != '5' ||
                 !int.TryParse(phoneNumber.Split("-")[0], out var parseResult) ||
                 !int.TryParse(phoneNumber.Split("-")[1], out parseResult) ||
-                !int.TryParse(phoneNumber.Split("-")[2], out parseResult) || 
+                !int.TryParse(phoneNumber.Split("-")[2], out parseResult) ||
                 !int.TryParse(phoneNumber.Split("-")[3], out parseResult))
             {
                 identityErrors.Add(TurkishIdentityErrorDescriber.InvalidMobile(phoneNumber));
@@ -69,15 +69,15 @@ public static class Register
                 identityErrors.Add(errorDescriber.RequiredAddress());
                 //return errorDescriber.RequiredAddress().CreateProblem();
             }
-            
+
             if (!CommonVariables.Cities.Contains(city))
             {
                 identityErrors.Add(errorDescriber.InvalidCity(city));
                 //return IdentityResult.Failed(errorDescriber.InvalidCity(city)).CreateValidationProblem();
             }
-            
+
             var userName = email.Split('@')[0];
-            
+
             var user = new ApplicationUser()
             {
                 Name = name,
@@ -87,9 +87,9 @@ public static class Register
                 City = city,
                 UserType = registration.CoachType == CoachType.Coach ? UserType.Coach : UserType.Pdr,
             };
-            
+
             var result = await userManager.CreateAsync(user, registration.Password);
-            
+
             if (!result.Succeeded)
             {
                 identityErrors.AddRange(result.Errors);
@@ -100,9 +100,9 @@ public static class Register
             {
                 return identityErrors.CreateProblem("Koç kaydetme işlemi başarısız");
             }
-            
+
             return TypedResults.Ok();
-        }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags("Koç");
+        }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags(TagConstants.CoachIdentity);
     }
 
     public sealed class CoachRegisterRequest

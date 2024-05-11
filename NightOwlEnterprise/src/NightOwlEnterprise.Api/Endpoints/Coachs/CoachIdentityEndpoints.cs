@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
+using NightOwlEnterprise.Api.Endpoints.Coachs.Me;
 
 namespace NightOwlEnterprise.Api.Endpoints.Coachs;
 
@@ -29,6 +30,7 @@ public static class CoachIdentityEndpoints
         routeGroup.MapReserveCoach();
         routeGroup.MapReservationDays();
         routeGroup.MapInvitationDetailList();
+        routeGroup.MapSpecifyHour();
 
         return new IdentityEndpointsConventionBuilder(routeGroup);
     }

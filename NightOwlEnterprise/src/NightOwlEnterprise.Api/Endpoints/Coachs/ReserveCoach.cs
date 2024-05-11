@@ -137,7 +137,7 @@ public static class ReserveCoach
                 return TypedResults.Ok();
 
             }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi()
-            .WithTags("Öğrencinin Koç ile yapabileceği işlemler").RequireAuthorization("Student");
+            .WithTags(TagConstants.StudentsCoachListAndReserve).RequireAuthorization("Student");
 
         static DateTime FindDate(DayOfWeek day)
         {

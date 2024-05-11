@@ -11,7 +11,7 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using Swashbuckle.AspNetCore.Filters;
 
-namespace NightOwlEnterprise.Api.Endpoints.Coachs;
+namespace NightOwlEnterprise.Api.Endpoints.Coachs.Me;
 
 public static class Onboard
 {
@@ -19,7 +19,7 @@ public static class Onboard
     
     public static void MapOnboard(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapPost("/onboard", async Task<Results<Ok, ProblemHttpResult>>
+        endpoints.MapPost("/me/onboard", async Task<Results<Ok, ProblemHttpResult>>
                 (CoachOnboardRequest request, ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
             {
                 var requestValidation = RequestValidation(request);
@@ -266,7 +266,7 @@ public static class Onboard
                 
                 return TypedResults.Ok();
             }).RequireAuthorization().Produces<ProblemHttpResult>(400).WithOpenApi()
-            .WithTags("Koç Tanışma Formu İşlemleri");
+            .WithTags(TagConstants.CoachMeOnboard);
         
         
         

@@ -22,7 +22,7 @@ public static class CommonIdentityEndpoints
         var routeGroup = endpoints.MapGroup("").WithOpenApi().WithTags("Oturum");
 
         routeGroup.MapLogin(jwtHelper);
-        routeGroup.MapRefresh(jwtHelper);
+        // routeGroup.MapRefresh(jwtHelper);
         
         // routeGroup.MapGet("/special-student", Results<Ok<string>, ProblemHttpResult>
         //     () => TypedResults.Ok("Special Accessed With Student")).RequireAuthorization("Student");

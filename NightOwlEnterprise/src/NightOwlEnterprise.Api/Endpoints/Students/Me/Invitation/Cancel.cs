@@ -3,13 +3,13 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace NightOwlEnterprise.Api.Endpoints.Invitations.Student;
+namespace NightOwlEnterprise.Api.Endpoints.Students.Me.Invitation;
 
 public static class Cancel
 {
     public static void MapCancel(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapPost("/{invitationId}/cancel", async Task<Results<Ok, ProblemHttpResult>>
+        endpoints.MapPost("/me/invitations/{invitationId}/cancel", async Task<Results<Ok, ProblemHttpResult>>
             ([FromRoute] Guid invitationId, ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
         {
             var studentId = claimsPrincipal.GetId();
@@ -34,6 +34,6 @@ public static class Cancel
             
             return TypedResults.Ok();
             
-        }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithDescription("Öğrenci görüşme saatini reddeder").WithTags("Öğrenci Davetiye İşlemleri").RequireAuthorization("Student");
+        }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithDescription("Öğrenci görüşme saatini reddeder").WithTags(TagConstants.StudentsInvitationApproveOrCancel).RequireAuthorization("Student");
     }
 }

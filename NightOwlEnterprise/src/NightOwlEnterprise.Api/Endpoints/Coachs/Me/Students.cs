@@ -25,48 +25,62 @@ public static class Students
     {
         // NOTE: We cannot inject UserManager<TUser> directly because the TUser generic parameter is currently unsupported by RDG.
         // https://github.com/dotnet/aspnetcore/issues/47338
-        // endpoints.MapPost("/me/students", async Task<Results<Ok<PagedResponse<StudentItem>>, ProblemHttpResult>>
-        //     ([FromQuery] int? page,[FromQuery] int? pageSize, ClaimsPrincipal claimsPrincipal, HttpContext httpContext, [FromServices] IServiceProvider sp) =>
-        // {
-        //     var paginationFilter = new PaginationFilter(page, pageSize);
-        //     
-        //     var dbContext = sp.GetRequiredService<ApplicationDbContext>();
-        //     
-        //     var paginationUriBuilder = sp.GetRequiredService<PaginationUriBuilder>();
-        //
-        //     var coachId = claimsPrincipal.GetId();
-        //     
-        //     // dbContext.CoachStudentTrainingSchedules.Where(x => x.CoachId == coachId).Select(x => new StudentItem()
-        //     // {
-        //     //     Id = x.StudentId,
-        //     //     Name = x.Student.Name,
-        //     //     
-        //     // })
-        //
-        //     return TypedResults.Ok(new List<StudentItem>() { new StudentItem() });
-        //
-        // }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags("Öğrencinin Koç ile yapabileceği işlemler").RequireAuthorization("Coach");
+        endpoints.MapPost("/me/students", async Task<Results<Ok<PagedResponse<StudentItem>>, ProblemHttpResult>>
+            ([FromQuery] int? page,[FromQuery] int? pageSize, ClaimsPrincipal claimsPrincipal, HttpContext httpContext, [FromServices] IServiceProvider sp) =>
+        {
+            var paginationFilter = new PaginationFilter(page, pageSize);
+            
+            var dbContext = sp.GetRequiredService<ApplicationDbContext>();
+            
+            var paginationUriBuilder = sp.GetRequiredService<PaginationUriBuilder>();
         
-        // endpoints.MapGet("me/students/{studentId}", async Task<Results<Ok<StudentItem>, ProblemHttpResult>>
-        //     ([FromQuery] Guid studentId, ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
-        // {
-        //     var dbContext = sp.GetRequiredService<ApplicationDbContext>();
-        //     
-        //     var coachId = claimsPrincipal.GetId();
-        //     
-        //     var coachApplicationUser = dbContext.Users.Include(x => x.CoachDetail)
-        //         .Include(x => x.CoachDetail.University)
-        //         .Include(x => x.CoachDetail.Department)
-        //         .FirstOrDefault(x => x.Id == coachId && x.UserType == UserType.Coach);
-        //
-        //     if (coachApplicationUser is null)
-        //     {
-        //         return TypedResults.Problem("Koç bilgisi bulunamadı.", statusCode: StatusCodes.Status400BadRequest);
-        //     }
-        //
-        //     return TypedResults.Ok(new StudentItem());
-        //     
-        // }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags("Öğrencinin Koç ile yapabileceği işlemler").RequireAuthorization("Coach");
+            var coachId = claimsPrincipal.GetId();
+
+            var studentOfCoachQueryable = dbContext.CoachStudentTrainingSchedules.Where(x => x.CoachId == coachId);
+                
+            var totalCount = await studentOfCoachQueryable.CountAsync();
+
+            var studentOfCoach = await studentOfCoachQueryable.Skip((paginationFilter.PageNumber - 1) * paginationFilter.PageSize)
+                .Take(paginationFilter.PageSize).ToListAsync();
+            
+            var students = new List<StudentItem>();
+
+            students.AddRange(studentOfCoach.Select(x => new StudentItem()
+            {
+                Id = x.Id,
+                Name = x.Student.Name,
+                Highschool = x.Student.StudentDetail.HighSchool,
+                Grade = x.Student.StudentDetail.Grade,
+            }));
+                
+            var pagedResponse = PagedResponse<StudentItem>.CreatePagedResponse(
+                students, totalCount, paginationFilter, paginationUriBuilder,
+                httpContext.Request.Path.Value ?? string.Empty);
+        
+            return TypedResults.Ok(pagedResponse);
+        
+        }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags("Öğrencinin Koç ile yapabileceği işlemler").RequireAuthorization("Coach");
+        
+        endpoints.MapGet("me/students/{studentId}", async Task<Results<Ok<StudentItem>, ProblemHttpResult>>
+            ([FromQuery] Guid studentId, ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
+        {
+            var dbContext = sp.GetRequiredService<ApplicationDbContext>();
+            
+            var coachId = claimsPrincipal.GetId();
+            
+            var coachApplicationUser = dbContext.Users.Include(x => x.CoachDetail)
+                .Include(x => x.CoachDetail.University)
+                .Include(x => x.CoachDetail.Department)
+                .FirstOrDefault(x => x.Id == coachId && x.UserType == UserType.Coach);
+        
+            if (coachApplicationUser is null)
+            {
+                return TypedResults.Problem("Koç bilgisi bulunamadı.", statusCode: StatusCodes.Status400BadRequest);
+            }
+        
+            return TypedResults.Ok(new StudentItem());
+            
+        }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags("Öğrencinin Koç ile yapabileceği işlemler").RequireAuthorization("Coach");
     }
 
     public sealed class StudentItem
@@ -75,12 +89,9 @@ public static class Students
         
         public string Name { get; set; }
         
-        public string Surname { get; set; }
-        
         public string Highschool { get; set; }
         
-        public string DepartmentType { get; set; }
-    
-        public string Grade { get; set; }
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public Grade Grade { get; set; }
     }
 }

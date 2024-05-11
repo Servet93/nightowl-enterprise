@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
+using NightOwlEnterprise.Api.Endpoints.Students.Me;
+using NightOwlEnterprise.Api.Endpoints.Students.Me.Invitation;
 
 namespace NightOwlEnterprise.Api.Endpoints.Students;
 
@@ -33,6 +35,9 @@ public static class StudentIdentityEndpoints
         routeGroup.MapCoachInfo();
         routeGroup.MapCallInfo();
         routeGroup.MapOnboard();
+        
+        routeGroup.MapApprove();
+        routeGroup.MapCancel();
 
         return new IdentityEndpointsConventionBuilder(routeGroup).WithDescription("Onboard formunu submit et");
     }
