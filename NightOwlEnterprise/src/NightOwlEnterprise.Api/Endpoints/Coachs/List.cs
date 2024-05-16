@@ -53,7 +53,6 @@ public static class List
             IQueryable<ApplicationUser> coachQueryable = dbContext.Users
                 .Include(x => x.CoachDetail)
                 .Include(x => x.CoachDetail.University)
-                .Include(x => x.CoachDetail.Department)
                 .Include(x => x.CoachYksRankings)
                 .Include(x => x.InvitationsAsCoach)
                 .Where(x => x.UserType == UserType.Coach)
@@ -81,15 +80,13 @@ public static class List
                 // {
                 //     return TypedResults.Problem("Öğrenci kayıtlı değil.", statusCode: StatusCodes.Status400BadRequest);
                 // }
-                
-                
 
                 coachQueryable = studentExamType switch
                 {
-                    ExamType.TM => coachQueryable.Where(x => x.CoachDetail.Department.DepartmentType == DepartmentType.TM),
-                    ExamType.MF => coachQueryable.Where(x => x.CoachDetail.Department.DepartmentType == DepartmentType.MF),
-                    ExamType.Sozel => coachQueryable.Where(x => x.CoachDetail.Department.DepartmentType == DepartmentType.Sozel),
-                    ExamType.Dil => coachQueryable.Where(x => x.CoachDetail.Department.DepartmentType == DepartmentType.Dil),
+                    ExamType.TM => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.TM),
+                    ExamType.MF => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.MF),
+                    ExamType.Sozel => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.Sozel),
+                    ExamType.Dil => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.Dil),
                     ExamType.TYT => coachQueryable,
                     _ => coachQueryable
                 };
@@ -122,8 +119,7 @@ public static class List
                 Id = x.Id,
                 Name = x.Name,
                 UniversityName = x.CoachDetail.University.Name,
-                DepartmentName = x.CoachDetail.Department.Name,
-                DepartmentType = x.CoachDetail.Department.DepartmentType,
+                DepartmentType = x.CoachDetail.DepartmentType,
                 Year = x.CoachYksRankings?.LastOrDefault()?.Year,
                 Male = x.CoachDetail.Male,
                 Rank = x.CoachDetail.Rank,
@@ -150,7 +146,6 @@ public static class List
             
             var coachApplicationUser = dbContext.Users.Include(x => x.CoachDetail)
                 .Include(x => x.CoachDetail.University)
-                .Include(x => x.CoachDetail.Department)
                 .FirstOrDefault(x => x.Id == coachId && x.UserType == UserType.Coach);
 
             if (coachApplicationUser is null)
@@ -164,8 +159,7 @@ public static class List
                 Name = coachApplicationUser.Name,
                 //Quota = coachApplicationUser.CoachDetail.Quota,
                 UniversityName = coachApplicationUser.CoachDetail.University.Name,
-                DepartmentName = coachApplicationUser.CoachDetail.Department.Name,
-                DepartmentType = coachApplicationUser.CoachDetail.Department.DepartmentType,
+                DepartmentType = coachApplicationUser.CoachDetail.DepartmentType,
                 Male = coachApplicationUser.CoachDetail.Male,
                 Rank = coachApplicationUser.CoachDetail.Rank,
                 IsGraduated = coachApplicationUser.CoachDetail.IsGraduated,

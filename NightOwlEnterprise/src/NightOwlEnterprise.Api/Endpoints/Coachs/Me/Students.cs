@@ -70,7 +70,6 @@ public static class Students
             
             var coachApplicationUser = dbContext.Users.Include(x => x.CoachDetail)
                 .Include(x => x.CoachDetail.University)
-                .Include(x => x.CoachDetail.Department)
                 .FirstOrDefault(x => x.Id == coachId && x.UserType == UserType.Coach);
         
             if (coachApplicationUser is null)

@@ -69,8 +69,7 @@ public static class Onboard
                 coach.CoachDetail.DepartmentType = request.DepartmentAndExamInfo.DepartmentType;
 
                 coach.CoachDetail.UniversityId = request.DepartmentAndExamInfo.UniversityId;
-                coach.CoachDetail.DepartmentId = request.DepartmentAndExamInfo.DepartmentId;
-                
+
                 coach.CoachYksRankings.Clear();
 
                 foreach (var yearToTyt in request.DepartmentAndExamInfo.YearToTyt)
@@ -896,8 +895,6 @@ public static class Onboard
     {
         public Guid UniversityId { get; set; }
         
-        public Guid DepartmentId { get; set; }
-        
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public DepartmentType DepartmentType { get; set; }
         
@@ -1091,8 +1088,7 @@ public static class Onboard
 
         private DepartmentAndExamInfo departmentAndExamInfo = new DepartmentAndExamInfo()
         {
-            UniversityId = Guid.Parse("26cbd5e1-f5fc-47d2-8839-780dc12e2043"),
-            DepartmentId = Guid.Parse("79209b31-0e51-471c-ab32-1d57e58dd3a0"),
+            UniversityId = Guid.Empty,
             DepartmentType = DepartmentType.MF,
             YearToTyt = new Dictionary<uint, bool>()
             {

@@ -379,8 +379,7 @@ if (isPostgresEnabled)
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-    SeedDepartmentsAndUniversities(db);
-    await SeedCoachs(db, userManager);
+    // await SeedCoachs(db, userManager);
 }
 
 app.UseCors("AllowAll");
@@ -551,92 +550,6 @@ app.Run();
 
 logger.Fatal("App is running.");
 
-void SeedDepartmentsAndUniversities(ApplicationDbContext dbContext)
-{
-    var hasAnyDepartment = dbContext.Departments.Any();
-
-    var departments = new List<Department>
-    {
-        new Department { Id = CommonVariables.ComputerEngineeringDepartmentId, Name = "Bilgisayar Mühendisliği", DepartmentType = DepartmentType.MF },
-        new Department { Id = CommonVariables.ElectricalAndElectronicsEngineeringDepartmentId, Name = "Elektrik-Elektronik Mühendisliği", DepartmentType = DepartmentType.MF },
-        new Department { Id = CommonVariables.MechanicalEngineeringDepartmentId, Name = "Makine Mühendisliği" , DepartmentType = DepartmentType.MF },
-        new Department { Id = CommonVariables.IndustrialEngineeringDepartmentId, Name = "Endüstri Mühendisliği", DepartmentType = DepartmentType.MF },
-        new Department { Id = CommonVariables.SociologyDepartmentId, Name = "Sosyoloji", DepartmentType = DepartmentType.TM },
-        new Department { Id = CommonVariables.HistoryDepartmentId, Name = "Tarih", DepartmentType = DepartmentType.Sozel },
-        new Department { Id = CommonVariables.PsychologyDepartmentId, Name = "Psikoloji", DepartmentType = DepartmentType.TM },
-        new Department { Id = CommonVariables.GazetecilikDepartmentId, Name = "Gazetecilik", DepartmentType = DepartmentType.Sozel },
-        new Department { Id = CommonVariables.ReklamcilikDepartmentId, Name = "Reklamcılık", DepartmentType = DepartmentType.Sozel },
-        new Department { Id = CommonVariables.IsletmeDepartmentId, Name = "İşletme", DepartmentType = DepartmentType.TM },
-        new Department { Id = CommonVariables.EnglishLanguageAndLiteratureDepartmentId, Name = "İngiliz Dili ve Edebiyatı", DepartmentType = DepartmentType.Dil },
-        new Department { Id = CommonVariables.FrenchLanguageAndLiteratureDepartmentId, Name = "Fransız Dili ve Edebiyatı", DepartmentType = DepartmentType.Dil },
-        new Department { Id = CommonVariables.GermanLanguageAndLiteratureDepartmentId, Name = "Alman Dili ve Edebiyatı", DepartmentType = DepartmentType.Dil},
-        // Diğer departmanları buraya ekleyin
-    };
-    
-    if (!hasAnyDepartment)
-    {
-        dbContext.Departments.AddRange(departments);
-        dbContext.SaveChanges();
-    }
-
-    var hasAnyUniversity = dbContext.Universities.Any();
-
-    var universities = new List<University>
-    {
-        new University
-        {
-            Id = CommonVariables.BosphorusUniversityId, Name = "Boğaziçi Üniversitesi",
-        },
-        new University
-        {
-            Id = CommonVariables.MiddleEastTechnicalUniversityId, Name = "Orta Doğu Teknik Üniversitesi",
-        },
-        new University
-        {
-            Id = CommonVariables.IstanbulTechnicalUniversityId, Name = "İstanbul Teknik Üniversitesi",
-        },
-        // Diğer üniversiteleri buraya ekleyin
-    };
-    
-    if (!hasAnyUniversity)
-    {
-        dbContext.Universities.AddRange(universities);
-        dbContext.SaveChanges();
-    }
-
-    var hasAnyUniversityDepartment = dbContext.UniversityDepartments.Any();
-
-    if (!hasAnyUniversityDepartment)
-    {
-        var _universities = dbContext.Universities.ToList();
-        var _departments = dbContext.Departments.ToList();
-        
-        foreach (var university in _universities)
-        {
-            foreach (var department in _departments)
-            {
-                university.UniversityDepartments.Add(new UniversityDepartment()
-                {
-                    UniversityId = university.Id,
-                    DepartmentId = department.Id
-                });
-            }
-        }
-
-        dbContext.SaveChanges();
-    }
-
-    /*
-     *             UniversityDepartments = departments.Select(d => new UniversityDepartment
-            {
-                UniversityId = Guid.NewGuid(),
-                DepartmentId = d.Id,
-                Department = d
-            }).ToList()
-     */
-
-}
-
 async Task SeedCoachs(ApplicationDbContext dbContext, UserManager<ApplicationUser> userManager)
 {
     var hasAnyCoach = dbContext.Users.Any(x => x.UserType == UserType.Coach);
@@ -650,9 +563,7 @@ async Task SeedCoachs(ApplicationDbContext dbContext, UserManager<ApplicationUse
     if (!hasAnyCoach)
     {
         var universities = dbContext.Universities.ToList();
-
-        var departments = dbContext.Departments.ToList();
-
+        
         // universities * departments(39) * 5 = 195
         var persons = PersonGenerator.GeneratePeople(195);
 
@@ -660,165 +571,179 @@ async Task SeedCoachs(ApplicationDbContext dbContext, UserManager<ApplicationUse
         
         foreach (var university in universities)
         {
-            foreach (var department in departments)
+            for (int i = 0; i < 5; i++)
             {
-                for (int i = 0; i < 5; i++)
-                {
-                    var x = (byte)rnd.Next(5);
-                    
-                    var mondayQuota = x == 0 ? (byte)1 : (byte)rnd.Next(5);
-                    var tuesdayQuota = x == 1 ? (byte)1 : (byte)rnd.Next(5);
-                    var wednesdayQuota = x == 2 ? (byte)1 : (byte)rnd.Next(5);
-                    var thursayQuota = x == 3 ? (byte)1 : (byte)rnd.Next(5);
-                    var fridayQuota = x == 4 ? (byte)1 : (byte)rnd.Next(5);
+                var x = (byte)rnd.Next(5);
+                var y = (byte)rnd.Next(3);
+                
+                var mondayQuota = x == 0 ? (byte)1 : (byte)rnd.Next(5);
+                var tuesdayQuota = x == 1 ? (byte)1 : (byte)rnd.Next(5);
+                var wednesdayQuota = x == 2 ? (byte)1 : (byte)rnd.Next(5);
+                var thursayQuota = x == 3 ? (byte)1 : (byte)rnd.Next(5);
+                var fridayQuota = x == 4 ? (byte)1 : (byte)rnd.Next(5);
 
-                    var studentQuota = (byte)(mondayQuota + tuesdayQuota + wednesdayQuota + thursayQuota + fridayQuota);
-                    
-                    var applicationUser = new ApplicationUser()
+                var studentQuota = (byte)(mondayQuota + tuesdayQuota + wednesdayQuota + thursayQuota + fridayQuota);
+
+                DepartmentType departmentType = DepartmentType.Sozel;
+                
+                if (y == 0)
+                {
+                    departmentType = DepartmentType.TM;
+                }else if (y == 1)
+                {
+                    departmentType = DepartmentType.MF;
+                }else if (y == 2)
+                {
+                    departmentType = DepartmentType.Sozel;
+                }else if (y == 3)
+                {
+                    departmentType = DepartmentType.Dil;
+                }
+
+                var applicationUser = new ApplicationUser()
+                {
+                    Id = persons[counter].Id,
+                    Name = persons[counter].FirstName +" "+ persons[counter].LastName,
+                    UserName = persons[counter].FirstName + persons[counter].LastName,
+                    Email = persons[counter].Email,
+                    PhoneNumber = persons[counter].Phone,
+                    City = persons[counter].City,
+                    Address = persons[counter].Address,
+                    CoachDetail = new CoachDetail()
                     {
-                        Id = persons[counter].Id,
-                        Name = persons[counter].FirstName +" "+ persons[counter].LastName,
-                        UserName = persons[counter].FirstName + persons[counter].LastName,
+                        Name = persons[counter].FirstName,
+                        Surname = persons[counter].LastName,
                         Email = persons[counter].Email,
-                        PhoneNumber = persons[counter].Phone,
-                        City = persons[counter].City,
-                        Address = persons[counter].Address,
-                        CoachDetail = new CoachDetail()
-                        {
-                            Name = persons[counter].FirstName,
-                            Surname = persons[counter].LastName,
-                            Email = persons[counter].Email,
-                            Male = persons[counter].Gender,
-                            BirthDate = DateTime.Now,
-                            DepartmentType = department.DepartmentType,
-                            Mobile = persons[counter].Phone,
-                            UniversityId = university.Id,
-                            DepartmentId = department.Id,
-                            FirstTytNet = (byte)rnd.Next(90, 120),
-                            LastTytNet = (byte)rnd.Next(90, 120),
-                            FirstAytNet = (byte)rnd.Next(60, 80),
-                            LastAytNet = (byte)rnd.Next(60, 80),
-                            School = rnd.Next(100) % 2 == 0,
-                            UsedYoutube = rnd.Next(100) % 2 == 0,
-                            GoneCramSchool = rnd.Next(100) % 2 == 0,
-                            Rank = (uint)rnd.Next(5000),
-                            IsGraduated = rnd.Next(6) != 1 ? true : false,
-                            HighSchool = persons[counter].HighSchoolName,
-                            HighSchoolGPA = persons[counter].HighSchoolScore,
-                            StudentQuota = studentQuota,
-                            MondayQuota = mondayQuota,
-                            TuesdayQuota = tuesdayQuota,
-                            WednesdayQuota = wednesdayQuota,
-                            ThursdayQuota = thursayQuota,
-                            FridayQuota = fridayQuota,
-                            PrivateTutoring = true,
-                        },
-                        TytNets = new TYTNets()
-                        {
-                            Biology = (byte)rnd.Next(6),
-                            Chemistry = (byte)rnd.Next(7),
-                            Geometry = (byte)rnd.Next(10),
-                            Physics = (byte)rnd.Next(7),
-                            Mathematics = (byte)rnd.Next(30),
-                            Geography = (byte)rnd.Next(5),
-                            Grammar = (byte)rnd.Next(10),
-                            History = (byte)rnd.Next(5),
-                            Philosophy = (byte)rnd.Next(5),
-                            Religion = (byte)rnd.Next(5),
-                            Semantics = (byte)rnd.Next(30),
-                        },
-                        UserType = UserType.Coach,
+                        Male = persons[counter].Gender,
+                        BirthDate = DateTime.Now,
+                        DepartmentType = DepartmentType.MF,
+                        Mobile = persons[counter].Phone,
+                        UniversityId = university.Id,
+                        FirstTytNet = (byte)rnd.Next(90, 120),
+                        LastTytNet = (byte)rnd.Next(90, 120),
+                        FirstAytNet = (byte)rnd.Next(60, 80),
+                        LastAytNet = (byte)rnd.Next(60, 80),
+                        School = rnd.Next(100) % 2 == 0,
+                        UsedYoutube = rnd.Next(100) % 2 == 0,
+                        GoneCramSchool = rnd.Next(100) % 2 == 0,
+                        Rank = (uint)rnd.Next(5000),
+                        IsGraduated = rnd.Next(6) != 1 ? true : false,
+                        HighSchool = persons[counter].HighSchoolName,
+                        HighSchoolGPA = persons[counter].HighSchoolScore,
+                        StudentQuota = studentQuota,
+                        MondayQuota = mondayQuota,
+                        TuesdayQuota = tuesdayQuota,
+                        WednesdayQuota = wednesdayQuota,
+                        ThursdayQuota = thursayQuota,
+                        FridayQuota = fridayQuota,
+                        PrivateTutoring = true,
+                    },
+                    TytNets = new TYTNets()
+                    {
+                        Biology = (byte)rnd.Next(6),
+                        Chemistry = (byte)rnd.Next(7),
+                        Geometry = (byte)rnd.Next(10),
+                        Physics = (byte)rnd.Next(7),
+                        Mathematics = (byte)rnd.Next(30),
+                        Geography = (byte)rnd.Next(5),
+                        Grammar = (byte)rnd.Next(10),
+                        History = (byte)rnd.Next(5),
+                        Philosophy = (byte)rnd.Next(5),
+                        Religion = (byte)rnd.Next(5),
+                        Semantics = (byte)rnd.Next(30),
+                    },
+                    UserType = UserType.Coach,
+                };
+
+                for (int j = 2016; j < 2024; j++)
+                {
+                    var isEntered = rnd.Next(10) % 2 == 0;
+                    var rank = isEntered ? rnd.Next(5000) : 0;
+                    applicationUser.CoachYksRankings.Add(new CoachYksRanking()
+                        { Year = j.ToString(), Enter = isEntered, Rank = (uint)rank });
+                }
+                
+                counter += 1;
+                
+                if (departmentType == DepartmentType.MF)
+                {
+                    applicationUser.MfNets = new MFNets()
+                    {
+                        Biology = (byte)rnd.Next(13),
+                        Chemistry = (byte)rnd.Next(13),
+                        Geometry = (byte)rnd.Next(10),
+                        Physics = (byte)rnd.Next(14),
+                        Mathematics = (byte)rnd.Next(30),
                     };
 
-                    for (int j = 2016; j < 2024; j++)
+                    applicationUser.PrivateTutoringMF = new PrivateTutoringMF()
                     {
-                        var isEntered = rnd.Next(10) % 2 == 0;
-                        var rank = isEntered ? rnd.Next(5000) : 0;
-                        applicationUser.CoachYksRankings.Add(new CoachYksRanking()
-                            { Year = j.ToString(), Enter = isEntered, Rank = (uint)rank });
-                    }
+                        Biology = rnd.Next(2) % 2 == 0,
+                        Chemistry = rnd.Next(2) % 2 == 0,
+                        Geometry = rnd.Next(2) % 2 == 0,
+                        Mathematics = rnd.Next(2) % 2 == 0,
+                        Physics = rnd.Next(2) % 2 == 0,
+                    };
                     
-                    counter += 1;
+                }
+                else if (departmentType == DepartmentType.TM)
+                {
+                    applicationUser.TmNets = new TMNets()
+                    {
+                        Geography = (byte)rnd.Next(6),
+                        History = (byte)rnd.Next(10),
+                        Geometry = (byte)rnd.Next(10),
+                        Literature = (byte)rnd.Next(24),
+                        Mathematics = (byte)rnd.Next(30),
+                    };
                     
-                    if (department.DepartmentType == DepartmentType.MF)
+                    applicationUser.PrivateTutoringTM = new PrivateTutoringTM()
                     {
-                        applicationUser.MfNets = new MFNets()
-                        {
-                            Biology = (byte)rnd.Next(13),
-                            Chemistry = (byte)rnd.Next(13),
-                            Geometry = (byte)rnd.Next(10),
-                            Physics = (byte)rnd.Next(14),
-                            Mathematics = (byte)rnd.Next(30),
-                        };
-
-                        applicationUser.PrivateTutoringMF = new PrivateTutoringMF()
-                        {
-                            Biology = rnd.Next(2) % 2 == 0,
-                            Chemistry = rnd.Next(2) % 2 == 0,
-                            Geometry = rnd.Next(2) % 2 == 0,
-                            Mathematics = rnd.Next(2) % 2 == 0,
-                            Physics = rnd.Next(2) % 2 == 0,
-                        };
-                        
-                    }
-                    else if (department.DepartmentType == DepartmentType.TM)
+                        Geography = rnd.Next(2) % 2 == 0,
+                        Geometry = rnd.Next(2) % 2 == 0,
+                        History = rnd.Next(2) % 2 == 0,
+                        Mathematics = rnd.Next(2) % 2 == 0,
+                        Literature = rnd.Next(2) % 2 == 0,
+                    };
+                }
+                else if (departmentType == DepartmentType.Sozel)
+                {
+                    applicationUser.SozelNets = new SozelNets()
                     {
-                        applicationUser.TmNets = new TMNets()
-                        {
-                            Geography = (byte)rnd.Next(6),
-                            History = (byte)rnd.Next(10),
-                            Geometry = (byte)rnd.Next(10),
-                            Literature = (byte)rnd.Next(24),
-                            Mathematics = (byte)rnd.Next(30),
-                        };
-                        
-                        applicationUser.PrivateTutoringTM = new PrivateTutoringTM()
-                        {
-                            Geography = rnd.Next(2) % 2 == 0,
-                            Geometry = rnd.Next(2) % 2 == 0,
-                            History = rnd.Next(2) % 2 == 0,
-                            Mathematics = rnd.Next(2) % 2 == 0,
-                            Literature = rnd.Next(2) % 2 == 0,
-                        };
-                    }
-                    else if (department.DepartmentType == DepartmentType.Sozel)
-                    {
-                        applicationUser.SozelNets = new SozelNets()
-                        {
-                            Geography1 = (byte)rnd.Next(24),
-                            Geography2 = (byte)rnd.Next(11),
-                            History1 = (byte)rnd.Next(10),
-                            History2 = (byte)rnd.Next(11),
-                            Literature1 = (byte)rnd.Next(6),
-                            Philosophy = (byte)rnd.Next(12),
-                            Religion = (byte)rnd.Next(6),
-                        };
-                        
-                        applicationUser.PrivateTutoringSozel = new PrivateTutoringSozel()
-                        {
-                            Geography1 = rnd.Next(2) % 2 == 0,
-                            Geography2 = rnd.Next(2) % 2 == 0,
-                            History1 = rnd.Next(2) % 2 == 0,
-                            History2 = rnd.Next(2) % 2 == 0,
-                            Literature1 = rnd.Next(2) % 2 == 0,
-                            Philosophy = rnd.Next(2) % 2 == 0,
-                            Religion = rnd.Next(2) % 2 == 0,
-                        };
-                        
-                    }
-                    else if (department.DepartmentType == DepartmentType.Dil)
-                    {
-                        applicationUser.DilNets = new DilNets()
-                        {
-                            YDT = (byte)rnd.Next(80),
-                        };                  
-                        
-                        applicationUser.PrivateTutoringDil = new PrivateTutoringDil()
-                        {
-                            YTD = rnd.Next(2) % 2 == 0,
-                        };
-                    }
+                        Geography1 = (byte)rnd.Next(24),
+                        Geography2 = (byte)rnd.Next(11),
+                        History1 = (byte)rnd.Next(10),
+                        History2 = (byte)rnd.Next(11),
+                        Literature1 = (byte)rnd.Next(6),
+                        Philosophy = (byte)rnd.Next(12),
+                        Religion = (byte)rnd.Next(6),
+                    };
                     
+                    applicationUser.PrivateTutoringSozel = new PrivateTutoringSozel()
+                    {
+                        Geography1 = rnd.Next(2) % 2 == 0,
+                        Geography2 = rnd.Next(2) % 2 == 0,
+                        History1 = rnd.Next(2) % 2 == 0,
+                        History2 = rnd.Next(2) % 2 == 0,
+                        Literature1 = rnd.Next(2) % 2 == 0,
+                        Philosophy = rnd.Next(2) % 2 == 0,
+                        Religion = rnd.Next(2) % 2 == 0,
+                    };
+                    
+                }
+                else if (departmentType == DepartmentType.Dil)
+                {
+                    applicationUser.DilNets = new DilNets()
+                    {
+                        YDT = (byte)rnd.Next(80),
+                    };                  
+                    
+                    applicationUser.PrivateTutoringDil = new PrivateTutoringDil()
+                    {
+                        YTD = rnd.Next(2) % 2 == 0,
+                    };
+                }
+                
                     try
                     {
                         await userManager.CreateAsync(applicationUser, "Aa123456");
@@ -828,7 +753,6 @@ async Task SeedCoachs(ApplicationDbContext dbContext, UserManager<ApplicationUse
                         Console.WriteLine(e);
                     }
                 }
-            }
         }
     }
 }
@@ -836,8 +760,6 @@ async Task SeedCoachs(ApplicationDbContext dbContext, UserManager<ApplicationUse
 public class ApplicationDbContext : Microsoft.AspNetCore.Identity.EntityFrameworkCore.IdentityDbContext<ApplicationUser, ApplicationRole, Guid>
 {
     public DbSet<University> Universities { get; set; }
-    public DbSet<Department> Departments { get; set; }
-    public DbSet<UniversityDepartment> UniversityDepartments { get; set; }
     public DbSet<CoachDetail> CoachDetail { get; set; }
     public DbSet<CoachYksRanking> CoachYksRankings { get; set; }
     public DbSet<Invitation> Invitations { get; set; }
@@ -1024,19 +946,6 @@ public class ApplicationDbContext : Microsoft.AspNetCore.Identity.EntityFramewor
             .HasOne(cd => cd.User)
             .WithOne(u => u.DilNets)
             .HasForeignKey<DilNets>(cd => cd.UserId);
-
-        builder.Entity<UniversityDepartment>()
-            .HasKey(ud => new { ud.UniversityId, ud.DepartmentId });
-
-        builder.Entity<UniversityDepartment>()
-            .HasOne(ud => ud.University)
-            .WithMany(u => u.UniversityDepartments)
-            .HasForeignKey(ud => ud.UniversityId);
-
-        builder.Entity<UniversityDepartment>()
-            .HasOne(ud => ud.Department)
-            .WithMany(d => d.UniversityDepartments)
-            .HasForeignKey(ud => ud.DepartmentId);
     }
 }
 
@@ -1296,11 +1205,6 @@ public class CoachDetail
     // Universite referansı
     public University University { get; set; } 
     
-    public Guid DepartmentId { get; set; }
-    
-    // Department referansı
-    public Department Department { get; set; }
-    
     public string HighSchool { get; set; }
 
     public float HighSchoolGPA { get; set; }
@@ -1454,21 +1358,9 @@ public class DilNets
 public class University
 {
     public Guid Id { get; set; }
-    
-    public string Name { get; set; }
-
-    public ICollection<UniversityDepartment> UniversityDepartments { get; set; } = new List<UniversityDepartment>();
-}
-
-public class Department
-{
-    public Guid Id { get; set; }
-    
     public string Name { get; set; }
     
-    public DepartmentType DepartmentType { get; set; }
-    
-    public ICollection<UniversityDepartment> UniversityDepartments { get; set; } = new List<UniversityDepartment>();
+    public string NormalizedName { get; set; }
 }
 
 public enum ExamType
@@ -1487,15 +1379,6 @@ public enum Grade
     Onbir,
     Oniki,
     Mezun
-}
-
-public class UniversityDepartment
-{
-    public Guid UniversityId { get; set; }
-    public University University { get; set; }
-
-    public Guid DepartmentId { get; set; }
-    public Department Department { get; set; }
 }
 
 public class Invitation
