@@ -916,9 +916,9 @@ public static class Onboard
         
         public StudentGoals? StudentGoals { get; set; }
         
-        public ResourcesTYT? ResourcesTYT { get; set; }
+        public ResourcesTYTItem? ResourcesTYT { get; set; }
         
-        public ResourcesAYT? ResourcesAYT { get; set; }
+        public ResourcesAYTItem? ResourcesAYT { get; set; }
         
         public SupplementaryMaterials? SupplementaryMaterials { get; set; }
     
@@ -1128,7 +1128,7 @@ public static class Onboard
             YDT = 105
         };
 
-        private ResourcesTYT resourcesTyt = new ResourcesTYT()
+        private ResourcesTYTItem resourcesTyt = new ResourcesTYTItem()
         {
             Biology = "TYT - Biyoloji Kaynak",
             Chemistry = "TYT - Kimya Kaynak",
@@ -1142,7 +1142,7 @@ public static class Onboard
             Turkish = "TYT - Türkçe Kaynak",
         };
         
-        private ResourcesAYT resourcesAyt = new ResourcesAYT()
+        private ResourcesAYTItem resourcesAyt = new ResourcesAYTItem()
         {
             Biology = "AYT - Biyoloji Kaynak",
             Chemistry = "AYT - Kimya Kaynak",

@@ -1,6 +1,6 @@
 ﻿namespace NightOwlEnterprise.Api.Endpoints.CommonDto;
 
-public class ResourcesTYT
+public class ResourcesTYTItem
 {
     public string Turkish { get; set; }
     public string Mathematics { get; set; }
@@ -14,7 +14,7 @@ public class ResourcesTYT
     public string Biology { get; set; }
 }
     
-public class ResourcesAYT
+public class ResourcesAYTItem
 {
     public string Turkish { get; set; }
     public string Mathematics { get; set; }
