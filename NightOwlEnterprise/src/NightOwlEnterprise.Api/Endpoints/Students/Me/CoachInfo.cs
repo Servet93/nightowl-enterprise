@@ -25,6 +25,7 @@ public static class CoachInfo
                     .Where(x => x.StudentId == studentId)
                     .Select(x => new CoachInfoResponse()
                     {
+                        Id = x.Coach.Id,
                         Name = x.Coach.CoachDetail.Name,
                         Surname = x.Coach.CoachDetail.Surname,
                         UniversityName = x.Coach.CoachDetail.University.Name
@@ -39,6 +40,7 @@ public static class CoachInfo
 
     public class CoachInfoResponse
     {
+        public Guid Id { get; set; }
         public string Name { get; set; }
         
         public string Surname { get; set; }

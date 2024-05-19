@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.Runtime.CompilerServices;
 using System.Security.Claims;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -8,7 +7,11 @@ using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MongoDB.Bson;
-using MongoDB.Driver;
+using NightOwlEnterprise.Api.Endpoints.CommonDto;
+using NightOwlEnterprise.Api.Entities;
+using NightOwlEnterprise.Api.Entities.Enums;
+using NightOwlEnterprise.Api.Entities.Nets;
+using NightOwlEnterprise.Api.Entities.PrivateTutoring;
 using Swashbuckle.AspNetCore.Filters;
 
 namespace NightOwlEnterprise.Api.Endpoints.Coachs.Me;
@@ -69,6 +72,7 @@ public static class Onboard
                 coach.CoachDetail.DepartmentType = request.DepartmentAndExamInfo.DepartmentType;
 
                 coach.CoachDetail.UniversityId = request.DepartmentAndExamInfo.UniversityId;
+                coach.CoachDetail.DepartmentName = request.DepartmentAndExamInfo.DepartmentName;
 
                 coach.CoachYksRankings.Clear();
 
@@ -103,7 +107,7 @@ public static class Onboard
                     {
                         if (coach.PrivateTutoringTYT is null)
                         {
-                            coach.PrivateTutoringTYT = new global::PrivateTutoringTYT();
+                            coach.PrivateTutoringTYT = new global::NightOwlEnterprise.Api.Entities.PrivateTutoring.PrivateTutoringTYT();
                         }
                         
                         coach.PrivateTutoringTYT.Biology =
@@ -241,7 +245,7 @@ public static class Onboard
                 {
                     if (coach.SozelNets is null)
                     {
-                        coach.SozelNets = new global::SozelNets();
+                        coach.SozelNets = new global::NightOwlEnterprise.Api.Entities.Nets.SozelNets();
                     }
                     
                     coach.SozelNets.Geography1 = request.SozelNets.Geography1;
@@ -255,7 +259,7 @@ public static class Onboard
                 {
                     if (coach.DilNets is null)
                     {
-                        coach.DilNets = new global::DilNets();
+                        coach.DilNets = new global::NightOwlEnterprise.Api.Entities.Nets.DilNets();
                     }
                     
                     coach.DilNets.YDT = request.DilNets.YDT;
@@ -317,6 +321,11 @@ public static class Onboard
         }
         else
         {
+            if (string.IsNullOrEmpty(request.DepartmentName))
+            {
+                errorDescriptors.Add(CommonErrorDescriptor.EmptyDepartmentName());
+            }
+            
             var years = request.YearToTyt.Keys.Order().ToList();
 
             var firstYear = 2016;
@@ -894,6 +903,8 @@ public static class Onboard
     public class DepartmentAndExamInfo
     {
         public Guid UniversityId { get; set; }
+
+        public string DepartmentName { get; set; }
         
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public DepartmentType DepartmentType { get; set; }
@@ -901,85 +912,6 @@ public static class Onboard
         public Dictionary<uint, bool> YearToTyt { get; set; } 
 
         public Dictionary<uint, uint> YearToYksRanking { get; set; }
-    }
-    
-    public class CoachTytNets
-    {
-        //Anlam Bilgisi: (Max 30, Min 0)
-        public byte Semantics { get; set; }
-        //Dil Bilgisi: (Max 10, Min 0)
-        public byte Grammar { get; set; }
-        //Matematik: (Max 30, Min 0)
-        public byte Mathematics { get; set; }
-        //Geometri: (Max 10, Min 0)
-        public byte Geometry { get; set; }
-        //Tarih: (Max 5, Min 0)
-        public byte History { get; set; }
-        //Coğrafya: (Max 5, Min 0)
-        public byte Geography { get; set; }
-        //Felsefe: (Max 5, Min 0)
-        public byte Philosophy { get; set; }
-        //Din: (Max 5, Min 0)
-        public byte Religion { get; set; }
-        //Fizik: (Max 7, Min 0)
-        public byte Physics { get; set; }
-        //Kimya: (Max 7, Min 0)
-        public byte Chemistry { get; set; }
-        //Biology: (Max 6, Min 0)
-        public byte Biology { get; set; }
-    }
-    
-    public class CoachMfNets
-    {
-        //Matematik: (Max 30, Min 0)
-        public byte Mathematics { get; set; }
-        //Geometri: (Max 10, Min 0)
-        public byte Geometry { get; set; }
-        //Fizik: (Max 14, Min 0)
-        public byte Physics { get; set; }
-        //Kimya: (Max 13, Min 0)
-        public byte Chemistry { get; set; }
-        //Biology: (Max 13, Min 0)
-        public byte Biology { get; set; }
-    }
-    
-    public class CoachTmNets
-    {
-        //Matematik: (Max 30, Min 0)
-        public byte Mathematics { get; set; }
-        //Geometri: (Max 10, Min 0)
-        public byte Geometry { get; set; }
-        //Edebiyat: (Max 24, Min 0)
-        public byte Literature { get; set; }
-        //Tarih: (Max 10, Min 0)
-        public byte History { get; set; }
-        //Coğrafya: (Max 6, Min 0)
-        public byte Geography { get; set; }
-    }
-    
-    //Sözel
-    public class CoachSozelNets
-    {
-        //Tarih-1: (Max 10, Min 0)
-        public byte History1 { get; set; }
-        //Coğrafya: (Max 24, Min 0)
-        public byte Geography1 { get; set; }
-        //Edebiyat-1: (Max 6, Min 0)
-        public byte Literature1 { get; set; }
-        //Tarih-2: (Max 11, Min 0)
-        public byte History2 { get; set; }
-        //Coğrafya-2: (Max 11, Min 0)
-        public byte Geography2 { get; set; }
-        //Felsefe: (Max 12, Min 0)
-        public byte Philosophy { get; set; }
-        //Din: (Max 6, Min 0)
-        public byte Religion { get; set; }
-    }
-    
-    public class CoachDilNets
-    {
-        //YDT: (Max 80, Min 0) Yabacnı Dil Testi
-        public byte YDT { get; set; }
     }
     
     public class CoachSupplementaryMaterials
@@ -1089,6 +1021,7 @@ public static class Onboard
         private DepartmentAndExamInfo departmentAndExamInfo = new DepartmentAndExamInfo()
         {
             UniversityId = Guid.Empty,
+            DepartmentName = "Bilgisayar Mühendisi",
             DepartmentType = DepartmentType.MF,
             YearToTyt = new Dictionary<uint, bool>()
             {

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using NightOwlEnterprise.Api.Entities.Enums;
 
 namespace NightOwlEnterprise.Api.Endpoints.Students.Me;
 

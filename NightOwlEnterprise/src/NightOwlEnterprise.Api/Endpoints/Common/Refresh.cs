@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using NightOwlEnterprise.Api.Entities;
 
 namespace NightOwlEnterprise.Api.Endpoints.Common;
 

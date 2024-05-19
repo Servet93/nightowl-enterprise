@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using NightOwlEnterprise.Api.Entities.Enums;
 
 namespace NightOwlEnterprise.Api.Endpoints.Coachs.Me;
 

@@ -21,4 +21,6 @@ public class TagConstants
     public const string CoachMeOnboard = "Koç -> Tanışma Formu";
     
     public const string CoachMeQuota = "Koç -> Kontenjan Belirleme";
+    
+    public const string CoachMeInfo = "Koç -> Profil";
 }

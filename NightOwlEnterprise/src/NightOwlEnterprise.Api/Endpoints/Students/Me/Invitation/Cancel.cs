@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using NightOwlEnterprise.Api.Entities.Enums;
 
 namespace NightOwlEnterprise.Api.Endpoints.Students.Me.Invitation;
 

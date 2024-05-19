@@ -7,21 +7,27 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
+using NightOwlEnterprise.Api.Entities;
+using NightOwlEnterprise.Api.Entities.Enums;
 
-namespace NightOwlEnterprise.Api.Endpoints.Students;
+namespace NightOwlEnterprise.Api.Endpoints.Students.Identity;
 
 public static class ForgotPassword
 {
-    public static void MapForgotPassword<TUser>(this IEndpointRouteBuilder endpoints, IEmailSender<ApplicationUser> emailSender)
-        where TUser : class, new()
+    public static void MapForgotPassword(this IEndpointRouteBuilder endpoints, IEmailSender<ApplicationUser> emailSender)
     {
         // TODO: Sınırsız bir şekilde çağrılamasın. Bir sınır getirilmeli 5 dk'da bi kere gibi. 
-        endpoints.MapPost("/forgotPassword", async Task<Results<Ok, ValidationProblem>>
+        endpoints.MapPost("/forgotPassword", async Task<Results<Ok, ProblemHttpResult>>
             ([FromBody] ForgotPasswordRequest resetRequest, [FromServices] IServiceProvider sp) =>
         {
             var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
             var user = await userManager.FindByEmailAsync(resetRequest.Email);
 
+            if (user is null || user.UserType != UserType.Student)
+            {
+                return CommonErrorDescriptor.NotFoundEmail().CreateProblem("Şifremi Unuttum!");
+            }
+            
             // if (user is not null && await userManager.IsEmailConfirmedAsync(user))
             if (user is not null)
             {

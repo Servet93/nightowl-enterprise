@@ -1,20 +1,11 @@
-﻿using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
-using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Encodings.Web;
+﻿using System.Security.Claims;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
-using MongoDB.Driver;
-using NightOwlEnterprise.Api.Endpoints.Students;
-using Stripe;
-using Swashbuckle.AspNetCore.Annotations;
+using NightOwlEnterprise.Api.Endpoints.CommonDto;
+using NightOwlEnterprise.Api.Entities;
+using NightOwlEnterprise.Api.Entities.Enums;
 using Swashbuckle.AspNetCore.Filters;
 
 namespace NightOwlEnterprise.Api.Endpoints.Coachs;
@@ -25,7 +16,7 @@ public static class List
     {
         // NOTE: We cannot inject UserManager<TUser> directly because the TUser generic parameter is currently unsupported by RDG.
         // https://github.com/dotnet/aspnetcore/issues/47338
-        endpoints.MapPost("/", async Task<Results<Ok<PagedResponse<Coach>>, ProblemHttpResult>>
+        endpoints.MapPost("/", async Task<Results<Ok<PagedResponse<CoachListItem>>, ProblemHttpResult>>
             ([FromBody] CoachFilterRequest? filter, [FromQuery] int? page,[FromQuery] int? pageSize, ClaimsPrincipal claimsPrincipal, HttpContext httpContext, [FromServices] IServiceProvider sp) =>
         {
             var paginationFilter = new PaginationFilter(page, pageSize);
@@ -66,32 +57,18 @@ public static class List
                     (x.CoachStudentTrainingSchedules.Where(i => i.CoachId == x.Id && i.Day == DayOfWeek.Sunday).Count() < x.CoachDetail.SundayQuota)
                 );
 
-            if (filter is null)
+            coachQueryable = studentExamType switch
             {
-                // var mongoDatabase = sp.GetRequiredService<IMongoDatabase>();
-                //
-                // var onboardStudentCollection = mongoDatabase.GetCollection<Students.Onboard.OnboardStudent>("onboardStudents");
-                //
-                // var docFilter = Builders<Students.Onboard.OnboardStudent>.Filter.Eq(s => s.UserId, strUserId);
-                //
-                // var onboardStudent = await onboardStudentCollection.Find(docFilter).FirstOrDefaultAsync();
-                //
-                // if (onboardStudent is null)
-                // {
-                //     return TypedResults.Problem("Öğrenci kayıtlı değil.", statusCode: StatusCodes.Status400BadRequest);
-                // }
-
-                coachQueryable = studentExamType switch
-                {
-                    ExamType.TM => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.TM),
-                    ExamType.MF => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.MF),
-                    ExamType.Sozel => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.Sozel),
-                    ExamType.Dil => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.Dil),
-                    ExamType.TYT => coachQueryable,
-                    _ => coachQueryable
-                };
-            }
-            else
+                ExamType.TYT_TM => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.TM),
+                ExamType.TM => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.TM),
+                ExamType.TYT_MF => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.MF),
+                ExamType.MF => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.MF),
+                ExamType.TYT_SOZEL => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.Sozel),
+                ExamType.Sozel => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.Sozel),
+                ExamType.Dil => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.Dil),
+            };
+            
+            if (filter is not null)
             {
                 coachQueryable = coachQueryable
                     .WhereIf(x => x.CoachDetail.IsGraduated == filter.IsGraduated, filter.IsGraduated.HasValue)
@@ -104,7 +81,7 @@ public static class List
                     .WhereIf(x => x.CoachDetail.Rank > 1000 && x.CoachDetail.Rank < 5000, filter.Rank.HasValue && filter.Rank == Rank.Between1000And5000)
                     .WhereIf(x => x.CoachDetail.Rank > 5000 && x.CoachDetail.Rank < 10000, filter.Rank.HasValue && filter.Rank == Rank.Between5000And10000)
                     .WhereIf(x => x.CoachDetail.Rank >= 10000, filter.Rank.HasValue && filter.Rank == Rank.Between10000And100000)
-                    .WhereIf(x => filter.UniversityIds.Contains(x.CoachDetail.UniversityId), filter.UniversityIds is not null && filter.UniversityIds.Any());    
+                    .WhereIf(x => filter.UniversityIds.Contains(x.CoachDetail.UniversityId), filter.UniversityIds is not null && filter.UniversityIds.Any());
             }
 
             var totalCount = await coachQueryable.CountAsync();
@@ -112,26 +89,20 @@ public static class List
             coachAppUsers = await coachQueryable.Skip((paginationFilter.PageNumber - 1) * paginationFilter.PageSize)
                 .Take(paginationFilter.PageSize).ToListAsync();
                 
-            var coachs = new List<Coach>();
+            var coachs = new List<CoachListItem>();
 
-            coachs.AddRange(coachAppUsers.Select(x => new Coach()
+            coachs.AddRange(coachAppUsers.Select(x => new CoachListItem()
             {
                 Id = x.Id,
-                Name = x.Name,
+                Name = x.CoachDetail.Name,
+                Surname = x.CoachDetail.Surname,
                 UniversityName = x.CoachDetail.University.Name,
-                DepartmentType = x.CoachDetail.DepartmentType,
+                DepartmentName = x.CoachDetail.DepartmentName,
                 Year = x.CoachYksRankings?.LastOrDefault()?.Year,
-                Male = x.CoachDetail.Male,
                 Rank = x.CoachDetail.Rank,
-                IsGraduated = x.CoachDetail.IsGraduated,
-                GoneCramSchool = x.CoachDetail.GoneCramSchool,
-                UsedYoutube = x.CoachDetail.UsedYoutube,
-                ChangedDepartmentType = x.CoachDetail.ChangedDepartmentType,
-                FromDepartment = x.CoachDetail.FromDepartment,
-                ToDepartment = x.CoachDetail.ToDepartment,
             }));
                 
-            var pagedResponse = PagedResponse<Coach>.CreatePagedResponse(
+            var pagedResponse = PagedResponse<CoachListItem>.CreatePagedResponse(
                 coachs, totalCount, paginationFilter, paginationUriBuilder,
                 httpContext.Request.Path.Value ?? string.Empty);
 
@@ -139,12 +110,19 @@ public static class List
             
         }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags(TagConstants.StudentsCoachListAndReserve).RequireAuthorization("Student");
         
-        endpoints.MapGet("/{coachId}", async Task<Results<Ok<Coach>, ProblemHttpResult>>
+        endpoints.MapGet("/{coachId}", async Task<Results<Ok<CoachItem>, ProblemHttpResult>>
             ([FromQuery] Guid coachId, ClaimsPrincipal claimsPrincipal, HttpContext httpContext, [FromServices] IServiceProvider sp) =>
         {
             var dbContext = sp.GetRequiredService<ApplicationDbContext>();
             
-            var coachApplicationUser = dbContext.Users.Include(x => x.CoachDetail)
+            var coachApplicationUser = dbContext.Users
+                .Include(x => x.CoachDetail)
+                .Include(x => x.CoachYksRankings)
+                .Include(x => x.TytNets)
+                .Include(x => x.TmNets)
+                .Include(x => x.MfNets)
+                .Include(x => x.SozelNets)
+                .Include(x => x.DilNets)
                 .Include(x => x.CoachDetail.University)
                 .FirstOrDefault(x => x.Id == coachId && x.UserType == UserType.Coach);
 
@@ -152,23 +130,173 @@ public static class List
             {
                 return TypedResults.Problem("Koç bilgisi bulunamadı.", statusCode: StatusCodes.Status400BadRequest);
             }
-
-            var coach = new Coach()
+            
+            var coach = new CoachItem()
             {
                 Id = coachApplicationUser.Id,
-                Name = coachApplicationUser.Name,
+                Name = coachApplicationUser.CoachDetail.Name,
+                Surname = coachApplicationUser.CoachDetail.Surname,
                 //Quota = coachApplicationUser.CoachDetail.Quota,
                 UniversityName = coachApplicationUser.CoachDetail.University.Name,
+                DepartmentName = coachApplicationUser.CoachDetail.DepartmentName,
                 DepartmentType = coachApplicationUser.CoachDetail.DepartmentType,
-                Male = coachApplicationUser.CoachDetail.Male,
                 Rank = coachApplicationUser.CoachDetail.Rank,
                 IsGraduated = coachApplicationUser.CoachDetail.IsGraduated,
+                //Yardımcı Kaynaklardan hangilerini kullandınız
                 GoneCramSchool = coachApplicationUser.CoachDetail.GoneCramSchool,
                 UsedYoutube = coachApplicationUser.CoachDetail.UsedYoutube,
+                School = coachApplicationUser.CoachDetail.School,
+                PrivateTutoring = coachApplicationUser.CoachDetail.PrivateTutoring,
+                //
                 ChangedDepartmentType = coachApplicationUser.CoachDetail.ChangedDepartmentType,
                 FromDepartment = coachApplicationUser.CoachDetail.FromDepartment,
                 ToDepartment = coachApplicationUser.CoachDetail.ToDepartment,
+                HighschoolName = coachApplicationUser.CoachDetail.HighSchool,
+                HighschoolGPA = coachApplicationUser.CoachDetail.HighSchoolGPA,
+                FirstTytNet = coachApplicationUser.CoachDetail.FirstTytNet,
+                LastTytNet = coachApplicationUser.CoachDetail.LastTytNet,
+                FirstAytNet = coachApplicationUser.CoachDetail.FirstAytNet,
+                LastAytNet = coachApplicationUser.CoachDetail.FirstAytNet,
+                YksRanks = new System.Collections.Generic.Dictionary<string, uint>()
             };
+            
+            if (coachApplicationUser.PrivateTutoringTYT is not null)
+            {
+                coach.PrivateTutoringTyt = new PrivateTutoringTYTObject()
+                {
+                    Biology = coachApplicationUser.PrivateTutoringTYT.Biology,
+                    Chemistry = coachApplicationUser.PrivateTutoringTYT.Chemistry,
+                    Geography = coachApplicationUser.PrivateTutoringTYT.Geography,
+                    Geometry = coachApplicationUser.PrivateTutoringTYT.Geometry,
+                    History = coachApplicationUser.PrivateTutoringTYT.History,
+                    Mathematics = coachApplicationUser.PrivateTutoringTYT.Mathematics,
+                    Philosophy = coachApplicationUser.PrivateTutoringTYT.Philosophy,
+                    Physics = coachApplicationUser.PrivateTutoringTYT.Physics,
+                    Religion = coachApplicationUser.PrivateTutoringTYT.Religion,
+                    Turkish = coachApplicationUser.PrivateTutoringTYT.Turkish,
+                };
+            }
+
+            if (coachApplicationUser.CoachDetail.DepartmentType == DepartmentType.TM)
+            {
+                if (coachApplicationUser.PrivateTutoringTM is not null)
+                {
+                    coach.PrivateTutoringAyt = new PrivateTutoringAYTObject()
+                    {
+                        Tm = new TM()
+                        {
+                            Geography = coachApplicationUser.PrivateTutoringTM.Geography,
+                            Geometry = coachApplicationUser.PrivateTutoringTM.Geometry,
+                            History = coachApplicationUser.PrivateTutoringTM.History,
+                            Literature = coachApplicationUser.PrivateTutoringTM.Literature,
+                            Mathematics = coachApplicationUser.PrivateTutoringTM.Mathematics,
+                        }
+                    };    
+                }
+
+                if (coachApplicationUser.TmNets is not null)
+                {
+                    coach.TmNets = new CoachTmNets()
+                    {
+                        Geography = coachApplicationUser.TmNets.Geography.Value,
+                        Geometry = coachApplicationUser.TmNets.Geometry.Value,
+                        History = coachApplicationUser.TmNets.History.Value,
+                        Literature = coachApplicationUser.TmNets.Literature.Value,
+                        Mathematics = coachApplicationUser.TmNets.Mathematics.Value,
+                    };    
+                }
+            }
+            else if (coachApplicationUser.CoachDetail.DepartmentType == DepartmentType.MF && coachApplicationUser.PrivateTutoringMF is not null)
+            {
+                if (coachApplicationUser.PrivateTutoringMF is not null)
+                {
+                    coach.PrivateTutoringAyt = new PrivateTutoringAYTObject()
+                    {
+                        Mf = new MF()
+                        {
+                            Biology = coachApplicationUser.PrivateTutoringMF.Biology,
+                            Chemistry = coachApplicationUser.PrivateTutoringMF.Chemistry,
+                            Geometry = coachApplicationUser.PrivateTutoringMF.Geometry,
+                            Mathematics = coachApplicationUser.PrivateTutoringMF.Mathematics,
+                            Physics = coachApplicationUser.PrivateTutoringMF.Physics,
+                        }
+                    };    
+                }
+                
+                if (coachApplicationUser.MfNets is not null)
+                {
+                    coach.MfNets = new CoachMfNets()
+                    {
+                        Biology = coachApplicationUser.MfNets.Biology.Value,
+                        Chemistry = coachApplicationUser.MfNets.Chemistry.Value,
+                        Geometry = coachApplicationUser.MfNets.Geometry.Value,
+                        Mathematics = coachApplicationUser.MfNets.Mathematics.Value,
+                        Physics = coachApplicationUser.MfNets.Physics.Value,
+                    };    
+                }
+            }
+            else if (coachApplicationUser.CoachDetail.DepartmentType == DepartmentType.Sozel && coachApplicationUser.PrivateTutoringSozel is not null)
+            {
+                if (coachApplicationUser.PrivateTutoringSozel is not null)
+                {
+                    coach.PrivateTutoringAyt = new PrivateTutoringAYTObject()
+                    {
+                        Sozel = new Sozel()
+                        {
+                            Geography1 = coachApplicationUser.PrivateTutoringSozel.Geography1,
+                            Geography2 = coachApplicationUser.PrivateTutoringSozel.Geography2,
+                            History1 = coachApplicationUser.PrivateTutoringSozel.History1,
+                            History2 = coachApplicationUser.PrivateTutoringSozel.History2,
+                            Literature1 = coachApplicationUser.PrivateTutoringSozel.Literature1,
+                            Philosophy = coachApplicationUser.PrivateTutoringSozel.Philosophy,
+                            Religion = coachApplicationUser.PrivateTutoringSozel.Religion,
+                        }
+                    };
+                }
+
+                if (coachApplicationUser.SozelNets is not null)
+                {
+                    coach.SozelNets = new CoachSozelNets()
+                    {
+                        Geography1 = coachApplicationUser.SozelNets.Geography1.Value,
+                        Geography2 = coachApplicationUser.SozelNets.Geography2.Value,
+                        History1 = coachApplicationUser.SozelNets.History1.Value,
+                        History2 = coachApplicationUser.SozelNets.History2.Value,
+                        Literature1 = coachApplicationUser.SozelNets.Literature1.Value,
+                        Philosophy = coachApplicationUser.SozelNets.Philosophy.Value,
+                        Religion = coachApplicationUser.SozelNets.Religion.Value,
+                    };
+                }
+                
+            }
+            else if (coachApplicationUser.CoachDetail.DepartmentType == DepartmentType.Dil  && coachApplicationUser.PrivateTutoringDil is not null)
+            {
+                if (coachApplicationUser.PrivateTutoringDil is not null)
+                {
+                    coach.PrivateTutoringAyt = new PrivateTutoringAYTObject()
+                    {
+                        Dil = new Dil()
+                        {
+                            YTD = coachApplicationUser.PrivateTutoringDil.YTD,
+                        }
+                    };
+                }
+
+                if (coachApplicationUser.DilNets is not null)
+                {
+                    coach.DilNets = new CoachDilNets()
+                    {
+                        YDT = coachApplicationUser.DilNets.YDT.Value
+                    };
+                }
+            }
+
+            var coachYksRankings = coachApplicationUser.CoachYksRankings.Where(x => x.Enter).ToList();
+
+            foreach (var yksRank in coachYksRankings)
+            {
+                coach.YksRanks.Add(yksRank.Year, yksRank.Rank);
+            }
 
             return TypedResults.Ok(coach);
             
@@ -203,26 +331,44 @@ public static class List
         Between10000And100000,
     }
 
-    public sealed class Coach
+    public sealed class CoachListItem
     {
         public Guid Id { get; set; }
         public string Name { get; set; }
+        public string Surname { get; set; }
         public string UniversityName { get; set; }
-        
+        public string DepartmentName { get; set; }
+        public uint Rank { get; set; }
+        public string Year { get; set; }
+    }
+    
+    public sealed class CoachItem
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; }
+        public string Surname { get; set; }
+        public string UniversityName { get; set; }
         public string DepartmentName { get; set; }
         
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public DepartmentType DepartmentType { get; set; }
         
-        public bool IsGraduated { get; set; }
-    
+        //İlk ve son tyt-ayt netleri        
         public byte FirstTytNet { get; set; }
-    
-        public bool UsedYoutube { get; set; }
-    
-        public bool GoneCramSchool { get; set; }
         
-        public bool Male { get; set; }
+        public byte LastTytNet { get; set; }
+        
+        public byte FirstAytNet { get; set; }
+        
+        public byte LastAytNet { get; set; }
+        
+        //
+        public bool IsGraduated { get; set; }
+        
+        public string HighschoolName { get; set; }
+        
+        public float HighschoolGPA { get; set; }
+        
     
         //Alan değiştirdi mi
         public bool ChangedDepartmentType { get; set; }
@@ -234,8 +380,32 @@ public static class List
         public DepartmentType ToDepartment { get; set; }
         
         public uint Rank { get; set; }
-        
         public string Year { get; set; }
+
+        public Dictionary<string, uint> YksRanks { get; set; }
+        
+        //Nets
+
+        public CoachTytNets TytNets { get; set; }
+        
+        public CoachMfNets MfNets { get; set; }
+        
+        public CoachTmNets TmNets { get; set; }
+        
+        public CoachSozelNets SozelNets { get; set; }
+        
+        public CoachDilNets DilNets { get; set; }
+        
+        //Yardımcı Kaynaklardan hangilerini kullandınız
+        public bool UsedYoutube { get; set; }
+        public bool GoneCramSchool { get; set; }
+        public bool PrivateTutoring { get; set; }
+        public bool School { get; set; }
+        
+        //Özel ders 
+        public PrivateTutoringTYTObject PrivateTutoringTyt { get; set; }
+        
+        public PrivateTutoringAYTObject PrivateTutoringAyt { get; set; }
     }
 
     public class CoachFilterRequestExamples : IMultipleExamplesProvider<CoachFilterRequest>

@@ -12,7 +12,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using NightOwlEnterprise.Api.Endpoints.Coachs;
-using NightOwlEnterprise.Api.Services;
+using NightOwlEnterprise.Api.Entities;
+using NightOwlEnterprise.Api.Entities.Enums;
 using Stripe;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.Filters;
@@ -103,23 +104,28 @@ public static class ReserveCoach
 
                     var date = FindDate(inviteRequest.Day);
 
-                    dbContext.Invitations.Add(new Invitation()
+                    for (int i = 1; i <= 4; i++)
                     {
-                        CoachId = coachId,
-                        StudentId = studentId,
-                        State = InvitationState.SpecifyHour,
-                        Type = InvitationType.VideoCall,
-                        Date = date,
-                    });
+                        dbContext.Invitations.Add(new Invitation()
+                        {
+                            CoachId = coachId,
+                            StudentId = studentId,
+                            State = InvitationState.SpecifyHour,
+                            Type = InvitationType.VideoCall,
+                            Date = date,
+                        });
                     
-                    dbContext.Invitations.Add(new Invitation()
-                    {
-                        CoachId = coachId,
-                        StudentId = studentId,
-                        State = InvitationState.SpecifyHour,
-                        Type = InvitationType.VoiceCall,
-                        Date = date.AddDays(3),
-                    });
+                        dbContext.Invitations.Add(new Invitation()
+                        {
+                            CoachId = coachId,
+                            StudentId = studentId,
+                            State = InvitationState.SpecifyHour,
+                            Type = InvitationType.VoiceCall,
+                            Date = date.AddDays(3),
+                        });
+
+                        date = date.AddDays(7);
+                    }
                     
                     dbContext.SaveChanges();
                 }
@@ -154,7 +160,8 @@ public static class ReserveCoach
             DateTime bulunanTarih;
             if (gunFarki == 0) // Bugün
             {
-                bulunanTarih = bugun;
+                // bulunanTarih = bugun;
+                bulunanTarih = bugun.AddDays(7);
             }
             else if (gunFarki > 0) // İleride
             {

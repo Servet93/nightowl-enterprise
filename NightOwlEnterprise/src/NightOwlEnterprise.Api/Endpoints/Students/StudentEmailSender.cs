@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity.UI.Services;
+using NightOwlEnterprise.Api.Entities;
 
 namespace NightOwlEnterprise.Api.Endpoints.Students;
 

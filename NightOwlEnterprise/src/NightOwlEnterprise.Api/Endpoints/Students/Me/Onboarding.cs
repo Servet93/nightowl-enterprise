@@ -1,16 +1,17 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
-using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using MongoDB.Bson;
-using MongoDB.Driver;
+using NightOwlEnterprise.Api.Endpoints.CommonDto;
+using NightOwlEnterprise.Api.Entities.Enums;
+using NightOwlEnterprise.Api.Entities.Nets;
+using NightOwlEnterprise.Api.Entities.PrivateTutoring;
 using Swashbuckle.AspNetCore.Filters;
+using ResourcesAYT = NightOwlEnterprise.Api.Entities.ResourcesAYT;
+using ResourcesTYT = NightOwlEnterprise.Api.Entities.ResourcesTYT;
 
-namespace NightOwlEnterprise.Api.Endpoints.Students;
+namespace NightOwlEnterprise.Api.Endpoints.Students.Me;
 
 public static class Onboard
 {
@@ -18,157 +19,6 @@ public static class Onboard
     
     public static void MapOnboard(this IEndpointRouteBuilder endpoints)
     {
-        // endpoints.MapPost("/onboard/student-general-info", Results<Ok, ProblemHttpResult>
-        //         (StudentGeneralInfo request, [FromServices] IServiceProvider sp) =>
-        //     {
-        //         var requestValidation = ValidateStudentGeneralInfo(request);
-        //
-        //         if (requestValidation.Any())
-        //         {
-        //             return requestValidation.CreateProblem("Öğrenci bilgisi doğrulanamadı");
-        //         }
-        //
-        //         return TypedResults.Ok();
-        //
-        //     }).RequireAuthorization().Produces<ProblemHttpResult>(400).WithOpenApi()
-        //     .WithTags("Öğrenci Tanışma Formu İşlemleri");
-        //
-        // endpoints.MapPost("/onboard/parent-info", Results<Ok, ProblemHttpResult>
-        //         (ParentInfo request, [FromServices] IServiceProvider sp) =>
-        //     {
-        //         var requestValidation = ValidateParentInfo(request);
-        //
-        //         if (requestValidation.Any())
-        //         {
-        //             return requestValidation.CreateProblem("Veli bilgisi doğrulanamadı");
-        //         }
-        //
-        //         return TypedResults.Ok();
-        //
-        //     }).RequireAuthorization().Produces<ProblemHttpResult>(400).WithOpenApi()
-        //     .WithTags("Öğrenci Tanışma Formu İşlemleri");
-        //
-        // endpoints.MapPost("/onboard/last-practice-tyt-exam-points", Results<Ok, ProblemHttpResult>
-        //         (TYTAveragePoints request, [FromServices] IServiceProvider sp) =>
-        //     {
-        //         var requestValidation = ValidateLastPracticeTytExamPoints(request);
-        //
-        //         if (requestValidation.Any())
-        //         {
-        //             return requestValidation.CreateProblem("Son temel yeterlilik sınav türü bilgisi doğrulanamadı");
-        //         }
-        //
-        //         return TypedResults.Ok();
-        //
-        //     }).RequireAuthorization().Produces<ProblemHttpResult>(400).WithOpenApi()
-        //     .WithTags("Öğrenci Tanışma Formu İşlemleri");
-        //
-        // endpoints.MapPost("/onboard/last-practice-tm-exam-points", Results<Ok, ProblemHttpResult>
-        //         (TMAveragePoints request, [FromServices] IServiceProvider sp) =>
-        //     {
-        //         var requestValidation = ValidateLastPracticeTmExamPoints(request);
-        //
-        //         if (requestValidation.Any())
-        //         {
-        //             return requestValidation.CreateProblem("Son eşit ağırlık puan türü bilgisi doğrulanamadı");
-        //         }
-        //
-        //         return TypedResults.Ok();
-        //
-        //     }).RequireAuthorization().Produces<ProblemHttpResult>(400).WithOpenApi()
-        //     .WithTags("Öğrenci Tanışma Formu İşlemleri");
-        //
-        // endpoints.MapPost("/onboard/last-practice-mf-exam-points", Results<Ok, ProblemHttpResult>
-        //         (MFAveragePoints request, [FromServices] IServiceProvider sp) =>
-        //     {
-        //         var requestValidation = ValidateLastPracticeMfExamPoints(request);
-        //
-        //         if (requestValidation.Any())
-        //         {
-        //             return requestValidation.CreateProblem("Son sayısal puan türü bilgisi doğrulanamadı");
-        //         }
-        //
-        //         return TypedResults.Ok();
-        //
-        //     }).RequireAuthorization().Produces<ProblemHttpResult>(400).WithOpenApi()
-        //     .WithTags("Öğrenci Tanışma Formu İşlemleri");
-        //
-        // endpoints.MapPost("/onboard/last-practice-sozel-exam-points", Results<Ok, ProblemHttpResult>
-        //         (SozelAveragePoints request, [FromServices] IServiceProvider sp) =>
-        //     {
-        //         var requestValidation = ValidateLastPracticeSozelExamPoints(request);
-        //
-        //         if (requestValidation.Any())
-        //         {
-        //             return requestValidation.CreateProblem("Son sözel puan türü bilgisi doğrulanamadı");
-        //         }
-        //
-        //         return TypedResults.Ok();
-        //
-        //     }).RequireAuthorization().Produces<ProblemHttpResult>(400).WithOpenApi()
-        //     .WithTags("Öğrenci Tanışma Formu İşlemleri");
-        //
-        // endpoints.MapPost("/onboard/last-practice-dil-exam-points", Results<Ok, ProblemHttpResult>
-        //         (DilAveragePoints request, [FromServices] IServiceProvider sp) =>
-        //     {
-        //         var requestValidation = ValidateLastPracticeDilExamPoints(request);
-        //
-        //         if (requestValidation.Any())
-        //         {
-        //             return requestValidation.CreateProblem("Son yabancı dil puan türü bilgisi doğrulanamadı");
-        //         }
-        //
-        //         return TypedResults.Ok();
-        //
-        //     }).RequireAuthorization().Produces<ProblemHttpResult>(400).WithOpenApi()
-        //     .WithTags("Öğrenci Tanışma Formu İşlemleri");
-        //
-        // endpoints.MapPost("/onboard/student-goals", Results<Ok, ProblemHttpResult>
-        //         (StudentGoals request, [FromServices] IServiceProvider sp) =>
-        //     {
-        //         var requestValidation = ValidateStudentGoals(request);
-        //
-        //         if (requestValidation.Any())
-        //         {
-        //             return requestValidation.CreateProblem("Öğrenci hedefleri doğrulanamadı.");
-        //         }
-        //
-        //         return TypedResults.Ok();
-        //
-        //     }).RequireAuthorization().Produces<ProblemHttpResult>(400).WithOpenApi()
-        //     .WithTags("Öğrenci Tanışma Formu İşlemleri");
-        //
-        // endpoints.MapPost("/onboard/academic-summary", Results<Ok, ProblemHttpResult>
-        //         (AcademicSummary request, [FromServices] IServiceProvider sp) =>
-        //     {
-        //         var requestValidation = ValidateAcademicSummary(request);
-        //
-        //         if (requestValidation.Any())
-        //         {
-        //             return requestValidation.CreateProblem("Öğrenci akademik özet bilgisi doğrulanamadı.");
-        //         }
-        //
-        //         return TypedResults.Ok();
-        //
-        //     }).RequireAuthorization().Produces<ProblemHttpResult>(400).WithOpenApi()
-        //     .WithTags("Öğrenci Tanışma Formu İşlemleri");
-        //
-        // endpoints.MapPost("/onboard/suplementary-materials/{examType}", Results<Ok, ProblemHttpResult>
-        //     ([FromQuery] ExamType examType, [FromBody] SupplementaryMaterials request,
-        //         [FromServices] IServiceProvider sp) =>
-        //     {
-        //         var requestValidation = ValidateSupplementaryMaterials(examType, request);
-        //
-        //         if (requestValidation.Any())
-        //         {
-        //             return requestValidation.CreateProblem("Öğrenci akademik özet bilgisi doğrulanamadı.");
-        //         }
-        //
-        //         return TypedResults.Ok();
-        //
-        //     }).RequireAuthorization().Produces<ProblemHttpResult>(400).WithOpenApi()
-        //     .WithTags("Öğrenci Tanışma Formu İşlemleri");
-
         endpoints.MapPost("/me/onboard", async Task<Results<Ok, ProblemHttpResult>>
                 (StudentOnboardRequest request, ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
             {
@@ -178,27 +28,12 @@ public static class Onboard
                 {
                     var errors = requestValidation.Errors;
 
-                    return TypedResults.Problem("Tanışma formu eksik yada hatalı!",
-                        statusCode: StatusCodes.Status400BadRequest,
-                        extensions: new Dictionary<string, object?>()
-                        {
-                            { "errors", errors },
-                        });
+                    return errors.CreateProblem("Tanışma formu eksik yada hatalı!");
                 }
 
                 var studentId = claimsPrincipal.GetId();
 
                 var dbContext = sp.GetRequiredService<ApplicationDbContext>();
-
-                // var mongoDatabase = sp.GetRequiredService<IMongoDatabase>();
-                //
-                // var onboardStudentCollection = mongoDatabase.GetCollection<OnboardStudent>("onboardStudents");
-
-                // var strUserId = claimsPrincipal.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier).Value;
-                //
-                // var filter = Builders<OnboardStudent>.Filter.Eq(s => s.UserId, strUserId);
-
-                // var onboardStudent = await onboardStudentCollection.Find(filter).FirstOrDefaultAsync();
 
                 var student =
                     await dbContext.Users
@@ -364,7 +199,41 @@ public static class Onboard
                         };
                     }
                 }
+
+                if (student.ResourcesTYT is null)
+                {
+                    student.ResourcesTYT = new global::NightOwlEnterprise.Api.Entities.ResourcesTYT()
+                    {
+                        Biology = request.ResourcesTYT.Biology,
+                        Chemistry = request.ResourcesTYT.Chemistry,
+                        Geography = request.ResourcesTYT.Geography,
+                        Geometry = request.ResourcesTYT.Geometry,
+                        History = request.ResourcesTYT.History,
+                        Mathematics = request.ResourcesTYT.Mathematics,
+                        Philosophy = request.ResourcesTYT.Philosophy,
+                        Physics = request.ResourcesTYT.Physics,
+                        Religion = request.ResourcesTYT.Religion,
+                        Turkish = request.ResourcesTYT.Turkish,
+                    };
+                }
                 
+                if (student.ResourcesAYT is null)
+                {
+                    student.ResourcesAYT = new global::NightOwlEnterprise.Api.Entities.ResourcesAYT()
+                    {
+                        Biology = request.ResourcesAYT.Biology,
+                        Chemistry = request.ResourcesAYT.Chemistry,
+                        Geography = request.ResourcesAYT.Geography,
+                        Geometry = request.ResourcesAYT.Geometry,
+                        History = request.ResourcesAYT.History,
+                        Mathematics = request.ResourcesAYT.Mathematics,
+                        Philosophy = request.ResourcesAYT.Philosophy,
+                        Physics = request.ResourcesAYT.Physics,
+                        Religion = request.ResourcesAYT.Religion,
+                        Turkish = request.ResourcesAYT.Turkish,
+                    };
+                }
+
                 var subscription = student.SubscriptionHistories.Where(x => x.SubscriptionEndDate != null)
                     .OrderBy(x => x.SubscriptionEndDate.Value)
                     .FirstOrDefault(x => x.SubscriptionEndDate.Value > DateTime.UtcNow);
@@ -481,7 +350,10 @@ public static class Onboard
                 errorDescriptors.AddRange(ValidateLastPracticeTytExamPoints(request.LastPracticeTytExamPoints));
             }
             
-            if (request.StudentGeneralInfo?.ExamType != ExamType.TYT && request.IsTryPracticeAYTExamBefore) // Alan Yeterlilik Testi
+            if (request.StudentGeneralInfo?.ExamType != ExamType.TYT_TM 
+                && request.StudentGeneralInfo?.ExamType != ExamType.TYT_MF
+                && request.StudentGeneralInfo?.ExamType != ExamType.TYT_SOZEL
+                && request.IsTryPracticeAYTExamBefore) // Alan Yeterlilik Testi
             {
                 switch (request.StudentGeneralInfo.ExamType)
                 {
@@ -614,7 +486,7 @@ public static class Onboard
         return errorDescriptors;
     }
 
-    private static List<ErrorDescriptor> ValidateLastPracticeDilExamPoints(DilAveragePoints? request)
+    private static List<ErrorDescriptor> ValidateLastPracticeDilExamPoints(StudentDilNets? request)
     {
         var errorDescriptors = new List<ErrorDescriptor>();
         
@@ -635,7 +507,7 @@ public static class Onboard
         return errorDescriptors;
     }
 
-    private static List<ErrorDescriptor> ValidateLastPracticeSozelExamPoints(SozelAveragePoints? request)
+    private static List<ErrorDescriptor> ValidateLastPracticeSozelExamPoints(StudentSozelNets? request)
     {
         var errorDescriptors = new List<ErrorDescriptor>();
         
@@ -704,7 +576,7 @@ public static class Onboard
         return errorDescriptors;
     }
 
-    private static List<ErrorDescriptor> ValidateLastPracticeMfExamPoints(MFAveragePoints? request)
+    private static List<ErrorDescriptor> ValidateLastPracticeMfExamPoints(StudentMfNets? request)
     {
         var errorDescriptors = new List<ErrorDescriptor>();
         
@@ -757,7 +629,7 @@ public static class Onboard
         return errorDescriptors;
     }
 
-    private static List<ErrorDescriptor> ValidateLastPracticeTmExamPoints(TMAveragePoints? request)
+    private static List<ErrorDescriptor> ValidateLastPracticeTmExamPoints(StudentTmNets? request)
     {
         var errorDescriptors = new List<ErrorDescriptor>();
         
@@ -806,7 +678,7 @@ public static class Onboard
         return errorDescriptors;
     }
 
-    private static List<ErrorDescriptor> ValidateLastPracticeTytExamPoints(TYTAveragePoints? request)
+    private static List<ErrorDescriptor> ValidateLastPracticeTytExamPoints(StudentTytNets? request)
     {
         var errorDescriptors = new List<ErrorDescriptor>();
         
@@ -1005,25 +877,6 @@ public static class Onboard
         return errorDescriptors;
     }
 
-    private static async Task<InfoResponse> CreateInfoResponseAsync<TUser>(TUser user, UserManager<TUser> userManager)
-        where TUser : class
-    {
-        return new()
-        {
-            Email = await userManager.GetEmailAsync(user) ?? throw new NotSupportedException("Users must have an email."),
-            IsEmailConfirmed = await userManager.IsEmailConfirmedAsync(user),
-        };
-    }
-
-    public class OnboardStudent
-    {
-        public ObjectId Id { get; set; }
-        
-        public string UserId { get; set; }
-        
-        public StudentOnboardRequest Data { get; set; }
-    }
-
     /*
      * //Alan -> MF,TM,Sözel,Dil,Tyt
         public string ExamType { get; set; }
@@ -1032,51 +885,6 @@ public static class Onboard
         public string Grade  { get; set; }
      */
     
-    
-    public class StudentGeneralInfo
-    {
-        public string Name { get; set; }
-        public string Surname { get; set; }
-        public string Mobile { get; set; }
-        public string Email { get; set; }
-        
-        [JsonConverter(typeof(JsonStringEnumConverter))]
-        public ExamType ExamType { get; set; }
-        [JsonConverter(typeof(JsonStringEnumConverter))]
-        public Grade Grade { get; set; }
-    }
-
-    public class ParentInfo
-    {
-        public string Name { get; set; }
-        public string Surname { get; set; }
-        public string Mobile { get; set; }
-        public string Email { get; set; }
-    }
-
-    //Okuduğunuz lise
-    //Lise orta öğretim başarı puanınız 0-100 arasında olmalı
-    public class AcademicSummary
-    {
-        public string HighSchool { get; set; }
-        public float HighSchoolGPA { get; set; }
-    }
-
-    //TYT hedef netiniz: (Max 120, Min 0) (required değil)
-
-    //AYT hedef netiniz: (Max 80, Min 0) (required değil)
-
-    //Hedef sıralamanız: (1-SONSUZ rangeta integer alır) (required değil)
-
-    //Hedef meslek/okul/bölümünüz: (Free text string alır) (required değil)
-    public class StudentGoals
-    {
-        public byte? TytGoalNet { get; set; }
-        public byte? AytGoalNet { get; set; }
-        public uint? GoalRanking { get; set; }
-        public string? DesiredProfessionSchoolField { get; set; }   
-    }
-
     public class StudentOnboardRequest
     {
         public StudentGeneralInfo? StudentGeneralInfo { get; set; }
@@ -1088,23 +896,23 @@ public static class Onboard
         //Daha önce TYT denemesine girdiniz mi? True ise LastPracticeTytExamPoints dolu olmalı. False ise 
         public bool IsTryPracticeTYTExamBefore { get; set; }
         
-        public TYTAveragePoints? LastPracticeTytExamPoints { get; set; }
+        public StudentTytNets? LastPracticeTytExamPoints { get; set; }
         
         //Daha önce AYT denemesine girdiniz mi? True ise
         //LastPracticeTytExamPoints dolu olmalı. False ise 
         public bool IsTryPracticeAYTExamBefore { get; set; }
         
         //Daha önce AYT denemesine girdiniz mi? True ise && ExamType -> MF
-        public MFAveragePoints? LastPracticeMfExamPoints { get; set; }
+        public StudentMfNets? LastPracticeMfExamPoints { get; set; }
         
         //Daha önce AYT denemesine girdiniz mi? True ise && ExamType -> TM
-        public TMAveragePoints? LastPracticeTmExamPoints { get; set; }
+        public StudentTmNets? LastPracticeTmExamPoints { get; set; }
         
         //Daha önce AYT denemesine girdiniz mi? True ise && ExamType -> Sozel
-        public SozelAveragePoints? LastPracticeSozelExamPoints { get; set; }
+        public StudentSozelNets? LastPracticeSozelExamPoints { get; set; }
         
         //Daha önce AYT denemesine girdiniz mi? True ise && ExamType -> Dil
-        public DilAveragePoints? LastPracticeDilExamPoints { get; set; }
+        public StudentDilNets? LastPracticeDilExamPoints { get; set; }
         
         public StudentGoals? StudentGoals { get; set; }
         
@@ -1117,206 +925,6 @@ public static class Onboard
         //Koçluktan beklentin nedir? (Free text uzun paragraf)
         public string ExpectationsFromCoaching { get; set; }
     }
-
-    public class TYTAveragePoints
-    {
-        //Anlam Bilgisi: (Max 30, Min 0)
-        public byte Semantics { get; set; }
-        //Dil Bilgisi: (Max 10, Min 0)
-        public byte Grammar { get; set; }
-        //Matematik: (Max 30, Min 0)
-        public byte Mathematics { get; set; }
-        //Geometri: (Max 10, Min 0)
-        public byte Geometry { get; set; }
-        //Tarih: (Max 5, Min 0)
-        public byte History { get; set; }
-        //Coğrafya: (Max 5, Min 0)
-        public byte Geography { get; set; }
-        //Felsefe: (Max 5, Min 0)
-        public byte Philosophy { get; set; }
-        //Din: (Max 5, Min 0)
-        public byte Religion { get; set; }
-        //Fizik: (Max 7, Min 0)
-        public byte Physics { get; set; }
-        //Kimya: (Max 7, Min 0)
-        public byte Chemistry { get; set; }
-        //Biology: (Max 6, Min 0)
-        public byte Biology { get; set; }
-    }
-    
-    public class MFAveragePoints
-    {
-        //Matematik: (Max 30, Min 0)
-        public byte Mathematics { get; set; }
-        //Geometri: (Max 10, Min 0)
-        public byte Geometry { get; set; }
-        //Fizik: (Max 14, Min 0)
-        public byte Physics { get; set; }
-        //Kimya: (Max 13, Min 0)
-        public byte Chemistry { get; set; }
-        //Biology: (Max 13, Min 0)
-        public byte Biology { get; set; }
-    }
-    
-    public class TMAveragePoints
-    {
-        //Matematik: (Max 30, Min 0)
-        public byte Mathematics { get; set; }
-        //Geometri: (Max 10, Min 0)
-        public byte Geometry { get; set; }
-        //Edebiyat: (Max 24, Min 0)
-        public byte Literature { get; set; }
-        //Tarih: (Max 10, Min 0)
-        public byte History { get; set; }
-        //Coğrafya: (Max 6, Min 0)
-        public byte Geography { get; set; }
-    }
-    
-    //Sözel
-    public class SozelAveragePoints
-    {
-        //Tarih-1: (Max 10, Min 0)
-        public byte History1 { get; set; }
-        //Coğrafya: (Max 24, Min 0)
-        public byte Geography1 { get; set; }
-        //Edebiyat-1: (Max 6, Min 0)
-        public byte Literature1 { get; set; }
-        //Tarih-2: (Max 11, Min 0)
-        public byte History2 { get; set; }
-        //Coğrafya-2: (Max 11, Min 0)
-        public byte Geography2 { get; set; }
-        //Felsefe: (Max 12, Min 0)
-        public byte Philosophy { get; set; }
-        //Din: (Max 6, Min 0)
-        public byte Religion { get; set; }
-    }
-    
-    public class DilAveragePoints
-    {
-        //YDT: (Max 80, Min 0) Yabacnı Dil Testi
-        public byte YDT { get; set; }
-    }
-
-    public class ResourcesTYT
-    {
-        public string Turkish { get; set; }
-        public string Mathematics { get; set; }
-        public string Geometry { get; set; }
-        public string History { get; set; }
-        public string Geography { get; set; }
-        public string Philosophy { get; set; }
-        public string Religion { get; set; }
-        public string Physics { get; set; }
-        public string Chemistry { get; set; }
-        public string Biology { get; set; }
-    }
-    
-    public class ResourcesAYT
-    {
-        public string Mathematics { get; set; }
-        public string Geometry { get; set; }
-        public string Physics { get; set; }
-        public string Chemistry { get; set; }
-        public string Biology { get; set; }
-        public string Literature { get; set; }
-        public string History { get; set; }
-        public string Geography { get; set; }
-        public string Philosophy { get; set; }
-        public string Religion { get; set; }
-    }
-    
-    public class SupplementaryMaterials
-    {
-        public bool School { get; set; }
-        //Özel Ders: Bunu işaretlerse hemen altına ek bir soru gelir:
-        // Hangi derslerden özel ders alıyorsunuz?(Birden çok seçenek seçebilecek). Seçenekler:
-        // TYT(Başlık):
-        //Türkçe, Matematik, Geometri, Tarih, Coğrafya, Felsefe, Din, Fizik, Kimya, Biyoloji
-        //AYT(Başlık):
-        //Alanına göre a partında seçtiği dersler gelir. Hangi alandan hangi derslerin geleceğini e partındaki netler kısmından ulaşabilirsiniz.
-        public bool PrivateTutoring { get; set; }
-        
-        public bool PrivateTutoringTyt { get; set; }
-        public PrivateTutoringTYTObject? PrivateTutoringTytLessons { get; set; }
-        
-        public bool PrivateTutoringAyt { get; set; }
-        //AYT(Başlık):
-        //Alanına göre a partında seçtiği dersler gelir. Hangi alandan hangi derslerin geleceğini e partındaki netler kısmından ulaşabilirsiniz.
-        public PrivateTutoringAYTObject? PrivateTutoringAytLessons { get; set; }
-        
-        public bool Course { get; set; }
-        public bool Youtube { get; set; }
-    }
-
-    public class PrivateTutoringTYTObject
-    {
-        public bool Turkish { get; set; }
-        public bool Mathematics { get; set; }
-        public bool Geometry { get; set; }
-        public bool History { get; set; }
-        public bool Geography { get; set; }
-        public bool Philosophy { get; set; }
-        public bool Religion { get; set; }
-        public bool Physics { get; set; }
-        public bool Chemistry { get; set; }
-        public bool Biology { get; set; }
-    }
-    
-    public class PrivateTutoringAYTObject
-    {
-        public MF? Mf { get; set; }
-        public TM? Tm { get; set; }
-        public Sozel? Sozel { get; set; }
-        public Dil? Dil { get; set; }
-    }
-    
-    public class MF
-    {
-        public bool Mathematics { get; set; }
-        public bool Geometry { get; set; }
-        public bool Physics { get; set; }
-        public bool Chemistry { get; set; }
-        public bool Biology { get; set; }
-    }
-    
-    public class TM
-    {
-        //Matematik: (Max 30, Min 0)
-        public bool Mathematics { get; set; }
-        //Geometri: (Max 10, Min 0)
-        public bool Geometry { get; set; }
-        //Edebiyat: (Max 24, Min 0)
-        public bool Literature { get; set; }
-        //Tarih: (Max 10, Min 0)
-        public bool History { get; set; }
-        //Coğrafya: (Max 6, Min 0)
-        public bool Geography { get; set; }
-    }
-    
-    //Sözel
-    public class Sozel
-    {
-        //Tarih-1: (Max 10, Min 0)
-        public bool History1 { get; set; }
-        //Coğrafya: (Max 24, Min 0)
-        public bool Geography1 { get; set; }
-        //Edebiyat-1: (Max 6, Min 0)
-        public bool Literature1 { get; set; }
-        //Tarih-2: (Max 11, Min 0)
-        public bool History2 { get; set; }
-        //Coğrafya-2: (Max 11, Min 0)
-        public bool Geography2 { get; set; }
-        //Felsefe: (Max 12, Min 0)
-        public bool Philosophy { get; set; }
-        //Din: (Max 6, Min 0)
-        public bool Religion { get; set; }
-    }
-    
-    public class Dil
-    {
-        //YDT: (Max 80, Min 0)
-        public bool YTD { get; set; }
-    }
     
     public class StudentOnboardRequestExamples : IMultipleExamplesProvider<StudentOnboardRequest>
     {
@@ -1326,7 +934,7 @@ public static class Onboard
             Surname = "ŞEKER",
             Email = "servetseker@gmail.com",
             Grade = Grade.Oniki,
-            ExamType = ExamType.TYT,
+            ExamType = ExamType.TYT_TM,
             Mobile = "533-333-33-33",
         };
         
@@ -1422,7 +1030,7 @@ public static class Onboard
             }
         };
 
-        private TYTAveragePoints validTytAveragePoints = new TYTAveragePoints()
+        private StudentTytNets _validStudentTytNets = new StudentTytNets()
         {
             Semantics = 22,
             Grammar = 7,
@@ -1437,7 +1045,7 @@ public static class Onboard
             Biology = 4,
         };
         
-        private TYTAveragePoints invalidTytAveragePoints = new TYTAveragePoints()
+        private StudentTytNets _invalidStudentTytNets = new StudentTytNets()
         {
             Semantics = 34,
             Grammar = 22,
@@ -1452,7 +1060,7 @@ public static class Onboard
             Biology = 7,
         };
         
-        private MFAveragePoints validMfAveragePoints = new MFAveragePoints()
+        private StudentMfNets _validStudentMfNets = new StudentMfNets()
         {
             Mathematics = 27,
             Geometry = 8,
@@ -1461,7 +1069,7 @@ public static class Onboard
             Biology = 10
         };
 
-        private MFAveragePoints invalidMfAveragePoints = new MFAveragePoints()
+        private StudentMfNets _invalidStudentMfNets = new StudentMfNets()
         {
             Mathematics = 33,
             Geometry = 12,
@@ -1470,7 +1078,7 @@ public static class Onboard
             Biology = 20
         };
         
-        private TMAveragePoints validTmAveragePoints = new TMAveragePoints()
+        private StudentTmNets _validStudentTmNets = new StudentTmNets()
         {
             Mathematics = 18,
             Geometry = 4,
@@ -1479,7 +1087,7 @@ public static class Onboard
             Geography = 4
         };
 
-        private TMAveragePoints invalidTmAveragePoints = new TMAveragePoints()
+        private StudentTmNets _invalidStudentTmNets = new StudentTmNets()
         {
             Mathematics = 37,
             Geometry = 13,
@@ -1488,7 +1096,7 @@ public static class Onboard
             Geography = 9
         };
         
-        private SozelAveragePoints validSozelAveragePoints = new SozelAveragePoints()
+        private StudentSozelNets _validStudentSozelNets = new StudentSozelNets()
         {
             History1 = 8,
             Geography1 = 22,
@@ -1499,7 +1107,7 @@ public static class Onboard
             Religion = 5,
         };
 
-        private SozelAveragePoints invalidSozelAveragePoints = new SozelAveragePoints()
+        private StudentSozelNets _invalidStudentSozelNets = new StudentSozelNets()
         {
             History1 = 13,
             Geography1 = 26,
@@ -1510,14 +1118,42 @@ public static class Onboard
             Religion = 11,
         };
 
-        private DilAveragePoints validDilAveragePoints = new DilAveragePoints()
+        private StudentDilNets _validStudentDilNets = new StudentDilNets()
         {
             YDT = 65
         };
         
-        private DilAveragePoints invalidDilAveragePoints = new DilAveragePoints()
+        private StudentDilNets _invalidStudentDilNets = new StudentDilNets()
         {
             YDT = 105
+        };
+
+        private ResourcesTYT resourcesTyt = new ResourcesTYT()
+        {
+            Biology = "TYT - Biyoloji Kaynak",
+            Chemistry = "TYT - Kimya Kaynak",
+            Geography = "TYT - Coğrafya Kaynak",
+            Geometry = "TYT - Geometri Kaynak",
+            History = "TYT - Tarih Kaynak",
+            Mathematics = "TYT - Matematik Kaynak",
+            Philosophy = "TYT - Felsefe Kaynak",
+            Physics = "TYT - Fizik Kaynak",
+            Religion = "TYT - Din Kaynak",
+            Turkish = "TYT - Türkçe Kaynak",
+        };
+        
+        private ResourcesAYT resourcesAyt = new ResourcesAYT()
+        {
+            Biology = "AYT - Biyoloji Kaynak",
+            Chemistry = "AYT - Kimya Kaynak",
+            Geography = "AYT - Coğrafya Kaynak",
+            Geometry = "AYT - Geometri Kaynak",
+            History = "AYT - Tarih Kaynak",
+            Mathematics = "AYT - Matematik Kaynak",
+            Philosophy = "TYT - Felsefe Kaynak",
+            Physics = "AYT - Fizik Kaynak",
+            Religion = "AYT - Din Kaynak",
+            Turkish = "AYT - Türkçe Kaynak",
         };
         
         public IEnumerable<SwaggerExample<StudentOnboardRequest>> GetExamples()
@@ -1531,6 +1167,8 @@ public static class Onboard
                 IsTryPracticeAYTExamBefore = false,
                 StudentGoals = emptyStudentGoals,
                 SupplementaryMaterials = onlySchoolSupplementaryMaterials,
+                ResourcesTYT = resourcesTyt,
+                ResourcesAYT = resourcesAyt,
                 ExpectationsFromCoaching = ":)"
             });
             
@@ -1543,6 +1181,8 @@ public static class Onboard
                 IsTryPracticeAYTExamBefore = false,
                 StudentGoals = emptyStudentGoals,
                 SupplementaryMaterials = privateTutoringTytSupplementaryMaterials,
+                ResourcesTYT = resourcesTyt,
+                ResourcesAYT = resourcesAyt,
                 ExpectationsFromCoaching = ":)"
             });
             
@@ -1552,10 +1192,12 @@ public static class Onboard
                 ParentInfo = servetParentInfo,
                 AcademicSummary = servetAcademicSummary,
                 IsTryPracticeTYTExamBefore = true,
-                LastPracticeTytExamPoints = validTytAveragePoints,
+                LastPracticeTytExamPoints = _validStudentTytNets,
                 IsTryPracticeAYTExamBefore = false,
                 StudentGoals = emptyStudentGoals,
                 SupplementaryMaterials = privateTutoringTytSupplementaryMaterials,
+                ResourcesTYT = resourcesTyt,
+                ResourcesAYT = resourcesAyt,
                 ExpectationsFromCoaching = ":)"
             });
             
@@ -1565,10 +1207,12 @@ public static class Onboard
                 ParentInfo = servetParentInfo,
                 AcademicSummary = servetAcademicSummary,
                 IsTryPracticeTYTExamBefore = true,
-                LastPracticeTytExamPoints = invalidTytAveragePoints,
+                LastPracticeTytExamPoints = _invalidStudentTytNets,
                 IsTryPracticeAYTExamBefore = false,
                 StudentGoals = emptyStudentGoals,
                 SupplementaryMaterials = privateTutoringTytSupplementaryMaterials,
+                ResourcesTYT = resourcesTyt,
+                ResourcesAYT = resourcesAyt,
                 ExpectationsFromCoaching = ":)"
             });
             
@@ -1581,6 +1225,8 @@ public static class Onboard
                 IsTryPracticeAYTExamBefore = false,
                 StudentGoals = emptyStudentGoals,
                 SupplementaryMaterials = privateTutoringTytSupplementaryMaterials,
+                ResourcesTYT = resourcesTyt,
+                ResourcesAYT = resourcesAyt,
                 ExpectationsFromCoaching = ":)"
             });
             
@@ -1590,10 +1236,12 @@ public static class Onboard
                 ParentInfo = servetParentInfo,
                 AcademicSummary = servetAcademicSummary,
                 IsTryPracticeTYTExamBefore = true,
-                LastPracticeTytExamPoints = validTytAveragePoints,
+                LastPracticeTytExamPoints = _validStudentTytNets,
                 IsTryPracticeAYTExamBefore = false,
                 StudentGoals = emptyStudentGoals,
                 SupplementaryMaterials = privateTutoringTytSupplementaryMaterials,
+                ResourcesTYT = resourcesTyt,
+                ResourcesAYT = resourcesAyt,
                 ExpectationsFromCoaching = ":)"
             });
             
@@ -1603,11 +1251,13 @@ public static class Onboard
                 ParentInfo = servetParentInfo,
                 AcademicSummary = servetAcademicSummary,
                 IsTryPracticeTYTExamBefore = true,
-                LastPracticeTytExamPoints = validTytAveragePoints,
+                LastPracticeTytExamPoints = _validStudentTytNets,
                 IsTryPracticeAYTExamBefore = true,
-                LastPracticeMfExamPoints = validMfAveragePoints,
+                LastPracticeMfExamPoints = _validStudentMfNets,
                 StudentGoals = emptyStudentGoals,
                 SupplementaryMaterials = privateTutoringTytSupplementaryMaterials,
+                ResourcesTYT = resourcesTyt,
+                ResourcesAYT = resourcesAyt,
                 ExpectationsFromCoaching = ":)"
             });
             
@@ -1617,11 +1267,13 @@ public static class Onboard
                 ParentInfo = servetParentInfo,
                 AcademicSummary = servetAcademicSummary,
                 IsTryPracticeTYTExamBefore = true,
-                LastPracticeTytExamPoints = validTytAveragePoints,
+                LastPracticeTytExamPoints = _validStudentTytNets,
                 IsTryPracticeAYTExamBefore = true,
-                LastPracticeMfExamPoints = invalidMfAveragePoints,
+                LastPracticeMfExamPoints = _invalidStudentMfNets,
                 StudentGoals = emptyStudentGoals,
                 SupplementaryMaterials = privateTutoringTytSupplementaryMaterials,
+                ResourcesTYT = resourcesTyt,
+                ResourcesAYT = resourcesAyt,
                 ExpectationsFromCoaching = ":)"
             });
             
@@ -1631,11 +1283,13 @@ public static class Onboard
                 ParentInfo = servetParentInfo,
                 AcademicSummary = servetAcademicSummary,
                 IsTryPracticeTYTExamBefore = true,
-                LastPracticeTytExamPoints = validTytAveragePoints,
+                LastPracticeTytExamPoints = _validStudentTytNets,
                 IsTryPracticeAYTExamBefore = true,
-                LastPracticeTmExamPoints = validTmAveragePoints,
+                LastPracticeTmExamPoints = _validStudentTmNets,
                 StudentGoals = emptyStudentGoals,
                 SupplementaryMaterials = privateTutoringTytSupplementaryMaterials,
+                ResourcesTYT = resourcesTyt,
+                ResourcesAYT = resourcesAyt,
                 ExpectationsFromCoaching = ":)"
             });
     
@@ -1645,11 +1299,13 @@ public static class Onboard
                 ParentInfo = servetParentInfo,
                 AcademicSummary = servetAcademicSummary,
                 IsTryPracticeTYTExamBefore = true,
-                LastPracticeTytExamPoints = validTytAveragePoints,
+                LastPracticeTytExamPoints = _validStudentTytNets,
                 IsTryPracticeAYTExamBefore = true,
-                LastPracticeTmExamPoints = invalidTmAveragePoints,
+                LastPracticeTmExamPoints = _invalidStudentTmNets,
                 StudentGoals = emptyStudentGoals,
                 SupplementaryMaterials = privateTutoringTytSupplementaryMaterials,
+                ResourcesTYT = resourcesTyt,
+                ResourcesAYT = resourcesAyt,
                 ExpectationsFromCoaching = ":)"
             });
             
@@ -1659,11 +1315,13 @@ public static class Onboard
                 ParentInfo = servetParentInfo,
                 AcademicSummary = servetAcademicSummary,
                 IsTryPracticeTYTExamBefore = true,
-                LastPracticeTytExamPoints = validTytAveragePoints,
+                LastPracticeTytExamPoints = _validStudentTytNets,
                 IsTryPracticeAYTExamBefore = true,
-                LastPracticeSozelExamPoints = validSozelAveragePoints,
+                LastPracticeSozelExamPoints = _validStudentSozelNets,
                 StudentGoals = emptyStudentGoals,
                 SupplementaryMaterials = privateTutoringTytSupplementaryMaterials,
+                ResourcesTYT = resourcesTyt,
+                ResourcesAYT = resourcesAyt,
                 ExpectationsFromCoaching = ":)"
             });
             
@@ -1673,11 +1331,13 @@ public static class Onboard
                 ParentInfo = servetParentInfo,
                 AcademicSummary = servetAcademicSummary,
                 IsTryPracticeTYTExamBefore = true,
-                LastPracticeTytExamPoints = validTytAveragePoints,
+                LastPracticeTytExamPoints = _validStudentTytNets,
                 IsTryPracticeAYTExamBefore = true,
-                LastPracticeSozelExamPoints = invalidSozelAveragePoints,
+                LastPracticeSozelExamPoints = _invalidStudentSozelNets,
                 StudentGoals = emptyStudentGoals,
                 SupplementaryMaterials = privateTutoringTytSupplementaryMaterials,
+                ResourcesTYT = resourcesTyt,
+                ResourcesAYT = resourcesAyt,
                 ExpectationsFromCoaching = ":)"
             });
             
@@ -1687,11 +1347,13 @@ public static class Onboard
                 ParentInfo = servetParentInfo,
                 AcademicSummary = servetAcademicSummary,
                 IsTryPracticeTYTExamBefore = true,
-                LastPracticeTytExamPoints = validTytAveragePoints,
+                LastPracticeTytExamPoints = _validStudentTytNets,
                 IsTryPracticeAYTExamBefore = true,
-                LastPracticeDilExamPoints = validDilAveragePoints,
+                LastPracticeDilExamPoints = _validStudentDilNets,
                 StudentGoals = emptyStudentGoals,
                 SupplementaryMaterials = privateTutoringTytSupplementaryMaterials,
+                ResourcesTYT = resourcesTyt,
+                ResourcesAYT = resourcesAyt,
                 ExpectationsFromCoaching = ":)"
             });
             
@@ -1701,11 +1363,13 @@ public static class Onboard
                 ParentInfo = servetParentInfo,
                 AcademicSummary = servetAcademicSummary,
                 IsTryPracticeTYTExamBefore = true,
-                LastPracticeTytExamPoints = validTytAveragePoints,
+                LastPracticeTytExamPoints = _validStudentTytNets,
                 IsTryPracticeAYTExamBefore = true,
-                LastPracticeDilExamPoints = invalidDilAveragePoints,
+                LastPracticeDilExamPoints = _invalidStudentDilNets,
                 StudentGoals = emptyStudentGoals,
                 SupplementaryMaterials = privateTutoringTytSupplementaryMaterials,
+                ResourcesTYT = resourcesTyt,
+                ResourcesAYT = resourcesAyt,
                 ExpectationsFromCoaching = ":)"
             });
         }

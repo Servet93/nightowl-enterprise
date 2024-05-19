@@ -1,0 +1,80 @@
+﻿namespace NightOwlEnterprise.Api.Endpoints.CommonDto;
+
+public class StudentTytNets
+{
+    //Anlam Bilgisi: (Max 30, Min 0)
+    public byte Semantics { get; set; }
+    //Dil Bilgisi: (Max 10, Min 0)
+    public byte Grammar { get; set; }
+    //Matematik: (Max 30, Min 0)
+    public byte Mathematics { get; set; }
+    //Geometri: (Max 10, Min 0)
+    public byte Geometry { get; set; }
+    //Tarih: (Max 5, Min 0)
+    public byte History { get; set; }
+    //Coğrafya: (Max 5, Min 0)
+    public byte Geography { get; set; }
+    //Felsefe: (Max 5, Min 0)
+    public byte Philosophy { get; set; }
+    //Din: (Max 5, Min 0)
+    public byte Religion { get; set; }
+    //Fizik: (Max 7, Min 0)
+    public byte Physics { get; set; }
+    //Kimya: (Max 7, Min 0)
+    public byte Chemistry { get; set; }
+    //Biology: (Max 6, Min 0)
+    public byte Biology { get; set; }
+}
+
+public class StudentMfNets
+{
+    //Matematik: (Max 30, Min 0)
+    public byte Mathematics { get; set; }
+    //Geometri: (Max 10, Min 0)
+    public byte Geometry { get; set; }
+    //Fizik: (Max 14, Min 0)
+    public byte Physics { get; set; }
+    //Kimya: (Max 13, Min 0)
+    public byte Chemistry { get; set; }
+    //Biology: (Max 13, Min 0)
+    public byte Biology { get; set; }
+}
+
+public class StudentTmNets
+{
+    //Matematik: (Max 30, Min 0)
+    public byte Mathematics { get; set; }
+    //Geometri: (Max 10, Min 0)
+    public byte Geometry { get; set; }
+    //Edebiyat: (Max 24, Min 0)
+    public byte Literature { get; set; }
+    //Tarih: (Max 10, Min 0)
+    public byte History { get; set; }
+    //Coğrafya: (Max 6, Min 0)
+    public byte Geography { get; set; }
+}
+
+//Sözel
+public class StudentSozelNets
+{
+    //Tarih-1: (Max 10, Min 0)
+    public byte History1 { get; set; }
+    //Coğrafya: (Max 24, Min 0)
+    public byte Geography1 { get; set; }
+    //Edebiyat-1: (Max 6, Min 0)
+    public byte Literature1 { get; set; }
+    //Tarih-2: (Max 11, Min 0)
+    public byte History2 { get; set; }
+    //Coğrafya-2: (Max 11, Min 0)
+    public byte Geography2 { get; set; }
+    //Felsefe: (Max 12, Min 0)
+    public byte Philosophy { get; set; }
+    //Din: (Max 6, Min 0)
+    public byte Religion { get; set; }
+}
+
+public class StudentDilNets
+{
+    //YDT: (Max 80, Min 0) Yabacnı Dil Testi
+    public byte YDT { get; set; }
+}

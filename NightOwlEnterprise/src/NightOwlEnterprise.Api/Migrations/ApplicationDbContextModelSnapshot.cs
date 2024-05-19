@@ -159,6 +159,10 @@ namespace NightOwlEnterprise.Api.Migrations
                     b.Property<bool>("ChangedDepartmentType")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("DepartmentName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<int>("DepartmentType")
                         .HasColumnType("integer");
 
@@ -222,6 +226,9 @@ namespace NightOwlEnterprise.Api.Migrations
 
                     b.Property<bool>("School")
                         .HasColumnType("boolean");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
 
                     b.Property<byte>("StudentQuota")
                         .HasColumnType("smallint");
@@ -629,6 +636,110 @@ namespace NightOwlEnterprise.Api.Migrations
                     b.HasKey("CoachId");
 
                     b.ToTable("PrivateTutoringTYT");
+                });
+
+            modelBuilder.Entity("ResourcesAYT", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Biology")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Chemistry")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Geography")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Geometry")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("History")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Literature")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Mathematics")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Philosophy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Physics")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Religion")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Turkish")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("ResourcesAYT");
+                });
+
+            modelBuilder.Entity("ResourcesTYT", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Biology")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Chemistry")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Geography")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Geometry")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("History")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Mathematics")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Philosophy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Physics")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Religion")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Turkish")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("ResourcesTYT");
                 });
 
             modelBuilder.Entity("SozelNets", b =>
@@ -1130,6 +1241,28 @@ namespace NightOwlEnterprise.Api.Migrations
                     b.Navigation("Coach");
                 });
 
+            modelBuilder.Entity("ResourcesAYT", b =>
+                {
+                    b.HasOne("ApplicationUser", "User")
+                        .WithOne("ResourcesAYT")
+                        .HasForeignKey("ResourcesAYT", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ResourcesTYT", b =>
+                {
+                    b.HasOne("ApplicationUser", "User")
+                        .WithOne("ResourcesTYT")
+                        .HasForeignKey("ResourcesTYT", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("SozelNets", b =>
                 {
                     b.HasOne("ApplicationUser", "User")
@@ -1217,6 +1350,12 @@ namespace NightOwlEnterprise.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("PrivateTutoringTYT")
+                        .IsRequired();
+
+                    b.Navigation("ResourcesAYT")
+                        .IsRequired();
+
+                    b.Navigation("ResourcesTYT")
                         .IsRequired();
 
                     b.Navigation("SozelNets")

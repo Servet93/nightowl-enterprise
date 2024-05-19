@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
+using NightOwlEnterprise.Api.Entities;
 
 namespace NightOwlEnterprise.Api.Controllers;
 

@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
+using NightOwlEnterprise.Api.Endpoints.Coachs.Identity;
 using NightOwlEnterprise.Api.Endpoints.Coachs.Me;
+using NightOwlEnterprise.Api.Entities;
 
 namespace NightOwlEnterprise.Api.Endpoints.Coachs;
 
@@ -22,8 +24,11 @@ public static class CoachIdentityEndpoints
         
         var routeGroup = endpoints.MapGroup("coachs");
 
-        routeGroup.MapRegister<ApplicationUser>((IEmailSender<ApplicationUser>)emailSender,
+        routeGroup.MapRegister((IEmailSender<ApplicationUser>)emailSender,
             linkGenerator);
+        routeGroup.MapForgotPassword((IEmailSender<ApplicationUser>)emailSender);
+        routeGroup.MapResetPassword<ApplicationUser>();
+
         routeGroup.MapList();
         routeGroup.MapOnboard();
         routeGroup.MapQuota(coachConfig);
@@ -31,6 +36,7 @@ public static class CoachIdentityEndpoints
         routeGroup.MapReservationDays();
         routeGroup.MapInvitationDetailList();
         routeGroup.MapSpecifyHour();
+        routeGroup.MapManageInfo();
 
         return new IdentityEndpointsConventionBuilder(routeGroup);
     }

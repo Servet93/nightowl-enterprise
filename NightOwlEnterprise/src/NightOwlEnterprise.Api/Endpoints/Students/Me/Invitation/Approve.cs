@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
+using NightOwlEnterprise.Api.Entities;
+using NightOwlEnterprise.Api.Entities.Enums;
 using Stripe;
 using Swashbuckle.AspNetCore.Annotations;
 

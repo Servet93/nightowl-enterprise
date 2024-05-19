@@ -8,18 +8,19 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
+using NightOwlEnterprise.Api.Entities;
+using NightOwlEnterprise.Api.Entities.Enums;
 using Stripe;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.Filters;
 
-namespace NightOwlEnterprise.Api.Endpoints.Coachs;
+namespace NightOwlEnterprise.Api.Endpoints.Coachs.Identity;
 
 public static class Register
 {
     private static readonly EmailAddressAttribute _emailAddressAttribute = new();
     
-    public static void MapRegister<TUser>(this IEndpointRouteBuilder endpoints, IEmailSender<ApplicationUser> emailSender, LinkGenerator linkGenerator)
-        where TUser : class, new()
+    public static void MapRegister(this IEndpointRouteBuilder endpoints, IEmailSender<ApplicationUser> emailSender, LinkGenerator linkGenerator)
     {
         // NOTE: We cannot inject UserManager<TUser> directly because the TUser generic parameter is currently unsupported by RDG.
         // https://github.com/dotnet/aspnetcore/issues/47338
@@ -86,6 +87,10 @@ public static class Register
                 Address = address,
                 City = city,
                 UserType = registration.CoachType == CoachType.Coach ? UserType.Coach : UserType.Pdr,
+                CoachDetail = new CoachDetail()
+                {
+                    Status = registration.CoachType == CoachType.Coach ? CoachStatus.OnboardProgress : CoachStatus.Active
+                }
             };
 
             var result = await userManager.CreateAsync(user, registration.Password);

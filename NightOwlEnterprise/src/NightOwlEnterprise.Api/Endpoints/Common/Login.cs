@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.BearerToken;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using NightOwlEnterprise.Api.Entities;
 using Swashbuckle.AspNetCore.Filters;
 
 namespace NightOwlEnterprise.Api.Endpoints.Common;

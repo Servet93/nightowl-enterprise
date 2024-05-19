@@ -101,6 +101,15 @@
             };
         }
         
+        public static ErrorDescriptor EmptyDepartmentName()
+        {
+            return new ErrorDescriptor
+            {
+                Code = nameof(EmptyDepartmentName),
+                Description = $"Okuduğunuz bölümü giriniz"
+            };
+        }
+        
         public static ErrorDescriptor EmptyParentInfo()
         {
             return new ErrorDescriptor
@@ -369,4 +378,11 @@
                 Description = $"Alan bilgisi seçiniz!"
             };
         }
+
+        public static ErrorDescriptor NotFoundEmail() =>
+            new ErrorDescriptor(nameof(RequiredExamTypes), "Kayıtlarımızda böyle bir mail adresi bulunamadı");
+        
+        public static ErrorDescriptor InvalidPasswordResetCode() =>
+            new ErrorDescriptor(nameof(InvalidPasswordResetCode), "Password Reset Code geçersiz");
+
     }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
+using NightOwlEnterprise.Api.Entities;
 
 namespace NightOwlEnterprise.Api;
 

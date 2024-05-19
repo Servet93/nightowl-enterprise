@@ -1,4 +1,6 @@
-﻿namespace NightOwlEnterprise.Api;
+﻿using System.Reflection.Metadata;
+
+namespace NightOwlEnterprise.Api;
 
 public class Person
 {
@@ -67,38 +69,63 @@ public class PersonGenerator
 
     private static readonly Random random = new Random();
 
-    public static List<Person> GeneratePeople(int count)
+    public static List<Person> GeneratePeople()
     {
         List<Person> people = new List<Person>();
 
-        for (int i = 0; i < count; i++)
+        string lastName = string.Empty;
+        string city = string.Empty;
+        string address = string.Empty;
+        string email = string.Empty;
+        string phone = string.Empty;
+        string highSchoolName = string.Empty;
+        float highSchoolScore = 0f; // 0 ile 100 arasında rastgele başarı puanı
+        int i = 1;        
+        foreach (var maleFirstName in MaleFirstNames)
         {
-            bool isMale = random.Next(0, 2) == 1; // Rastgele olarak cinsiyeti belirler
-
-            // İlk isim listelerini cinsiyete göre seçin
-            List<string> firstNameList = isMale ? MaleFirstNames : FemaleFirstNames;
-
-            // Rastgele bir isim, soyisim, şehir ve adres oluştur
-            string firstName = firstNameList[random.Next(firstNameList.Count)];
-            string lastName = LastNames[random.Next(LastNames.Count)];
-            string city = Cities[random.Next(Cities.Count)];
-            string address = $"Street {random.Next(1, 100)}";
-
-            // E-posta ve telefon numarası
-            string email = $"{firstName.ToLower()}.{lastName.ToLower()}@example.com";
-            string phone = $"05{random.Next(100, 1000)}{random.Next(100, 10000)}";
+            lastName = LastNames[random.Next(LastNames.Count)];
+            city = Cities[random.Next(Cities.Count)];
+            address = $"Street {random.Next(1, 100)}";
+            email = $"{maleFirstName.ReplaceTurkishCharacters().ToLower()}.{lastName.ReplaceTurkishCharacters().ToLower()}@example.com";
+            phone = $"05{random.Next(100, 1000)}{random.Next(100, 10000)}";
+            highSchoolName = HighSchoolNames[random.Next(HighSchoolNames.Count)];
+            highSchoolScore = random.NextSingle() * 100; // 0 ile 100 arasında rastgele başarı puanı
             
-            // Lise adı ve başarı puanı
-            string highSchoolName = HighSchoolNames[random.Next(HighSchoolNames.Count)];
-            float highSchoolScore = random.NextSingle() * 100; // 0 ile 100 arasında rastgele başarı puanı
-
             // Yeni bir Person nesnesi oluştur ve listesine ekleyin
             Person person = new Person
             {
                 Id = new Guid($"00000000-0000-0000-0000-{i.ToString("000000000000")}"),
-                FirstName = firstName,
+                FirstName = maleFirstName,
                 LastName = lastName,
-                Gender = isMale,
+                Gender = false,
+                Email = email,
+                Phone = phone,
+                City = city,
+                Address = address,
+                HighSchoolName = highSchoolName,
+                HighSchoolScore = highSchoolScore,
+            };
+            
+            people.Add(person);
+
+            i++;
+        }
+
+        foreach (var femaleFirstName in FemaleFirstNames)
+        {
+            lastName = LastNames[random.Next(LastNames.Count)];
+            city = Cities[random.Next(Cities.Count)];
+            address = $"Street {random.Next(1, 100)}";
+            email = $"{femaleFirstName.ReplaceTurkishCharacters().ToLower()}.{lastName.ReplaceTurkishCharacters().ToLower()}@example.com";
+            phone = $"05{random.Next(100, 1000)}{random.Next(100, 10000)}";
+            
+            // Yeni bir Person nesnesi oluştur ve listesine ekleyin
+            Person person = new Person
+            {
+                Id = new Guid($"00000000-0000-0000-0000-{i.ToString("000000000000")}"),
+                FirstName = femaleFirstName,
+                LastName = lastName,
+                Gender = false,
                 Email = email,
                 Phone = phone,
                 City = city,
@@ -108,6 +135,8 @@ public class PersonGenerator
             };
 
             people.Add(person);
+            
+            i++;
         }
 
         return people;

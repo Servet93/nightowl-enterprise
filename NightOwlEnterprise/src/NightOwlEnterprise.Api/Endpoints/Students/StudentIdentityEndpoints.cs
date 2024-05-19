@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
+using NightOwlEnterprise.Api.Endpoints.Students.Identity;
 using NightOwlEnterprise.Api.Endpoints.Students.Me;
 using NightOwlEnterprise.Api.Endpoints.Students.Me.Invitation;
+using NightOwlEnterprise.Api.Entities;
 
 namespace NightOwlEnterprise.Api.Endpoints.Students;
 
@@ -22,15 +24,16 @@ public static class StudentIdentityEndpoints
         
         var routeGroup = endpoints.MapGroup("students");
 
-        routeGroup.MapRegister<ApplicationUser>((IEmailSender<ApplicationUser>)emailSender,
-            linkGenerator);
+        routeGroup.MapRegister<ApplicationUser>((IEmailSender<ApplicationUser>)emailSender, linkGenerator);
+        routeGroup.MapForgotPassword((IEmailSender<ApplicationUser>)emailSender);
+        routeGroup.MapResetPassword<ApplicationUser>();
         routeGroup.MapPayment<ApplicationUser>(stripeCredential);
+        
         // routeGroup.MapLogin<ApplicationUser>(jwtHelper);
         // routeGroup.MapRefresh<ApplicationUser>(jwtHelper);
         //routeGroup.MapConfirmEmail<ApplicationUser>();
         //routeGroup.MapResendConfirmationEmail<TUser>(emailSender, linkGenerator);
-        routeGroup.MapForgotPassword<ApplicationUser>((IEmailSender<ApplicationUser>)emailSender);
-        routeGroup.MapResetPassword<ApplicationUser>();
+
         routeGroup.MapManageInfo<TUser>();
         routeGroup.MapCoachInfo();
         routeGroup.MapCallInfo();

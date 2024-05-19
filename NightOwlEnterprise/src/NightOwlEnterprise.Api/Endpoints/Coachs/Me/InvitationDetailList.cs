@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
+using NightOwlEnterprise.Api.Entities.Enums;
 using Stripe;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -20,7 +21,7 @@ public static class InvitationDetailList
 {
     public static void MapInvitationDetailList(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapGet("/me/invitations", async Task<Results<Ok<List<InvitationResponse>>, ProblemHttpResult>>
+        endpoints.MapGet("/me/todo-list", async Task<Results<Ok<List<InvitationResponse>>, ProblemHttpResult>>
                 (ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
             {
                 var coachId = claimsPrincipal.GetId();
@@ -32,8 +33,11 @@ public static class InvitationDetailList
                     InvitationState.SpecifyHour, InvitationState.WaitingApprove,
                 };
 
-                var invitationEntities = await dbContext.Invitations.Include(x => x.Student)
-                    .Where(x => x.CoachId == coachId)
+                var esikDate = DateTime.Now.AddHours(-48);
+                
+                var invitationEntities = await dbContext.Invitations
+                    .Include(x => x.Student)
+                    .Where(x => x.CoachId == coachId && x.Date > esikDate)
                     .ToListAsync();
 
                 var invitations = invitationEntities.Select(invitationEntity => new InvitationResponse()

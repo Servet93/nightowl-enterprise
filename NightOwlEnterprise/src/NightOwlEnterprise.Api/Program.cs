@@ -1,6 +1,4 @@
-using System.ComponentModel;
-using System.Net.Http.Headers;
-using System.Text;
+﻿using System.Text;
 using System.Text.Json.Serialization;
 using Amazon.Runtime;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -13,14 +11,15 @@ using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using MongoDB.Bson;
 using MongoDB.Driver;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using NightOwlEnterprise.Api;
 using NightOwlEnterprise.Api.Endpoints;
 using NightOwlEnterprise.Api.Endpoints.Coachs;
 using NightOwlEnterprise.Api.Endpoints.Students;
 using NightOwlEnterprise.Api.Endpoints.Universities;
-using NightOwlEnterprise.Api.Services;
+using NightOwlEnterprise.Api.Entities;
+using NightOwlEnterprise.Api.Entities.Enums;
+using NightOwlEnterprise.Api.Entities.Nets;
+using NightOwlEnterprise.Api.Entities.PrivateTutoring;
 using NightOwlEnterprise.Api.Utils.Email;
 using NLog;
 using NLog.AWS.Logger;
@@ -29,9 +28,14 @@ using NLog.Layouts;
 using NLog.Web;
 using Swashbuckle.AspNetCore.Filters;
 using JsonAttribute = NLog.Layouts.JsonAttribute;
-using Onboard = NightOwlEnterprise.Api.Endpoints.Students.Onboard;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var systemStartPointNow = DateTime.Now;
+var systemStartPointUtcNow = DateTime.UtcNow;
+
+var systemEndPointNow = DateTime.Now;
+var systemEndPointUtcNow = DateTime.UtcNow;
 
 var logger = LogManager.Setup()
     .LoadConfigurationFromAppSettings()
@@ -147,8 +151,6 @@ builder.Services.AddCors(options =>
         policyBuilder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
     });
 });
-
-builder.Services.AddSingleton<GetCoachAvailabilityDays>();
 
 var stripeCredential = builder.Configuration.GetSection(StripeCredential.StripeSection).Get<StripeCredential>();
 
@@ -349,6 +351,8 @@ builder.Services.AddSingleton<PaginationUriBuilder>(o =>
     return new PaginationUriBuilder(uri);
 });
 
+// builder.Services.AddHostedService<SeedDataService>();
+
 var app = builder.Build();
 
 logger.Fatal("App is created.");
@@ -379,7 +383,7 @@ if (isPostgresEnabled)
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-    // await SeedCoachs(db, userManager);
+    await SeedCoachs(db, userManager);
 }
 
 app.UseCors("AllowAll");
@@ -503,6 +507,10 @@ app.MapGet("/conf", async context =>
     logger.LogInformation("Aws Cloud Watch Conf");
     
     StringBuilder sb = new();
+    sb.AppendLine($"systemStartPointNow -> {systemStartPointNow}");
+    sb.AppendLine($"systemStartPointUtcNow -> {systemStartPointUtcNow}");
+    sb.AppendLine($"systemEndPointNow -> {systemEndPointNow}");
+    sb.AppendLine($"systemEndPointUtcNow -> {systemEndPointUtcNow}");
     sb.AppendLine($"IsMongoEnabled -> {isMongoEnabled}");
     sb.AppendLine($"Mongo -> {mongoConnectionString}");
     sb.AppendLine($"IsPostgresEnabled -> {isPostgresEnabled}");
@@ -548,6 +556,9 @@ app.MapGet("/zmeet", async context =>
 
 app.Run();
 
+systemEndPointNow = DateTime.Now;
+systemEndPointUtcNow = DateTime.UtcNow;
+
 logger.Fatal("App is running.");
 
 async Task SeedCoachs(ApplicationDbContext dbContext, UserManager<ApplicationUser> userManager)
@@ -557,68 +568,70 @@ async Task SeedCoachs(ApplicationDbContext dbContext, UserManager<ApplicationUse
     var rnd = new Random();
 
     var index = 0;
-
-    var namesAndGender = CommonVariables.NamesAndGender.DistinctBy(x => x.Item1).ToList();
     
     if (!hasAnyCoach)
     {
         var universities = dbContext.Universities.ToList();
+        var universitiesCount = universities.Count;
         
         // universities * departments(39) * 5 = 195
-        var persons = PersonGenerator.GeneratePeople(195);
-
-        var counter = 0;
+        var persons = PersonGenerator.GeneratePeople();
         
-        foreach (var university in universities)
+        foreach (var person in persons)
         {
-            for (int i = 0; i < 5; i++)
+            index++;
+            
+            var x = (byte)rnd.Next(5);
+
+            DepartmentType departmentType = DepartmentType.Sozel;
+
+            var remain = index % 4;
+            
+            if (remain == 1)
             {
-                var x = (byte)rnd.Next(5);
-                var y = (byte)rnd.Next(3);
-                
-                var mondayQuota = x == 0 ? (byte)1 : (byte)rnd.Next(5);
-                var tuesdayQuota = x == 1 ? (byte)1 : (byte)rnd.Next(5);
-                var wednesdayQuota = x == 2 ? (byte)1 : (byte)rnd.Next(5);
-                var thursayQuota = x == 3 ? (byte)1 : (byte)rnd.Next(5);
-                var fridayQuota = x == 4 ? (byte)1 : (byte)rnd.Next(5);
+                departmentType = DepartmentType.TM;
+            }
+            else if (remain == 2)
+            {
+                departmentType = DepartmentType.MF;
+            }
+            else if (remain == 3)
+            {
+                departmentType = DepartmentType.Sozel;
+            }
+            else if (remain == 4)
+            {
+                departmentType = DepartmentType.Dil;
+            }
+            
+            var mondayQuota = x == 0 ? (byte)1 : (byte)rnd.Next(5);
+            var tuesdayQuota = x == 1 ? (byte)1 : (byte)rnd.Next(5);
+            var wednesdayQuota = x == 2 ? (byte)1 : (byte)rnd.Next(5);
+            var thursayQuota = x == 3 ? (byte)1 : (byte)rnd.Next(5);
+            var fridayQuota = x == 4 ? (byte)1 : (byte)rnd.Next(5);
 
-                var studentQuota = (byte)(mondayQuota + tuesdayQuota + wednesdayQuota + thursayQuota + fridayQuota);
-
-                DepartmentType departmentType = DepartmentType.Sozel;
-                
-                if (y == 0)
+            var studentQuota = (byte)(mondayQuota + tuesdayQuota + wednesdayQuota + thursayQuota + fridayQuota);
+            
+            var applicationUser = new ApplicationUser()
                 {
-                    departmentType = DepartmentType.TM;
-                }else if (y == 1)
-                {
-                    departmentType = DepartmentType.MF;
-                }else if (y == 2)
-                {
-                    departmentType = DepartmentType.Sozel;
-                }else if (y == 3)
-                {
-                    departmentType = DepartmentType.Dil;
-                }
-
-                var applicationUser = new ApplicationUser()
-                {
-                    Id = persons[counter].Id,
-                    Name = persons[counter].FirstName +" "+ persons[counter].LastName,
-                    UserName = persons[counter].FirstName + persons[counter].LastName,
-                    Email = persons[counter].Email,
-                    PhoneNumber = persons[counter].Phone,
-                    City = persons[counter].City,
-                    Address = persons[counter].Address,
+                    Id = person.Id,
+                    Name = person.FirstName.ReplaceTurkishCharacters() +" "+ person.LastName.ReplaceTurkishCharacters(),
+                    UserName = person.FirstName.ReplaceTurkishCharacters() + person.LastName.ReplaceTurkishCharacters(),
+                    Email = person.Email,
+                    PhoneNumber = person.Phone,
+                    City = person.City,
+                    Address = person.Address,
                     CoachDetail = new CoachDetail()
                     {
-                        Name = persons[counter].FirstName,
-                        Surname = persons[counter].LastName,
-                        Email = persons[counter].Email,
-                        Male = persons[counter].Gender,
+                        Name = person.FirstName,
+                        Surname = person.LastName,
+                        Email = person.Email,
+                        Male = person.Gender,
                         BirthDate = DateTime.Now,
-                        DepartmentType = DepartmentType.MF,
-                        Mobile = persons[counter].Phone,
-                        UniversityId = university.Id,
+                        DepartmentType = departmentType,
+                        DepartmentName = $"Department Name -> {rnd.Next(universitiesCount)}",
+                        Mobile = person.Phone,
+                        UniversityId = universities[rnd.Next(universitiesCount)].Id,
                         FirstTytNet = (byte)rnd.Next(90, 120),
                         LastTytNet = (byte)rnd.Next(90, 120),
                         FirstAytNet = (byte)rnd.Next(60, 80),
@@ -628,8 +641,8 @@ async Task SeedCoachs(ApplicationDbContext dbContext, UserManager<ApplicationUse
                         GoneCramSchool = rnd.Next(100) % 2 == 0,
                         Rank = (uint)rnd.Next(5000),
                         IsGraduated = rnd.Next(6) != 1 ? true : false,
-                        HighSchool = persons[counter].HighSchoolName,
-                        HighSchoolGPA = persons[counter].HighSchoolScore,
+                        HighSchool = person.HighSchoolName,
+                        HighSchoolGPA = person.HighSchoolScore,
                         StudentQuota = studentQuota,
                         MondayQuota = mondayQuota,
                         TuesdayQuota = tuesdayQuota,
@@ -637,6 +650,7 @@ async Task SeedCoachs(ApplicationDbContext dbContext, UserManager<ApplicationUse
                         ThursdayQuota = thursayQuota,
                         FridayQuota = fridayQuota,
                         PrivateTutoring = true,
+                        Status = CoachStatus.Active,
                     },
                     TytNets = new TYTNets()
                     {
@@ -662,8 +676,6 @@ async Task SeedCoachs(ApplicationDbContext dbContext, UserManager<ApplicationUse
                     applicationUser.CoachYksRankings.Add(new CoachYksRanking()
                         { Year = j.ToString(), Enter = isEntered, Rank = (uint)rank });
                 }
-                
-                counter += 1;
                 
                 if (departmentType == DepartmentType.MF)
                 {
@@ -743,15 +755,14 @@ async Task SeedCoachs(ApplicationDbContext dbContext, UserManager<ApplicationUse
                         YTD = rnd.Next(2) % 2 == 0,
                     };
                 }
-                
-                    try
-                    {
-                        await userManager.CreateAsync(applicationUser, "Aa123456");
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine(e);
-                    }
+                                
+                try
+                {
+                    await userManager.CreateAsync(applicationUser, "Aa123456").ConfigureAwait(false);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
                 }
         }
     }
@@ -774,11 +785,16 @@ public class ApplicationDbContext : Microsoft.AspNetCore.Identity.EntityFramewor
     public DbSet<CoachStudentTrainingSchedule> CoachStudentTrainingSchedules { get; set; }
     
     public DbSet<ZoomMeetDetail> ZoomMeetDetails { get; set; }
+    
+    public DbSet<ResourcesTYT> ResourcesTYT { get; set; }
+    public DbSet<ResourcesAYT> ResourcesAYT { get; set; }
 
     public ApplicationDbContext(Microsoft.EntityFrameworkCore.DbContextOptions<ApplicationDbContext> options) :
         base(options)
-    { }
-
+    {
+        
+    }
+    
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -946,544 +962,25 @@ public class ApplicationDbContext : Microsoft.AspNetCore.Identity.EntityFramewor
             .HasOne(cd => cd.User)
             .WithOne(u => u.DilNets)
             .HasForeignKey<DilNets>(cd => cd.UserId);
+        
+        // ResourcesTYT tablosunun ilişkilerini belirtiyoruz
+        builder.Entity<ResourcesTYT>()
+            .HasKey(cd => cd.UserId); // Primary key'i belirtiyoruz
+        
+        // ResourcesTYT ile ApplicationUser arasında ilişki
+        builder.Entity<ResourcesTYT>()
+            .HasOne(cd => cd.User)
+            .WithOne(u => u.ResourcesTYT)
+            .HasForeignKey<ResourcesTYT>(cd => cd.UserId);
+        
+        // ResourcesTYT tablosunun ilişkilerini belirtiyoruz
+        builder.Entity<ResourcesAYT>()
+            .HasKey(cd => cd.UserId); // Primary key'i belirtiyoruz
+        
+        // ResourcesTYT ile ApplicationUser arasında ilişki
+        builder.Entity<ResourcesAYT>()
+            .HasOne(cd => cd.User)
+            .WithOne(u => u.ResourcesAYT)
+            .HasForeignKey<ResourcesAYT>(cd => cd.UserId);
     }
 }
-
-public class ApplicationUser : Microsoft.AspNetCore.Identity.IdentityUser<Guid>
-{
-    public string Name { get; set; } = String.Empty;
-    public string Address { get; set; }  = String.Empty;
-    public string City { get; set; }  = String.Empty;
-    
-    public UserType UserType { get; set; }
-    
-    public string CustomerId { get; set; } = String.Empty;
-    
-    public string SubscriptionId { get; set; } = String.Empty;
-    
-    public string? RefreshToken { get; set; }
-    
-    public DateTime? RefreshTokenExpiration { get; set; }
-    
-    public string? PasswordResetCode { get; set; }
-    
-    public DateTime? PasswordResetCodeExpiration { get; set; }
-    
-    public CoachDetail CoachDetail { get; set; }
-    
-    public StudentDetail StudentDetail { get; set; }
-    public ICollection<SubscriptionHistory> SubscriptionHistories { get; set; } = new List<SubscriptionHistory>();
-    
-    public ICollection<Invitation> InvitationsAsCoach { get; set; } = new List<Invitation>();
-    
-    public ICollection<Invitation> InvitationsAsStudent { get; set; } = new List<Invitation>();
-
-    public ICollection<CoachYksRanking> CoachYksRankings { get; set; } = new List<CoachYksRanking>();
-
-    public PrivateTutoringTYT PrivateTutoringTYT { get; set; }
-    public PrivateTutoringMF PrivateTutoringMF { get; set; }
-    public PrivateTutoringTM PrivateTutoringTM { get; set; }
-    public PrivateTutoringSozel PrivateTutoringSozel { get; set; }
-    public PrivateTutoringDil PrivateTutoringDil { get; set; }
-    
-    public TYTNets TytNets { get; set; }
-    public TMNets TmNets { get; set; }
-    public MFNets MfNets { get; set; }
-    public SozelNets SozelNets { get; set; }
-    public DilNets DilNets { get; set; }
-    public ICollection<CoachStudentTrainingSchedule> CoachStudentTrainingSchedules { get; set; } = new List<CoachStudentTrainingSchedule>();
-
-    public ICollection<CoachStudentTrainingSchedule> StudentCoachTrainingSchedules { get; set; } = new List<CoachStudentTrainingSchedule>();
-}
-
-public class ApplicationRole : IdentityRole<Guid>
-{
-    
-}
-
-public class SubscriptionHistory
-{
-    public int Id { get; set; } // Abonelik geçmişi kimliği
-
-    public Guid UserId { get; set; } // Kullanıcı kimliği
-    
-    // ForeignKey ile ilişkiyi kurmak için ApplicationUser sınıfına referans
-    public ApplicationUser User { get; set; }
-
-    public DateTime SubscriptionStartDate { get; set; } // Abonelik başlangıç tarihi
-
-    public DateTime? SubscriptionEndDate { get; set; } // Abonelik bitiş tarihi
-
-    public SubscriptionType Type { get; set; } // Abonelik tipi (örneğin, ücretsiz, standart, premium)
-
-    public string SubscriptionId { get; set; }
-    
-    public string InvoiceId { get; set; }
-    
-    public string SubscriptionState { get; set; }
-    
-    public string InvoiceState { get; set; }
-    
-    public string LastError { get; set; }
-}
-
-public enum SubscriptionType
-{
-    Pdr = 0,
-    Coach = 1,
-}
-
-public class StudentDetail
-{
-    public Guid StudentId { get; set; }
-
-    public string? Name { get; set; }
-    
-    public string? Surname { get; set; }
-    
-    public string? Email { get; set; }
-    
-    public string? Mobile { get; set; }
-    
-    public string? ParentName { get; set; }
-    
-    public string? ParentSurname { get; set; }
-    
-    public string? ParentEmail { get; set; }
-    
-    public string? ParentMobile { get; set; }
-    
-    public string? HighSchool { get; set; }
-    
-    public float? HighSchoolGPA { get; set; }
-    
-    public byte? TytGoalNet { get; set; }
-    
-    public byte? AytGoalNet { get; set; }
-    
-    public uint? GoalRanking { get; set; }
-
-    public string? DesiredProfessionSchoolField { get; set; }
-    
-    public string? ExpectationsFromCoaching { get; set; }
-
-    public bool? School { get; set; }
-    
-    public bool? Course { get; set; }
-    
-    public bool? Youtube { get; set; }
-    
-    public bool? PrivateTutoringTyt { get; set; }
-    
-    public bool? PrivateTutoringAyt { get; set; }
-    
-    public Grade Grade { get; set; }
-    
-    public ExamType ExamType { get; set; }
-    
-    public ApplicationUser Student { get; set; } // İlişkiyi burada tanımlıyoruz
-    
-    public StudentStatus Status { get; set; }
-}
-
-public enum DepartmentType
-{
-    TM,
-    MF,
-    Sozel,
-    Dil,
-}
-
-public class PrivateTutoringTYT
-{
-    public Guid CoachId { get; set; }
-    public ApplicationUser Coach { get; set; } // İlişkiyi burada tanımlıyoruz
-    
-    public bool Turkish { get; set; }
-    public bool Mathematics { get; set; }
-    public bool Geometry { get; set; }
-    public bool History { get; set; }
-    public bool Geography { get; set; }
-    public bool Philosophy { get; set; }
-    public bool Religion { get; set; }
-    public bool Physics { get; set; }
-    public bool Chemistry { get; set; }
-    public bool Biology { get; set; }
-}
-
-public class PrivateTutoringMF
-{
-    public Guid CoachId { get; set; }
-    public ApplicationUser Coach { get; set; } // İlişkiyi burada tanımlıyoruz
-    
-    public bool Mathematics { get; set; }
-    public bool Geometry { get; set; }
-    public bool Physics { get; set; }
-    public bool Chemistry { get; set; }
-    public bool Biology { get; set; }
-}
-    
-public class PrivateTutoringTM
-{
-    public Guid CoachId { get; set; }
-    public ApplicationUser Coach { get; set; } // İlişkiyi burada tanımlıyoruz
-    
-    //Matematik: (Max 30, Min 0)
-    public bool Mathematics { get; set; }
-    //Geometri: (Max 10, Min 0)
-    public bool Geometry { get; set; }
-    //Edebiyat: (Max 24, Min 0)
-    public bool Literature { get; set; }
-    //Tarih: (Max 10, Min 0)
-    public bool History { get; set; }
-    //Coğrafya: (Max 6, Min 0)
-    public bool Geography { get; set; }
-}
-    
-//Sözel
-public class PrivateTutoringSozel
-{
-    public Guid CoachId { get; set; }
-    public ApplicationUser Coach { get; set; } // İlişkiyi burada tanımlıyoruz
-    
-    //Tarih-1: (Max 10, Min 0)
-    public bool History1 { get; set; }
-    //Coğrafya: (Max 24, Min 0)
-    public bool Geography1 { get; set; }
-    //Edebiyat-1: (Max 6, Min 0)
-    public bool Literature1 { get; set; }
-    //Tarih-2: (Max 11, Min 0)
-    public bool History2 { get; set; }
-    //Coğrafya-2: (Max 11, Min 0)
-    public bool Geography2 { get; set; }
-    //Felsefe: (Max 12, Min 0)
-    public bool Philosophy { get; set; }
-    //Din: (Max 6, Min 0)
-    public bool Religion { get; set; }
-}
-    
-public class PrivateTutoringDil
-{
-    public Guid CoachId { get; set; }
-    public ApplicationUser Coach { get; set; } // İlişkiyi burada tanımlıyoruz
-    
-    //YDT: (Max 80, Min 0)
-    public bool YTD { get; set; }
-}
-
-public class CoachYksRanking
-{
-    public Guid Id { get; set; }
-    
-    public Guid CoachId { get; set; }
-    
-    public ApplicationUser Coach { get; set; } // İlişkiyi burada tanımlıyoruz
-
-    public string Year { get; set; }
-    
-    public bool Enter { get; set; }
-    
-    public uint Rank { get; set; }
-}
-
-public class CoachDetail
-{
-    public Guid CoachId { get; set; }
-    
-    public ApplicationUser Coach { get; set; } // İlişkiyi burada tanımlıyoruz
-
-    public string Name { get; set; }
-    public string Surname { get; set; }
-    public string Mobile { get; set; }
-    public string Email { get; set; }
-    public DateTime BirthDate { get; set; }
-        
-    public DepartmentType DepartmentType { get; set; }
-    
-    public Guid UniversityId { get; set; }
-    
-    // Universite referansı
-    public University University { get; set; } 
-    
-    public string HighSchool { get; set; }
-
-    public float HighSchoolGPA { get; set; }
-    public byte FirstTytNet { get; set; }
-        
-    public byte LastTytNet { get; set; }
-        
-    public byte FirstAytNet { get; set; }
-        
-    public byte LastAytNet { get; set; }
-    
-    public bool ChangedDepartmentType { get; set; }
-
-    public DepartmentType FromDepartment { get; set; }
-        
-    public DepartmentType ToDepartment { get; set; }
-
-    // public bool Tm { get; set; }
-    // public bool Mf { get; set; }
-    // public bool Sozel { get; set; }
-    // public bool Dil { get; set; }
-    // public bool Tyt { get; set; }
-
-    public bool IsGraduated { get; set; }
-    
-    public bool UsedYoutube { get; set; }
-    
-    public bool GoneCramSchool { get; set; }
-    
-    public bool School { get; set; }
-    
-    public bool PrivateTutoring { get; set; }
-    
-    public bool Male { get; set; }
-    public uint Rank { get; set; }
-    public byte StudentQuota { get; set; }
-    public byte MondayQuota { get; set; }
-    
-    public byte TuesdayQuota { get; set; }
-    
-    public byte WednesdayQuota { get; set; }
-    
-    public byte ThursdayQuota { get; set; }
-    
-    public byte FridayQuota { get; set; }
-    
-    public byte SaturdayQuota { get; set; }
-    
-    public byte SundayQuota { get; set; }
-}
-
-public class TYTNets
-{
-    public Guid UserId { get; set; }
-    
-    public ApplicationUser User { get; set; } // İlişkiyi burada tanımlıyoruz
-    
-    //Anlam Bilgisi: (Max 30, Min 0)
-    public byte? Semantics { get; set; }
-    //Dil Bilgisi: (Max 10, Min 0)
-    public byte? Grammar { get; set; }
-    //Matematik: (Max 30, Min 0)
-    public byte? Mathematics { get; set; }
-    //Geometri: (Max 10, Min 0)
-    public byte? Geometry { get; set; }
-    //Tarih: (Max 5, Min 0)
-    public byte? History { get; set; }
-    //Coğrafya: (Max 5, Min 0)
-    public byte? Geography { get; set; }
-    //Felsefe: (Max 5, Min 0)
-    public byte? Philosophy { get; set; }
-    //Din: (Max 5, Min 0)
-    public byte? Religion { get; set; }
-    //Fizik: (Max 7, Min 0)
-    public byte? Physics { get; set; }
-    //Kimya: (Max 7, Min 0)
-    public byte? Chemistry { get; set; }
-    //Biology: (Max 6, Min 0)
-    public byte? Biology { get; set; }
-}
-
-public class MFNets
-{
-    public Guid UserId { get; set; }
-    
-    public ApplicationUser User { get; set; } // İlişkiyi burada tanımlıyoruz
-    
-    //Matematik: (Max 30, Min 0)
-    public byte? Mathematics { get; set; }
-    //Geometri: (Max 10, Min 0)
-    public byte? Geometry { get; set; }
-    //Fizik: (Max 14, Min 0)
-    public byte? Physics { get; set; }
-    //Kimya: (Max 13, Min 0)
-    public byte? Chemistry { get; set; }
-    //Biology: (Max 13, Min 0)
-    public byte? Biology { get; set; }
-}
-    
-public class TMNets
-{
-    public Guid UserId { get; set; }
-    
-    public ApplicationUser User { get; set; } // İlişkiyi burada tanımlıyoruz
-    
-    //Matematik: (Max 30, Min 0)
-    public byte? Mathematics { get; set; }
-    //Geometri: (Max 10, Min 0)
-    public byte? Geometry { get; set; }
-    //Edebiyat: (Max 24, Min 0)
-    public byte? Literature { get; set; }
-    //Tarih: (Max 10, Min 0)
-    public byte? History { get; set; }
-    //Coğrafya: (Max 6, Min 0)
-    public byte? Geography { get; set; }
-}
-    
-//Sözel
-public class SozelNets
-{
-    public Guid UserId { get; set; }
-    
-    public ApplicationUser User { get; set; } // İlişkiyi burada tanımlıyoruz
-    
-    //Tarih-1: (Max 10, Min 0)
-    public byte? History1 { get; set; }
-    //Coğrafya: (Max 24, Min 0)
-    public byte? Geography1 { get; set; }
-    //Edebiyat-1: (Max 6, Min 0)
-    public byte? Literature1 { get; set; }
-    //Tarih-2: (Max 11, Min 0)
-    public byte? History2 { get; set; }
-    //Coğrafya-2: (Max 11, Min 0)
-    public byte? Geography2 { get; set; }
-    //Felsefe: (Max 12, Min 0)
-    public byte? Philosophy { get; set; }
-    //Din: (Max 6, Min 0)
-    public byte? Religion { get; set; }
-}
-    
-public class DilNets
-{
-    public Guid UserId { get; set; }
-    
-    public ApplicationUser User { get; set; } // İlişkiyi burada tanımlıyoruz
-    
-    //YDT: (Max 80, Min 0) Yabacnı Dil Testi
-    public byte? YDT { get; set; }
-}
-
-public class University
-{
-    public Guid Id { get; set; }
-    public string Name { get; set; }
-    
-    public string NormalizedName { get; set; }
-}
-
-public enum ExamType
-{
-    TYT,
-    TM,
-    MF,
-    Sozel,
-    Dil,
-}
-
-public enum Grade
-{
-    Dokuz,
-    On,
-    Onbir,
-    Oniki,
-    Mezun
-}
-
-public class Invitation
-{
-    public Guid Id { get; set; }
-    public Guid CoachId { get; set; }
-    public ApplicationUser Coach { get; set; }
-    public Guid StudentId { get; set; }
-    public ApplicationUser Student { get; set; }
-    public DateTime Date { get; set; }
-    public TimeSpan StartTime { get; set; }
-    
-    public TimeSpan EndTime { get; set; }
-
-    public InvitationType Type { get; set; }
-    
-    public InvitationState State { get; set; }
-    
-    public bool IsAvailable { get; set; } // true ise görüşme aktif, false ise zamanı gelmedi // 5 dakika kala burası açılır
-
-    public Guid? ZoomMeetDetailId { get; set; }
-    
-    public ZoomMeetDetail ZoomMeetDetail { get; set; }
-}
-
-public class CoachStudentTrainingSchedule
-{
-    public Guid Id { get; set; }
-    public Guid CoachId { get; set; }
-    public ApplicationUser Coach { get; set; }
-    public Guid StudentId { get; set; }
-    public ApplicationUser Student { get; set; }
-    public DayOfWeek Day { get; set; }
-    
-    public DateTime CreatedAt { get; set; }
-}
-
-public class ZoomMeetDetail
-{
-    public Guid Id { get; set; }
-    
-    public string? MeetId { get; set; }
-    
-    public string? HostEmail { get; set; }
-    
-    public string? RegistrationUrl { get; set; }
-    
-    public string? JoinUrl { get; set; }
-    
-    public string? MeetingPasscode { get; set; }
-    
-    public DateTime? StartTime { get; set; }
-    
-    public DateTime? CreatedAt { get; set; }
-    
-    public string? CoachRegistrantId { get; set; }
-    
-    public string? CoachParticipantPinCode { get; set; }
-    
-    public string? CoachJoinUrl { get; set; }
-    
-    public string? StudentRegistrantId { get; set; }
-    
-    public string? StudentParticipantPinCode { get; set; }
-    
-    public string? StudentJoinUrl { get; set; }
-    
-    public Guid InvitationId { get; set; }
-    public Invitation Invitation { get; set; }
-}
-
-public enum InvitationType
-{
-    VideoCall,
-    VoiceCall,
-}
-
-public enum InvitationState
-{
-    SpecifyHour, // Saat Belirle(Sadece Koç belirleyebiliyor)
-    WaitingApprove,
-    Approved, // Görüşülecek
-    Cancelled, //İptal edildi
-    Open, // Açık
-    Done, //Tamamlandı
-}
-
-public enum StudentStatus
-{
-    [Description("Payment Awaiting")]
-    PaymentAwaiting,
-    [Description("Onboard Progress")]
-    OnboardProgress,
-    [Description("Coach Select")]
-    CoachSelect,
-    [Description("Active")]
-    Active,
-}
-
-public enum UserType
-{
-    Student,
-    Coach,
-    Pdr,
-}
-
-
-

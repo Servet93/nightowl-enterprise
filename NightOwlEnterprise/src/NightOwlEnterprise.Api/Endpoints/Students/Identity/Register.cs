@@ -8,11 +8,13 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
+using NightOwlEnterprise.Api.Entities;
+using NightOwlEnterprise.Api.Entities.Enums;
 using Stripe;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.Filters;
 
-namespace NightOwlEnterprise.Api.Endpoints.Students;
+namespace NightOwlEnterprise.Api.Endpoints.Students.Identity;
 
 public static class Register
 {

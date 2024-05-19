@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using NightOwlEnterprise.Api.Entities;
 
 namespace NightOwlEnterprise.Api;
 
