@@ -1154,6 +1154,7 @@ public static class Onboard
             Physics = "AYT - Fizik Kaynak",
             Religion = "AYT - Din Kaynak",
             Turkish = "AYT - Türkçe Kaynak",
+            Literature = "AYT - Edebiyat Kaynak",
         };
         
         public IEnumerable<SwaggerExample<StudentOnboardRequest>> GetExamples()
