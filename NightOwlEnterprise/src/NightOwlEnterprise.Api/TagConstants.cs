@@ -23,4 +23,6 @@ public class TagConstants
     public const string CoachMeQuota = "Koç -> Kontenjan Belirleme";
     
     public const string CoachMeInfo = "Koç -> Profil";
+    
+    public const string CoachMeStudents = "Koç -> Öğrencilere ait bilgileri edinme";
 }

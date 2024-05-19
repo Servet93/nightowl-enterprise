@@ -37,6 +37,7 @@ public static class CoachIdentityEndpoints
         routeGroup.MapInvitationDetailList();
         routeGroup.MapSpecifyHour();
         routeGroup.MapManageInfo();
+        routeGroup.MapStudents();
 
         return new IdentityEndpointsConventionBuilder(routeGroup);
     }

@@ -14,7 +14,7 @@ public static class ManageInfo
 {
     public static void MapManageInfo(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapGet("/me/info", async Task<Results<Ok<CoachInfoResponse>, ProblemHttpResult>>
+        endpoints.MapGet("/me/info", async Task<Results<Ok<CoachStateResponse>, ProblemHttpResult>>
                 (ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
             {
                 var dbContext = sp.GetRequiredService<ApplicationDbContext>();
@@ -30,16 +30,16 @@ public static class ManageInfo
             .WithTags(TagConstants.CoachMeInfo);
     }
     
-    private static CoachInfoResponse CreateInfoResponseAsync(ApplicationUser user)
+    private static CoachStateResponse CreateInfoResponseAsync(ApplicationUser user)
     {
-        return new CoachInfoResponse
+        return new CoachStateResponse
         {
             Email = user.Email!,
             Status = user.CoachDetail.Status,
         };
     }
 
-    public class CoachInfoResponse
+    public class CoachStateResponse
     {
         public string Email { get; set; }
         

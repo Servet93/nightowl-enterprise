@@ -64,7 +64,7 @@ public static class Students
         
             return TypedResults.Ok(pagedResponse);
         
-        }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags("Öğrencinin Koç ile yapabileceği işlemler").RequireAuthorization("Coach");
+        }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags(TagConstants.CoachMeStudents).RequireAuthorization("Coach");
         
         endpoints.MapGet("me/students/{studentId}", async Task<Results<Ok<StudentItem>, ProblemHttpResult>>
             ([FromQuery] Guid studentId, ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
@@ -96,7 +96,7 @@ public static class Students
         
             return TypedResults.Ok(studentItem);
             
-        }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags("Öğrencinin Koç ile yapabileceği işlemler").RequireAuthorization("Coach");
+        }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags(TagConstants.CoachMeStudents).RequireAuthorization("Coach");
         
         endpoints.MapGet("me/students/{studentId}/onboard-info", async Task<Results<Ok<StudentOnboardInfo>, ProblemHttpResult>>
             ([FromQuery] Guid studentId, ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
@@ -346,7 +346,7 @@ public static class Students
         
             return TypedResults.Ok(studentOnboardInfo);
             
-        }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags("Öğrencinin Koç ile yapabileceği işlemler").RequireAuthorization("Coach");
+        }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags(TagConstants.CoachMeStudents).RequireAuthorization("Coach");
     }
 
     public sealed class StudentItem
