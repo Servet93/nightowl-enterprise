@@ -206,7 +206,7 @@ public static class List
                     };    
                 }
             }
-            else if (coachApplicationUser.CoachDetail.DepartmentType == DepartmentType.MF && coachApplicationUser.PrivateTutoringMF is not null)
+            else if (coachApplicationUser.CoachDetail.DepartmentType == DepartmentType.MF)
             {
                 if (coachApplicationUser.PrivateTutoringMF is not null)
                 {
@@ -235,7 +235,7 @@ public static class List
                     };    
                 }
             }
-            else if (coachApplicationUser.CoachDetail.DepartmentType == DepartmentType.Sozel && coachApplicationUser.PrivateTutoringSozel is not null)
+            else if (coachApplicationUser.CoachDetail.DepartmentType == DepartmentType.Sozel)
             {
                 if (coachApplicationUser.PrivateTutoringSozel is not null)
                 {
@@ -269,7 +269,7 @@ public static class List
                 }
                 
             }
-            else if (coachApplicationUser.CoachDetail.DepartmentType == DepartmentType.Dil  && coachApplicationUser.PrivateTutoringDil is not null)
+            else if (coachApplicationUser.CoachDetail.DepartmentType == DepartmentType.Dil)
             {
                 if (coachApplicationUser.PrivateTutoringDil is not null)
                 {
