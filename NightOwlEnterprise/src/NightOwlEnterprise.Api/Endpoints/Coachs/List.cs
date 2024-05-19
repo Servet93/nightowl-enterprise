@@ -123,6 +123,11 @@ public static class List
                 .Include(x => x.MfNets)
                 .Include(x => x.SozelNets)
                 .Include(x => x.DilNets)
+                .Include(x => x.PrivateTutoringTYT)
+                .Include(x => x.PrivateTutoringTM)
+                .Include(x => x.PrivateTutoringMF)
+                .Include(x => x.PrivateTutoringDil)
+                .Include(x => x.PrivateTutoringSozel)
                 .Include(x => x.CoachDetail.University)
                 .FirstOrDefault(x => x.Id == coachId && x.UserType == UserType.Coach);
 
@@ -160,6 +165,24 @@ public static class List
                 YksRanks = new System.Collections.Generic.Dictionary<string, uint>()
             };
             
+            if (coachApplicationUser.TytNets is not null)
+            {
+                coach.TytNets = new CoachTytNets()
+                {
+                    Biology = coachApplicationUser.TytNets.Biology.Value,
+                    Chemistry = coachApplicationUser.TytNets.Chemistry.Value,
+                    Geography = coachApplicationUser.TytNets.Geography.Value,
+                    Geometry = coachApplicationUser.TytNets.Geometry.Value,
+                    History = coachApplicationUser.TytNets.History.Value,
+                    Mathematics = coachApplicationUser.TytNets.Mathematics.Value,
+                    Philosophy = coachApplicationUser.TytNets.Philosophy.Value,
+                    Physics = coachApplicationUser.TytNets.Physics.Value,
+                    Religion = coachApplicationUser.TytNets.Religion.Value,
+                    Grammar = coachApplicationUser.TytNets.Grammar.Value,
+                    Semantics = coachApplicationUser.TytNets.Semantics.Value,
+                };
+            }
+            
             if (coachApplicationUser.PrivateTutoringTYT is not null)
             {
                 coach.PrivateTutoringTyt = new PrivateTutoringTYTObject()
@@ -176,6 +199,7 @@ public static class List
                     Turkish = coachApplicationUser.PrivateTutoringTYT.Turkish,
                 };
             }
+            
 
             if (coachApplicationUser.CoachDetail.DepartmentType == DepartmentType.TM)
             {
