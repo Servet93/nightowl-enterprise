@@ -136,7 +136,7 @@ public static class Onboard
                     }
                 }
                 
-                if (request.IsTryPracticeTYTExamBefore)
+                if (request.IsTryPracticeTYTExamBefore && request.LastPracticeTytExamPoints is not null)
                 {
                     student.TytNets = new TYTNets()
                     {
@@ -156,7 +156,7 @@ public static class Onboard
 
                 if (request.IsTryPracticeAYTExamBefore)
                 {
-                    if (request.StudentGeneralInfo.ExamType == ExamType.TM)
+                    if (request.StudentGeneralInfo.ExamType == ExamType.TM && request.LastPracticeTmExamPoints is not null)
                     {
                         student.TmNets = new TMNets()
                         {
@@ -167,7 +167,7 @@ public static class Onboard
                             Mathematics = request.LastPracticeTmExamPoints.Mathematics,
                         };
                     }
-                    else if (request.StudentGeneralInfo.ExamType == ExamType.MF)
+                    else if (request.StudentGeneralInfo.ExamType == ExamType.MF && request.LastPracticeMfExamPoints is not null)
                     {
                         student.MfNets = new MFNets()
                         {
@@ -178,7 +178,7 @@ public static class Onboard
                             Physics = request.LastPracticeMfExamPoints.Physics,
                         };
                     }
-                    else if (request.StudentGeneralInfo.ExamType == ExamType.Sozel)
+                    else if (request.StudentGeneralInfo.ExamType == ExamType.Sozel && request.LastPracticeSozelExamPoints is not null)
                     {
                         student.SozelNets = new SozelNets()
                         {
@@ -191,7 +191,7 @@ public static class Onboard
                             Religion = request.LastPracticeSozelExamPoints.Religion,
                         };
                     }
-                    else if (request.StudentGeneralInfo.ExamType == ExamType.Dil)
+                    else if (request.StudentGeneralInfo.ExamType == ExamType.Dil && request.LastPracticeDilExamPoints is not null)
                     {
                         student.DilNets = new DilNets()
                         {
@@ -200,7 +200,7 @@ public static class Onboard
                     }
                 }
 
-                if (student.ResourcesTYT is null)
+                if (student.ResourcesTYT is not null)
                 {
                     student.ResourcesTYT = new global::NightOwlEnterprise.Api.Entities.ResourcesTYT()
                     {
@@ -217,7 +217,7 @@ public static class Onboard
                     };
                 }
                 
-                if (student.ResourcesAYT is null)
+                if (student.ResourcesAYT is not null)
                 {
                     student.ResourcesAYT = new global::NightOwlEnterprise.Api.Entities.ResourcesAYT()
                     {
