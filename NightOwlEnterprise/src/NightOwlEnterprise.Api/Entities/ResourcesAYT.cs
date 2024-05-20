@@ -16,5 +16,5 @@ public class ResourcesAYT
     public string? Philosophy { get; set; }
     public string? Religion { get; set; }
     
-    public string Turkish { get; set; }
+    public string? Turkish { get; set; }
 }
