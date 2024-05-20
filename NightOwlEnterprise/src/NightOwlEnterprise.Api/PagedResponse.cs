@@ -49,6 +49,8 @@ public class PagedResponse<T>
         response.TotalPages = roundedTotalPages;
         response.TotalRecords = totalRecords;
 
+        response.PageNumber = validFilter.PageNumber;
+
         return response;
     }
 }

@@ -111,7 +111,7 @@ public static class List
         }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags(TagConstants.StudentsCoachListAndReserve).RequireAuthorization("Student");
         
         endpoints.MapGet("/{coachId}", async Task<Results<Ok<CoachItem>, ProblemHttpResult>>
-            ([FromQuery] Guid coachId, ClaimsPrincipal claimsPrincipal, HttpContext httpContext, [FromServices] IServiceProvider sp) =>
+            ([FromRoute] Guid coachId, ClaimsPrincipal claimsPrincipal, HttpContext httpContext, [FromServices] IServiceProvider sp) =>
         {
             var dbContext = sp.GetRequiredService<ApplicationDbContext>();
             
@@ -145,7 +145,6 @@ public static class List
                 UniversityName = coachApplicationUser.CoachDetail.University.Name,
                 DepartmentName = coachApplicationUser.CoachDetail.DepartmentName,
                 DepartmentType = coachApplicationUser.CoachDetail.DepartmentType.Value,
-                Rank = coachApplicationUser.CoachDetail.Rank.Value,
                 IsGraduated = coachApplicationUser.CoachDetail.IsGraduated.Value,
                 //Yardımcı Kaynaklardan hangilerini kullandınız
                 GoneCramSchool = coachApplicationUser.CoachDetail.GoneCramSchool.Value,
@@ -162,7 +161,7 @@ public static class List
                 LastTytNet = coachApplicationUser.CoachDetail.LastTytNet.Value,
                 FirstAytNet = coachApplicationUser.CoachDetail.FirstAytNet.Value,
                 LastAytNet = coachApplicationUser.CoachDetail.FirstAytNet.Value,
-                YksRanks = new System.Collections.Generic.Dictionary<string, uint>()
+                YksRanks = new System.Collections.Generic.Dictionary<string, uint>(),
             };
             
             if (coachApplicationUser.TytNets is not null)
@@ -320,6 +319,12 @@ public static class List
             foreach (var yksRank in coachYksRankings)
             {
                 coach.YksRanks.Add(yksRank.Year, yksRank.Rank);
+            }
+
+            if (coach.YksRanks.Any())
+            {
+                coach.Year = coach.YksRanks.OrderByDescending(x => Convert.ToInt32(x.Key)).FirstOrDefault().Key;
+                coach.Rank = coach.YksRanks.OrderByDescending(x => Convert.ToInt32(x.Key)).FirstOrDefault().Value;
             }
 
             return TypedResults.Ok(coach);
