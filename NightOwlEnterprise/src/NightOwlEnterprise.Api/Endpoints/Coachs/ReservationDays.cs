@@ -23,13 +23,13 @@ public static class ReservationDays
                     var coachDaysQuota = await dbContext.CoachDetail.Where(x => x.CoachId == coachId).Select(x =>
                         new CoachDaysQuota()
                         {
-                            MondayQuota = x.MondayQuota,
-                            TuesdayQuota = x.TuesdayQuota,
-                            WednesdayQuota = x.WednesdayQuota,
-                            ThursdayQuota = x.ThursdayQuota,
-                            FridayQuota = x.FridayQuota,
-                            SaturdayQuota = x.SaturdayQuota,
-                            SundayQuota = x.SundayQuota,
+                            MondayQuota = x.MondayQuota.Value,
+                            TuesdayQuota = x.TuesdayQuota.Value,
+                            WednesdayQuota = x.WednesdayQuota.Value,
+                            ThursdayQuota = x.ThursdayQuota.Value,
+                            FridayQuota = x.FridayQuota.Value,
+                            SaturdayQuota = x.SaturdayQuota.Value,
+                            SundayQuota = x.SundayQuota.Value,
                         }).FirstOrDefaultAsync();
 
                     var mondayStudentCount = dayToStudentCount.ContainsKey(DayOfWeek.Monday)

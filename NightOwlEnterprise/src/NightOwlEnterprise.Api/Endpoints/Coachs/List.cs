@@ -81,7 +81,7 @@ public static class List
                     .WhereIf(x => x.CoachDetail.Rank > 1000 && x.CoachDetail.Rank < 5000, filter.Rank.HasValue && filter.Rank == Rank.Between1000And5000)
                     .WhereIf(x => x.CoachDetail.Rank > 5000 && x.CoachDetail.Rank < 10000, filter.Rank.HasValue && filter.Rank == Rank.Between5000And10000)
                     .WhereIf(x => x.CoachDetail.Rank >= 10000, filter.Rank.HasValue && filter.Rank == Rank.Between10000And100000)
-                    .WhereIf(x => filter.UniversityIds.Contains(x.CoachDetail.UniversityId), filter.UniversityIds is not null && filter.UniversityIds.Any());
+                    .WhereIf(x => filter.UniversityIds.Contains(x.CoachDetail.UniversityId.Value), filter.UniversityIds is not null && filter.UniversityIds.Any());
             }
 
             var totalCount = await coachQueryable.CountAsync();
@@ -99,7 +99,7 @@ public static class List
                 UniversityName = x.CoachDetail.University.Name,
                 DepartmentName = x.CoachDetail.DepartmentName,
                 Year = x.CoachYksRankings?.LastOrDefault()?.Year,
-                Rank = x.CoachDetail.Rank,
+                Rank = x.CoachDetail.Rank.Value,
             }));
                 
             var pagedResponse = PagedResponse<CoachListItem>.CreatePagedResponse(
@@ -144,24 +144,24 @@ public static class List
                 //Quota = coachApplicationUser.CoachDetail.Quota,
                 UniversityName = coachApplicationUser.CoachDetail.University.Name,
                 DepartmentName = coachApplicationUser.CoachDetail.DepartmentName,
-                DepartmentType = coachApplicationUser.CoachDetail.DepartmentType,
-                Rank = coachApplicationUser.CoachDetail.Rank,
-                IsGraduated = coachApplicationUser.CoachDetail.IsGraduated,
+                DepartmentType = coachApplicationUser.CoachDetail.DepartmentType.Value,
+                Rank = coachApplicationUser.CoachDetail.Rank.Value,
+                IsGraduated = coachApplicationUser.CoachDetail.IsGraduated.Value,
                 //Yardımcı Kaynaklardan hangilerini kullandınız
-                GoneCramSchool = coachApplicationUser.CoachDetail.GoneCramSchool,
-                UsedYoutube = coachApplicationUser.CoachDetail.UsedYoutube,
-                School = coachApplicationUser.CoachDetail.School,
-                PrivateTutoring = coachApplicationUser.CoachDetail.PrivateTutoring,
+                GoneCramSchool = coachApplicationUser.CoachDetail.GoneCramSchool.Value,
+                UsedYoutube = coachApplicationUser.CoachDetail.UsedYoutube.Value,
+                School = coachApplicationUser.CoachDetail.School.Value,
+                PrivateTutoring = coachApplicationUser.CoachDetail.PrivateTutoring.Value,
                 //
-                ChangedDepartmentType = coachApplicationUser.CoachDetail.ChangedDepartmentType,
-                FromDepartment = coachApplicationUser.CoachDetail.FromDepartment,
-                ToDepartment = coachApplicationUser.CoachDetail.ToDepartment,
+                ChangedDepartmentType = coachApplicationUser.CoachDetail.ChangedDepartmentType.Value,
+                FromDepartment = coachApplicationUser.CoachDetail.FromDepartment.Value,
+                ToDepartment = coachApplicationUser.CoachDetail.ToDepartment.Value,
                 HighschoolName = coachApplicationUser.CoachDetail.HighSchool,
-                HighschoolGPA = coachApplicationUser.CoachDetail.HighSchoolGPA,
-                FirstTytNet = coachApplicationUser.CoachDetail.FirstTytNet,
-                LastTytNet = coachApplicationUser.CoachDetail.LastTytNet,
-                FirstAytNet = coachApplicationUser.CoachDetail.FirstAytNet,
-                LastAytNet = coachApplicationUser.CoachDetail.FirstAytNet,
+                HighschoolGPA = coachApplicationUser.CoachDetail.HighSchoolGPA.Value,
+                FirstTytNet = coachApplicationUser.CoachDetail.FirstTytNet.Value,
+                LastTytNet = coachApplicationUser.CoachDetail.LastTytNet.Value,
+                FirstAytNet = coachApplicationUser.CoachDetail.FirstAytNet.Value,
+                LastAytNet = coachApplicationUser.CoachDetail.FirstAytNet.Value,
                 YksRanks = new System.Collections.Generic.Dictionary<string, uint>()
             };
             

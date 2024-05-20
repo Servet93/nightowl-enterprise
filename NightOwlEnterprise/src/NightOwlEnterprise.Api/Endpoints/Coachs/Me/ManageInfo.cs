@@ -35,7 +35,7 @@ public static class ManageInfo
         return new CoachStateResponse
         {
             Email = user.Email!,
-            Status = user.CoachDetail.Status,
+            Status = user.CoachDetail.Status.Value,
         };
     }
 
