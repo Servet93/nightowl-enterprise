@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using NightOwlEnterprise.Api.Entities;
+using NightOwlEnterprise.Api.Entities.Enums;
 using Swashbuckle.AspNetCore.Filters;
 
 namespace NightOwlEnterprise.Api.Endpoints.Common;
@@ -22,6 +23,8 @@ public static class Login
             ([FromBody] LoginRequest login, [FromServices] IServiceProvider sp) =>
         {
             var identityErrors = new List<IdentityError>();
+            
+            var dbContext = sp.GetRequiredService<ApplicationDbContext>();
             
             var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
             
@@ -68,6 +71,17 @@ public static class Login
             user.RefreshToken = refreshTokenResult.Item1;
             user.RefreshTokenExpiration = refreshTokenResult.Item2;
 
+            StudentStatus? studentStatus = null;
+            CoachStatus? coachStatus = null;
+            if (user.UserType == UserType.Student)
+            {
+                studentStatus = dbContext.StudentDetail.FirstOrDefault(x => x.StudentId == user.Id).Status;
+            }
+            else
+            {
+                coachStatus = dbContext.CoachDetail.FirstOrDefault(x => x.CoachId == user.Id).Status;
+            }
+            
             var updateResult = await userManager.UpdateAsync(user);
             
             // The signInManager already produced the needed response in the form of a cookie or bearer token.
@@ -76,7 +90,10 @@ public static class Login
                 AccessToken = tokenResult.Item1,
                 AccessTokenExpiration = tokenResult.Item2,
                 RefreshToken = refreshTokenResult.Item1,
-                RefreshTokenExpiration = refreshTokenResult.Item2
+                RefreshTokenExpiration = refreshTokenResult.Item2,
+                UserType = user.UserType,
+                CoachStatus = coachStatus,
+                StudentStatus = studentStatus
             });
         }).ProducesValidationProblem(StatusCodes.Status400BadRequest);
     }

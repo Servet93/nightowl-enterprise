@@ -325,22 +325,28 @@ public static class Onboard
             {
                 errorDescriptors.Add(CommonErrorDescriptor.EmptyDepartmentName());
             }
-            
-            var years = request.YearToTyt.Keys.Order().ToList();
 
+            var years = request.YearToTyt;
+
+            var yearsDict = new Dictionary<uint, bool>();
+            
             var firstYear = 2016;
             
             var lastYear = DateTime.Now.Year;
 
             for (var i = 0; i < lastYear - firstYear; i++)
             {
-                var isValid = years[i] == firstYear + i;
-
-                if (!isValid)
+                if (years.ContainsKey((uint)(firstYear + i)))
                 {
-                    errorDescriptors.Add(CommonErrorDescriptor.EmptyTytYear(firstYear + i));
+                    yearsDict.Add((uint)(firstYear + i), years[(uint)(firstYear + i)]);
+                }
+                else
+                {
+                    yearsDict.Add((uint)(firstYear + i), false);    
                 }
             }
+
+            years = yearsDict;
 
             if (errorDescriptors.Any())
             {

@@ -772,6 +772,7 @@ public class ApplicationDbContext : Microsoft.AspNetCore.Identity.EntityFramewor
 {
     public DbSet<University> Universities { get; set; }
     public DbSet<CoachDetail> CoachDetail { get; set; }
+    public DbSet<StudentDetail> StudentDetail { get; set; }
     public DbSet<CoachYksRanking> CoachYksRankings { get; set; }
     public DbSet<Invitation> Invitations { get; set; }
     
@@ -788,6 +789,8 @@ public class ApplicationDbContext : Microsoft.AspNetCore.Identity.EntityFramewor
     
     public DbSet<ResourcesTYT> ResourcesTYT { get; set; }
     public DbSet<ResourcesAYT> ResourcesAYT { get; set; }
+    
+    
 
     public ApplicationDbContext(Microsoft.EntityFrameworkCore.DbContextOptions<ApplicationDbContext> options) :
         base(options)
