@@ -34,6 +34,8 @@ public static class ManageInfo
     {
         return new CoachStateResponse
         {
+            Name = user.CoachDetail.Name,
+            Surname = user.CoachDetail.Surname,
             Email = user.Email!,
             Status = user.CoachDetail.Status.Value,
         };
@@ -41,6 +43,8 @@ public static class ManageInfo
 
     public class CoachStateResponse
     {
+        public string Name { get; set; }
+        public string Surname { get; set; }
         public string Email { get; set; }
         
         [JsonConverter(typeof(JsonStringEnumConverter))]

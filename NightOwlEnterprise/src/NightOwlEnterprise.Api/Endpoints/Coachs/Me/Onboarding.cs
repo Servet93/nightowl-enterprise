@@ -275,6 +275,8 @@ public static class Onboard
                     
                     coach.DilNets.YDT = request.DilNets.YDT;
                 }
+
+                coach.CoachDetail.Status = CoachStatus.Active;
                 
                 await dbContext.SaveChangesAsync();
                 
@@ -1039,7 +1041,7 @@ public static class Onboard
 
         private DepartmentAndExamInfo departmentAndExamInfo = new DepartmentAndExamInfo()
         {
-            UniversityId = Guid.Empty,
+            UniversityId = Guid.Parse("efd3e340-041d-48a7-824c-b49a282fcb50"),
             DepartmentName = "Bilgisayar Mühendisi",
             DepartmentType = DepartmentType.MF,
             YearToTyt = new Dictionary<uint, bool>()
