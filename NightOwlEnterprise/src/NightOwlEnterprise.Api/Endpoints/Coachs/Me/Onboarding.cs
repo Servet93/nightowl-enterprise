@@ -76,14 +76,25 @@ public static class Onboard
 
                 coach.CoachYksRankings.Clear();
 
-                foreach (var yearToTyt in request.DepartmentAndExamInfo.YearToTyt)
+                if (request.DepartmentAndExamInfo.YearToTyt != null)
                 {
-                    coach.CoachYksRankings.Add(new CoachYksRanking()
+                    foreach (var yearToTyt in request.DepartmentAndExamInfo.YearToTyt)
                     {
-                        Enter = yearToTyt.Value,
-                        Year = yearToTyt.Key.ToString(),
-                        Rank = yearToTyt.Value ? request.DepartmentAndExamInfo.YearToYksRanking[yearToTyt.Key] : 0
-                    });    
+                        uint? _rank = null;
+                        
+                        if (request.DepartmentAndExamInfo.YearToYksRanking != null && 
+                            request.DepartmentAndExamInfo.YearToYksRanking.ContainsKey(yearToTyt.Key))
+                        {
+                            _rank = request.DepartmentAndExamInfo.YearToYksRanking[yearToTyt.Key];
+                        }
+                        
+                        coach.CoachYksRankings.Add(new CoachYksRanking()
+                        {
+                            Enter = yearToTyt.Value,
+                            Year = yearToTyt.Key.ToString(),
+                            Rank = _rank
+                        });    
+                    }    
                 }
                 
                 coach.CoachDetail.HighSchool = request.AcademicSummary.HighSchool;
@@ -336,7 +347,7 @@ public static class Onboard
 
             for (var i = 0; i < lastYear - firstYear; i++)
             {
-                if (years.ContainsKey((uint)(firstYear + i)))
+                if (years != null && years.ContainsKey((uint)(firstYear + i)))
                 {
                     yearsDict.Add((uint)(firstYear + i), years[(uint)(firstYear + i)]);
                 }
@@ -353,27 +364,29 @@ public static class Onboard
                 return errorDescriptors;
             }
 
-            foreach (var yearToYksRanking in request.YearToYksRanking)
+            if (request.YearToYksRanking != null)
             {
-                if (!request.YearToTyt.ContainsKey(yearToYksRanking.Key))
+                foreach (var yearToYksRanking in request.YearToYksRanking)
                 {
-                    errorDescriptors.Add(CommonErrorDescriptor.InvalidYksRankingYear(yearToYksRanking.Key));
-                    continue;
-                }
+                    if (!request.YearToTyt.ContainsKey(yearToYksRanking.Key))
+                    {
+                        errorDescriptors.Add(CommonErrorDescriptor.InvalidYksRankingYear(yearToYksRanking.Key));
+                        continue;
+                    }
                 
-                if (!request.YearToTyt[yearToYksRanking.Key])
-                {
-                    errorDescriptors.Add(CommonErrorDescriptor.NotEnterTytYear(yearToYksRanking.Key));
-                    continue;
-                }
+                    if (!request.YearToTyt[yearToYksRanking.Key])
+                    {
+                        errorDescriptors.Add(CommonErrorDescriptor.NotEnterTytYear(yearToYksRanking.Key));
+                        continue;
+                    }
                 
-                if (yearToYksRanking.Value > 10000)
-                {
-                    errorDescriptors.Add(
-                        CommonErrorDescriptor.InvalidYksRanking(yearToYksRanking.Key, yearToYksRanking.Value));
-                }
+                    if (yearToYksRanking.Value > 10000)
+                    {
+                        errorDescriptors.Add(
+                            CommonErrorDescriptor.InvalidYksRanking(yearToYksRanking.Key, yearToYksRanking.Value));
+                    }
+                }    
             }
-            
         }
         
         return errorDescriptors;

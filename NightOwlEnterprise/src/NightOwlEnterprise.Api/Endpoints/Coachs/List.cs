@@ -318,7 +318,7 @@ public static class List
 
             foreach (var yksRank in coachYksRankings)
             {
-                coach.YksRanks.Add(yksRank.Year, yksRank.Rank);
+                coach.YksRanks.Add(yksRank.Year, yksRank.Rank ?? 0);
             }
 
             if (coach.YksRanks.Any())

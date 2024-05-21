@@ -12,5 +12,5 @@ public class CoachYksRanking
     
     public bool Enter { get; set; }
     
-    public uint Rank { get; set; }
+    public uint? Rank { get; set; }
 }
