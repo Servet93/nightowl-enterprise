@@ -56,10 +56,13 @@ public static class Onboard
                 student.StudentDetail.HighSchool = request.AcademicSummary.HighSchool;
                 student.StudentDetail.HighSchoolGPA = request.AcademicSummary.HighSchoolGPA;
 
-                student.StudentDetail.GoalRanking = request.StudentGoals.GoalRanking;
-                student.StudentDetail.TytGoalNet = request.StudentGoals.TytGoalNet;
-                student.StudentDetail.AytGoalNet = request.StudentGoals.AytGoalNet;
-                student.StudentDetail.DesiredProfessionSchoolField = request.StudentGoals.DesiredProfessionSchoolField;
+                if (request.StudentGoals is not null)
+                {
+                    student.StudentDetail.GoalRanking = request.StudentGoals.GoalRanking;
+                    student.StudentDetail.TytGoalNet = request.StudentGoals.TytGoalNet;
+                    student.StudentDetail.AytGoalNet = request.StudentGoals.AytGoalNet;
+                    student.StudentDetail.DesiredProfessionSchoolField = request.StudentGoals.DesiredProfessionSchoolField;    
+                }
 
                 student.StudentDetail.ExpectationsFromCoaching = request.ExpectationsFromCoaching;
 
@@ -413,20 +416,25 @@ public static class Onboard
     private static List<ErrorDescriptor> ValidateStudentGoals(StudentGoals request)
     {
         var errorDescriptors = new List<ErrorDescriptor>();
+
+        if (request is null)
+        {
+            return errorDescriptors;
+        }
         
-        if (request.TytGoalNet is < 0 or > 120)
+        if (request.TytGoalNet.HasValue && request.TytGoalNet is < 0 or > 120)
         {
             errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidTYTGoalNet", "TYT neti",
                 request.TytGoalNet.Value, 120, 0));
         }
 
-        if (request.AytGoalNet is < 0 or > 80)
+        if (request.AytGoalNet.HasValue && request.AytGoalNet is < 0 or > 80)
         {
             errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidAYTGoalNet", "AYT neti",
                 request.AytGoalNet.Value, 80, 0));
         }
 
-        if (request.GoalRanking is < 1 or > 5000000)
+        if (request.GoalRanking.HasValue && request.GoalRanking is < 1 or > 5000000)
         {
             errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidGoalRanking", "Hedef sıralaması",
                 request.GoalRanking.Value, 5000000, 1));
