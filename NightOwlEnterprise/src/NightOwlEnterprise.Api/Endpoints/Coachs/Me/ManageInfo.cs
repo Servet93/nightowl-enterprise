@@ -25,6 +25,7 @@ public static class ManageInfo
                 
                 var user = dbContext.Users
                     .Include(x => x.CoachDetail)
+                    .Include(x => x.CoachDetail.University)
                     .FirstOrDefault(x => x.Id == coachId && x.UserType != UserType.Student);
 
                 var rank = dbContext.CoachYksRankings.OrderByDescending(x => Convert.ToInt32(x.Year))
@@ -44,6 +45,7 @@ public static class ManageInfo
             Name = user.CoachDetail.Name,
             Surname = user.CoachDetail.Surname,
             Birthdate = user.CoachDetail.BirthDate,
+            UniversityName = user.CoachDetail.University?.Name,
             DepartmentName = user.CoachDetail.DepartmentName,
             YksRank = rank,
             ProfilePhotoUrl = profilePhotoUrl,
@@ -61,6 +63,8 @@ public static class ManageInfo
         public string? ProfilePhotoUrl { get; set; }
         
         public DateTime? Birthdate { get; set; }
+        
+        public string UniversityName { get; set; }
         
         public string DepartmentName { get; set; }
         
