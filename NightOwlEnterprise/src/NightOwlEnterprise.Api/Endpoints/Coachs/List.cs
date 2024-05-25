@@ -81,6 +81,7 @@ public static class List
                     .WhereIf(x => x.CoachDetail.Rank > 1000 && x.CoachDetail.Rank < 5000, filter.Rank.HasValue && filter.Rank == Rank.Between1000And5000)
                     .WhereIf(x => x.CoachDetail.Rank > 5000 && x.CoachDetail.Rank < 10000, filter.Rank.HasValue && filter.Rank == Rank.Between5000And10000)
                     .WhereIf(x => x.CoachDetail.Rank >= 10000, filter.Rank.HasValue && filter.Rank == Rank.Between10000And100000)
+                    .WhereIf(x => x.CoachDetail.FromDepartment == filter.FromSection && x.CoachDetail.ToDepartment == filter.ToSection, filter.ChangedSection.HasValue && filter.ChangedSection.Value == true && filter.FromSection.HasValue && filter.ToSection.HasValue)
                     .WhereIf(x => filter.UniversityIds.Contains(x.CoachDetail.UniversityId.Value), filter.UniversityIds is not null && filter.UniversityIds.Any());
             }
 
@@ -90,7 +91,7 @@ public static class List
                 .Take(paginationFilter.PageSize).ToListAsync();
                 
             var coachs = new List<CoachListItem>();
-
+            
             coachs.AddRange(coachAppUsers.Select(x => new CoachListItem()
             {
                 Id = x.Id,
@@ -100,6 +101,7 @@ public static class List
                 DepartmentName = x.CoachDetail.DepartmentName,
                 Year = x.CoachYksRankings?.LastOrDefault()?.Year,
                 Rank = x.CoachDetail.Rank.Value,
+                ProfilePhotoUrl = paginationUriBuilder.GetCoachProfilePhotoUri(x.Id)
             }));
                 
             var pagedResponse = PagedResponse<CoachListItem>.CreatePagedResponse(
@@ -136,6 +138,8 @@ public static class List
                 return TypedResults.Problem("Koç bilgisi bulunamadı.", statusCode: StatusCodes.Status400BadRequest);
             }
             
+            var paginationUriBuilder = sp.GetRequiredService<PaginationUriBuilder>();
+            
             var coach = new CoachItem()
             {
                 Id = coachApplicationUser.Id,
@@ -162,6 +166,7 @@ public static class List
                 FirstAytNet = coachApplicationUser.CoachDetail.FirstAytNet.Value,
                 LastAytNet = coachApplicationUser.CoachDetail.FirstAytNet.Value,
                 YksRanks = new System.Collections.Generic.Dictionary<string, uint>(),
+                ProfilePhotoUrl = paginationUriBuilder.GetCoachProfilePhotoUri(coachId)
             };
             
             if (coachApplicationUser.TytNets is not null)
@@ -340,15 +345,18 @@ public static class List
     
         public bool? UsedYoutube { get; set; }
         
+        [JsonConverter(typeof(JsonStringEnumConverter))]
         public Rank? Rank { get; set; }
         public List<Guid> UniversityIds { get; set; }
         public bool? Male { get; set; }
         //Alan değiştirdi mi
         public bool? ChangedSection { get; set; }
     
-        public string? FromSection { get; set; }
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public DepartmentType? FromSection { get; set; }
     
-        public string? ToSection { get; set; }
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public DepartmentType? ToSection { get; set; }
     }
 
     public enum Rank
@@ -367,6 +375,8 @@ public static class List
         public string Surname { get; set; }
         public string UniversityName { get; set; }
         public string DepartmentName { get; set; }
+        
+        public string ProfilePhotoUrl { get; set; }
         public uint Rank { get; set; }
         public string Year { get; set; }
     }
@@ -435,6 +445,8 @@ public static class List
         public PrivateTutoringTYTObject PrivateTutoringTyt { get; set; }
         
         public PrivateTutoringAYTObject PrivateTutoringAyt { get; set; }
+        
+        public string ProfilePhotoUrl { get; set; }
     }
 
     public class CoachFilterRequestExamples : IMultipleExamplesProvider<CoachFilterRequest>

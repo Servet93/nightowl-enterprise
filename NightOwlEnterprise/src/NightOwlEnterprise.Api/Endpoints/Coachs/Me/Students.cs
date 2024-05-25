@@ -56,6 +56,7 @@ public static class Students
                 Surname = x.Student.StudentDetail.Surname,
                 Highschool = x.Student.StudentDetail.HighSchool,
                 Grade = x.Student.StudentDetail.Grade,
+                ProfilePhotoUrl = paginationUriBuilder.GetStudentProfilePhotoUri(x.Id)
             }));
                 
             var pagedResponse = PagedResponse<StudentItem>.CreatePagedResponse(
@@ -70,6 +71,8 @@ public static class Students
             ([FromQuery] Guid studentId, ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
         {
             var dbContext = sp.GetRequiredService<ApplicationDbContext>();
+            
+            var paginationUriBuilder = sp.GetRequiredService<PaginationUriBuilder>();
             
             var coachId = claimsPrincipal.GetId();
             
@@ -91,7 +94,8 @@ public static class Students
                 Name = student.StudentDetail.Name,
                 Surname = student.StudentDetail.Surname,
                 Highschool = student.StudentDetail.HighSchool,
-                Grade = student.StudentDetail.Grade
+                Grade = student.StudentDetail.Grade,
+                ProfilePhotoUrl = paginationUriBuilder.GetStudentProfilePhotoUri(studentId)
             };
         
             return TypedResults.Ok(studentItem);
@@ -360,6 +364,8 @@ public static class Students
         
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public Grade Grade { get; set; }
+        
+        public string? ProfilePhotoUrl { get; set; }
     }
     
     public class StudentOnboardInfo

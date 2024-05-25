@@ -121,4 +121,9 @@ public class PaginationUriBuilder
         modifiedUri = QueryHelpers.AddQueryString(modifiedUri, "pageSize", filter.PageSize.ToString());
         return new Uri(modifiedUri);
     }
+
+    public string GetCoachProfilePhotoUri(Guid coachId) => $"{_baseUri}/coachs/{coachId.ToString()}/profile-photo";
+    
+    public string GetStudentProfilePhotoUri(Guid studentId) => $"{_baseUri}/students/{studentId.ToString()}/profile-photo";
+    
 }

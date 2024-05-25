@@ -41,6 +41,8 @@ public static class StudentIdentityEndpoints
         
         routeGroup.MapApprove();
         routeGroup.MapCancel();
+        routeGroup.MapUploadProfilePhoto();
+        routeGroup.MapGetProfilePhoto();
 
         return new IdentityEndpointsConventionBuilder(routeGroup).WithDescription("Onboard formunu submit et");
     }

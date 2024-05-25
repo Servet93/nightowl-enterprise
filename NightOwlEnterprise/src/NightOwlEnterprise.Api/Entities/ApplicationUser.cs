@@ -28,6 +28,8 @@ public class ApplicationUser : Microsoft.AspNetCore.Identity.IdentityUser<Guid>
     public CoachDetail CoachDetail { get; set; }
     
     public StudentDetail StudentDetail { get; set; }
+    
+    public ProfilePhoto ProfilePhoto { get; set; }
     public ICollection<SubscriptionHistory> SubscriptionHistories { get; set; } = new List<SubscriptionHistory>();
     
     public ICollection<Invitation> InvitationsAsCoach { get; set; } = new List<Invitation>();

@@ -290,6 +290,23 @@ builder.Services.AddSwaggerGen(swaggerGenOptions =>
 {
     swaggerGenOptions.ExampleFilters();
     
+    // swaggerGenOptions.OperationFilter<FileUploadOperationFilter>();
+    
+    swaggerGenOptions.MapType<IFormFile>(() => new OpenApiSchema
+    {
+        // Type = "string", Format = "binary"
+        Type = "object",
+        Properties = new Dictionary<string, OpenApiSchema>
+        {
+            ["file"] = new OpenApiSchema
+            {
+                Type = "string",
+                Format = "binary"
+            }
+        },
+        Required = new HashSet<string> { "file" }
+    }); // IFormFile için özel belgeleme
+    
     // Endpoint gruplaması için
     swaggerGenOptions.TagActionsBy(api => api.GroupName);
     
@@ -790,7 +807,7 @@ public class ApplicationDbContext : Microsoft.AspNetCore.Identity.EntityFramewor
     public DbSet<ResourcesTYT> ResourcesTYT { get; set; }
     public DbSet<ResourcesAYT> ResourcesAYT { get; set; }
     
-    
+    public DbSet<ProfilePhoto> ProfilePhotos { get; set; }
 
     public ApplicationDbContext(Microsoft.EntityFrameworkCore.DbContextOptions<ApplicationDbContext> options) :
         base(options)
@@ -985,5 +1002,9 @@ public class ApplicationDbContext : Microsoft.AspNetCore.Identity.EntityFramewor
             .HasOne(cd => cd.User)
             .WithOne(u => u.ResourcesAYT)
             .HasForeignKey<ResourcesAYT>(cd => cd.UserId);
+        
+        // ProfilePhoto tablosunun ilişkilerini belirtiyoruz
+        builder.Entity<ProfilePhoto>()
+            .HasKey(cd => cd.UserId); // Primary key'i belirtiyoruz
     }
 }

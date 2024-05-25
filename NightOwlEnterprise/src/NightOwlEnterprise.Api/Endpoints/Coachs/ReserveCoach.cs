@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using NightOwlEnterprise.Api.Endpoints.Coachs;
 using NightOwlEnterprise.Api.Entities;
 using NightOwlEnterprise.Api.Entities.Enums;
+using NightOwlEnterprise.Api.Utils;
 using Stripe;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.Filters;
@@ -102,7 +103,7 @@ public static class ReserveCoach
                         CreatedAt = DateTime.UtcNow
                     });
 
-                    var date = FindDate(inviteRequest.Day);
+                    var date = DateUtils.FindDate(inviteRequest.Day);
 
                     for (int i = 1; i <= 4; i++)
                     {
@@ -126,7 +127,11 @@ public static class ReserveCoach
 
                         date = date.AddDays(7);
                     }
+
+                    var student = dbContext.StudentDetail.FirstOrDefault(x => x.StudentId == studentId);
                     
+                    student.Status = StudentStatus.Active;
+
                     dbContext.SaveChanges();
                 }
                 catch (Exception e)
@@ -144,36 +149,6 @@ public static class ReserveCoach
 
             }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi()
             .WithTags(TagConstants.StudentsCoachListAndReserve).RequireAuthorization("Student");
-
-        static DateTime FindDate(DayOfWeek day)
-        {
-            // Örnek bir gün
-            DayOfWeek verilenGun = day;
-
-            // Bugünkü tarih
-            DateTime bugun = DateTime.UtcNow;
-
-            // Verilen günün bugünkü tarihle karşılaştırılması
-            int gunFarki = ((int)verilenGun - (int)bugun.DayOfWeek + 7) % 7;
-
-            // İleride mi, geride mi, yoksa bugün mü olduğunun kontrolü ve tarih hesaplaması
-            DateTime bulunanTarih;
-            if (gunFarki == 0) // Bugün
-            {
-                // bulunanTarih = bugun;
-                bulunanTarih = bugun.AddDays(7);
-            }
-            else if (gunFarki > 0) // İleride
-            {
-                bulunanTarih = bugun.AddDays(gunFarki);
-            }
-            else // Geride
-            {
-                bulunanTarih = bugun.AddDays(7 + gunFarki);
-            }
-
-            return bulunanTarih;
-        }
     }
 
     public sealed class SendInvitationToCoachRequest

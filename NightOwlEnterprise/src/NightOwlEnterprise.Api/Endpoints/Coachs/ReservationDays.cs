@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using NightOwlEnterprise.Api.Utils;
 
 namespace NightOwlEnterprise.Api.Endpoints.Coachs;
 
@@ -93,37 +94,44 @@ public static class ReservationDays
                         Monday =
                         {
                             TotalQuota = coachDaysQuota.MondayQuota, RemainQuota = mondayRemainQuota,
-                            IsAbleToReserve = mondayRemainQuota > 0
+                            IsAbleToReserve = mondayRemainQuota > 0,
+                            Date = DateUtils.FindDate(DayOfWeek.Monday)
                         },
                         Tuesday =
                         {
                             TotalQuota = coachDaysQuota.TuesdayQuota, RemainQuota = tuesdayRemainQuota,
-                            IsAbleToReserve = tuesdayRemainQuota > 0
+                            IsAbleToReserve = tuesdayRemainQuota > 0,
+                            Date = DateUtils.FindDate(DayOfWeek.Tuesday)
                         },
                         Wednesday =
                         {
                             TotalQuota = coachDaysQuota.WednesdayQuota, RemainQuota = wednesdayRemainQuota,
-                            IsAbleToReserve = wednesdayRemainQuota > 0
+                            IsAbleToReserve = wednesdayRemainQuota > 0,
+                            Date = DateUtils.FindDate(DayOfWeek.Wednesday)
                         },
                         Thursday =
                         {
                             TotalQuota = coachDaysQuota.ThursdayQuota, RemainQuota = thursdayRemainQuota,
-                            IsAbleToReserve = thursdayRemainQuota > 0
+                            IsAbleToReserve = thursdayRemainQuota > 0,
+                            Date = DateUtils.FindDate(DayOfWeek.Thursday)
                         },
                         Friday =
                         {
                             TotalQuota = coachDaysQuota.FridayQuota, RemainQuota = fridayRemainQuota,
-                            IsAbleToReserve = fridayRemainQuota > 0
+                            IsAbleToReserve = fridayRemainQuota > 0,
+                            Date = DateUtils.FindDate(DayOfWeek.Friday),
                         },
                         Saturday =
                         {
                             TotalQuota = coachDaysQuota.SaturdayQuota, RemainQuota = saturdayRemainQuota,
-                            IsAbleToReserve = saturdayRemainQuota > 0
+                            IsAbleToReserve = saturdayRemainQuota > 0,
+                            Date = DateUtils.FindDate(DayOfWeek.Saturday),
                         },
                         Sunday =
                         {
                             TotalQuota = coachDaysQuota.SundayQuota, RemainQuota = sundayRemainQuota,
-                            IsAbleToReserve = sundayRemainQuota > 0
+                            IsAbleToReserve = sundayRemainQuota > 0,
+                            Date = DateUtils.FindDate(DayOfWeek.Sunday),
                         }
                     };
 
@@ -151,6 +159,8 @@ public static class ReservationDays
         public int RemainQuota { get; set; }
         
         public bool IsAbleToReserve { get; set; }
+        
+        public DateTime Date { get; set; }
     }
 
     public sealed class DaysAvailability

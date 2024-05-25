@@ -38,6 +38,8 @@ public static class CoachIdentityEndpoints
         routeGroup.MapSpecifyHour();
         routeGroup.MapManageInfo();
         routeGroup.MapStudents();
+        routeGroup.MapGetProfilePhoto();
+        routeGroup.MapUploadProfilePhoto();
 
         return new IdentityEndpointsConventionBuilder(routeGroup);
     }
