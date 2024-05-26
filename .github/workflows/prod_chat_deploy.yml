@@ -18,21 +18,21 @@ jobs:
     - name: Set up SSH
       run: |
         mkdir -p ~/.ssh/
-        echo "EC2IP -> ${{ secrets.PROD_EC2_IP }}"
+        echo "EC2IP -> ${{ secrets.PROD_CHAT_EC2_IP }}"
         echo "SSH_PRIVATE_KEY ->  ${{ secrets.PROD_EC2_SSH_PRIVATE_KEY }}"
         echo "${{ secrets.PROD_EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H ${{ secrets.PROD_EC2_IP }} >> ~/.ssh/known_hosts
+        ssh-keyscan -H ${{ secrets.PROD_CHAT_EC2_IP }} >> ~/.ssh/known_hosts
 
     - name: Stop nightowl-enterprise service on ec2
       run:  |
-        ssh -i ~/.ssh/id_rsa ubuntu@${{ secrets.PROD_EC2_IP }} 'bash -s' << 'EOF'
+        ssh -i ~/.ssh/id_rsa ubuntu@${{ secrets.PROD_CHAT_EC2_IP }} 'bash -s' << 'EOF'
         sudo systemctl stop nightowl-enterprise
         EOF
 
     - name: nightowl-enterprise directory is creating
       run: |
-        ssh -i ~/.ssh/id_rsa ubuntu@${{ secrets.PROD_EC2_IP }} 'bash -s' << 'EOF'
+        ssh -i ~/.ssh/id_rsa ubuntu@${{ secrets.PROD_CHAT_EC2_IP }} 'bash -s' << 'EOF'
           if test -d "nightowl-enterprise"; then
             echo "nightowl-enterprise directory is exist."
           else
@@ -42,11 +42,11 @@ jobs:
         EOF
         
     - name: Copy Files to EC2
-      run: scp -r ./* ubuntu@${{ secrets.PROD_EC2_IP }}:nightowl-enterprise/
+      run: scp -r ./* ubuntu@${{ secrets.PROD_CHAT_EC2_IP }}:nightowl-enterprise/
       working-directory: NightOwlEnterprise/src/NightOwlEnterprise.Api/bin/Release/net8.0/publish
 
     - name: Start nightowl-enterprise service on ec2
       run:  |
-        ssh -i ~/.ssh/id_rsa ubuntu@${{ secrets.PROD_EC2_IP }} 'bash -s' << 'EOF'
+        ssh -i ~/.ssh/id_rsa ubuntu@${{ secrets.PROD_CHAT_EC2_IP }} 'bash -s' << 'EOF'
         sudo systemctl start nightowl-enterprise
         EOF
