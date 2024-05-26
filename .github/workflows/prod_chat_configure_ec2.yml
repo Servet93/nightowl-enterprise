@@ -11,15 +11,15 @@ jobs:
     - name: Set up SSH
       run: |
         mkdir -p ~/.ssh/
-        echo "EC2IP -> ${{ secrets.PROD_EC2_IP }}"
+        echo "EC2IP -> ${{ secrets.PROD_CHAT_EC2_IP }}"
         echo "SSH_PRIVATE_KEY ->  ${{ secrets.PROD_EC2_SSH_PRIVATE_KEY }}"
         echo "${{ secrets.PROD_EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H ${{ secrets.PROD_EC2_IP }} >> ~/.ssh/known_hosts
+        ssh-keyscan -H ${{ secrets.PROD_CHAT_EC2_IP }} >> ~/.ssh/known_hosts
 
     - name: Creating env variables and service file
       run: |
-          ssh -i ~/.ssh/id_rsa ubuntu@${{ secrets.PROD_EC2_IP }} 'bash -s' << 'EOF'
+          ssh -i ~/.ssh/id_rsa ubuntu@${{ secrets.PROD_CHAT_EC2_IP }} 'bash -s' << 'EOF'
             # Buraya inline komutlarınızı ekleyin
             # ssh üzerinden export çalışmıyor güvenlikten ötürü
             #sudo export ASPNETCORE_URLS="${{ vars.PROD_EC2_URL }}"
@@ -90,7 +90,7 @@ jobs:
             echo 'SmtpServer__EnableSsl="${{ vars.PROD_SMTPSERVER__ENABLESSL }}"' | sudo tee -a /etc/environment
             #Update environments variable
             source /etc/environment
-            echo -e "${{ vars.PROD_SERVICE_DEFINITON_CONTENT_ON_EC2 }}" | sed 's@EC2_URL_PLACEHOLDER@${{ vars.PROD_EC2_URL }}@g' | sudo tee /etc/systemd/system/nightowl-enterprise.service
+            echo -e "${{ vars.PROD_SERVICE_DEFINITON_CONTENT_ON_EC2 }}" | sed 's@EC2_URL_PLACEHOLDER@${{ vars.PROD_CHAT_EC2_URL }}@g' | sudo tee /etc/systemd/system/nightowl-enterprise.service
             #Servis dosyasını kaydedin ve systemd'ye değişiklikleri bildirin
             sudo systemctl daemon-reload
             #Servisi başlatın(kapali, deploymant aşamasında stop start yapıyoruz
