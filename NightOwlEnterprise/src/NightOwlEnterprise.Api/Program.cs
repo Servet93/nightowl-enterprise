@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Globalization;
+using System.Text;
 using System.Text.Json.Serialization;
 using Amazon.Runtime;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -513,6 +514,9 @@ app.MapStudentsIdentityApi<ApplicationUser>();
 app.MapCoachsIdentityApi<ApplicationUser>();
 app.MapUniversityApi();
 
+TimeZoneInfo localZone = TimeZoneInfo.Local;
+CultureInfo currentCulture = CultureInfo.CurrentCulture;
+
 app.MapGet("/conf", async context =>
 {
     // ILoggerFactory örneği al
@@ -524,22 +528,29 @@ app.MapGet("/conf", async context =>
     logger.LogInformation("Aws Cloud Watch Conf");
     
     StringBuilder sb = new();
+    sb.AppendLine($"LocalZone.DisplayName -> {localZone.DisplayName}");
+    sb.AppendLine($"LocalZone.BaseUtcOffset -> {localZone.BaseUtcOffset}");
+    sb.AppendLine($"Culture.DisplayName -> {currentCulture.DisplayName}");
     sb.AppendLine($"systemStartPointNow -> {systemStartPointNow}");
     sb.AppendLine($"systemStartPointUtcNow -> {systemStartPointUtcNow}");
     sb.AppendLine($"systemEndPointNow -> {systemEndPointNow}");
     sb.AppendLine($"systemEndPointUtcNow -> {systemEndPointUtcNow}");
+    sb.AppendLine($"---------------------------------------------------------------");
     sb.AppendLine($"IsMongoEnabled -> {isMongoEnabled}");
     sb.AppendLine($"Mongo -> {mongoConnectionString}");
     sb.AppendLine($"IsPostgresEnabled -> {isPostgresEnabled}");
     sb.AppendLine($"Postgres -> {postgresConnectionString}");
+    sb.AppendLine($"---------------------------------------------------------------");
     sb.AppendLine($"Stripe.PublishableKey -> {stripeCredential.PublishableKey}");
     sb.AppendLine($"Stripe.SecretKey -> {stripeCredential.SecretKey}");
     sb.AppendLine($"Stripe.SigningSecret -> {stripeCredential.SigningSecret}");
     sb.AppendLine($"Stripe.DereceliKocPriceId -> {stripeCredential.DereceliKocPriceId}");
     sb.AppendLine($"Stripe.PdrPriceId -> {stripeCredential.PdrPriceId}");
+    sb.AppendLine($"---------------------------------------------------------------");
     sb.AppendLine($"JwtConfig.Audience -> {jwtConfig!.Audience}");
     sb.AppendLine($"JwtConfig.Issuer -> {jwtConfig.Issuer}");
     sb.AppendLine($"JwtConfig.Key -> {jwtConfig.Key}");
+    sb.AppendLine($"---------------------------------------------------------------");
     sb.AppendLine($"SmtpServerCredential.Enabled -> {smtpServerCredential.Enabled}");
     sb.AppendLine($"SmtpServerCredential.Address -> {smtpServerCredential.Address}");
     sb.AppendLine($"SmtpServerCredential.Port -> {smtpServerCredential.Port}");

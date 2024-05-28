@@ -12,7 +12,7 @@ public static class IdentityResultExtensions
             { "errors" , new List<ErrorDescriptor>() { new ErrorDescriptor(identityError.Code, identityError.Description) } }
         };
 
-        detail = string.IsNullOrEmpty(detail) ? identityError.Description : null;
+        detail = string.IsNullOrEmpty(detail) ? identityError.Description : detail;
         
         return TypedResults.Problem(detail, statusCode: StatusCodes.Status400BadRequest, extensions:dictExtensions);
     }
@@ -48,7 +48,7 @@ public static class IdentityResultExtensions
             { "errors" , new List<ErrorDescriptor>() { errorDescriptor } }
         };
         
-        detail = string.IsNullOrEmpty(detail) ? errorDescriptor.Description : null;
+        detail = string.IsNullOrEmpty(detail) ? errorDescriptor.Description : detail;
 
         return TypedResults.Problem(detail, statusCode: StatusCodes.Status400BadRequest, extensions:dictExtensions);
     }

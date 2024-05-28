@@ -57,7 +57,7 @@ public class PagedResponse<T>
 
 public class PaginationFilter
 {
-    private const int MaxPageSize = 20;
+    private const int MaxPageSize = 50;
     
     public int PageNumber { get; set; }
     
