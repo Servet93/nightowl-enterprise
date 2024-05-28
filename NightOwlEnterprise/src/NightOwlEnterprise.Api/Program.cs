@@ -535,6 +535,8 @@ app.MapGet("/conf", async context =>
     sb.AppendLine($"systemStartPointUtcNow -> {systemStartPointUtcNow}");
     sb.AppendLine($"systemEndPointNow -> {systemEndPointNow}");
     sb.AppendLine($"systemEndPointUtcNow -> {systemEndPointUtcNow}");
+    sb.AppendLine($"systemNow -> {DateTime.Now}");
+    sb.AppendLine($"systemUtcNow -> {DateTime.UtcNow}");
     sb.AppendLine($"---------------------------------------------------------------");
     sb.AppendLine($"IsMongoEnabled -> {isMongoEnabled}");
     sb.AppendLine($"Mongo -> {mongoConnectionString}");
