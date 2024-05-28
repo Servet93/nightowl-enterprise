@@ -191,8 +191,7 @@ public static class List
                     Philosophy = coachApplicationUser.TytNets.Philosophy.Value,
                     Physics = coachApplicationUser.TytNets.Physics.Value,
                     Religion = coachApplicationUser.TytNets.Religion.Value,
-                    Grammar = coachApplicationUser.TytNets.Grammar.Value,
-                    Semantics = coachApplicationUser.TytNets.Semantics.Value,
+                    Turkish = coachApplicationUser.TytNets.Turkish.Value,
                 };
             }
             

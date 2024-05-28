@@ -688,11 +688,10 @@ async Task SeedCoachs(ApplicationDbContext dbContext, UserManager<ApplicationUse
                         Physics = (byte)rnd.Next(7),
                         Mathematics = (byte)rnd.Next(30),
                         Geography = (byte)rnd.Next(5),
-                        Grammar = (byte)rnd.Next(10),
                         History = (byte)rnd.Next(5),
                         Philosophy = (byte)rnd.Next(5),
                         Religion = (byte)rnd.Next(5),
-                        Semantics = (byte)rnd.Next(30),
+                        Turkish = (byte)rnd.Next(40),
                     },
                     UserType = UserType.Coach,
                 };

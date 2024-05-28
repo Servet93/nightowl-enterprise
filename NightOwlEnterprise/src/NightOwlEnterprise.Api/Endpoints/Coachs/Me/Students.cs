@@ -180,13 +180,12 @@ public static class Students
                     Chemistry = student.TytNets.Chemistry.Value,
                     Geography = student.TytNets.Geography.Value,
                     Geometry = student.TytNets.Geometry.Value,
-                    Grammar = student.TytNets.Grammar.Value,
                     History = student.TytNets.History.Value,
                     Mathematics = student.TytNets.Mathematics.Value,
                     Philosophy = student.TytNets.Philosophy.Value,
                     Physics = student.TytNets.Physics.Value,
                     Religion = student.TytNets.Religion.Value,
-                    Semantics = student.TytNets.Semantics.Value,
+                    Turkish = student.TytNets.Turkish.Value,
                 };
             }
             

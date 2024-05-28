@@ -147,13 +147,12 @@ public static class Onboard
                         Chemistry = request.LastPracticeTytExamPoints.Chemistry,
                         Geography = request.LastPracticeTytExamPoints.Geography,
                         Geometry = request.LastPracticeTytExamPoints.Geometry,
-                        Grammar = request.LastPracticeTytExamPoints.Grammar,
                         History = request.LastPracticeTytExamPoints.History,
                         Mathematics = request.LastPracticeTytExamPoints.Mathematics,
                         Philosophy = request.LastPracticeTytExamPoints.Philosophy,
                         Physics = request.LastPracticeTytExamPoints.Physics,
                         Religion = request.LastPracticeTytExamPoints.Religion,
-                        Semantics = request.LastPracticeTytExamPoints.Semantics,
+                        Turkish = request.LastPracticeTytExamPoints.Turkish,
                     };
                 }
 
@@ -696,18 +695,11 @@ public static class Onboard
         }
         else
         {
-            //Anlam Bilgisi: (Max 30, Min 0)
-            if (request.Semantics > 30)
+            //Anlam Bilgisi: (Max 40, Min 0)
+            if (request.Turkish > 40)
             {
-                errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidSemanticNet", "Anlam bilgisi neti",
-                    request.Semantics, 30, 0));
-            }
-            
-            //Dil Bilgisi: (Max 10, Min 0)
-            if (request.Grammar > 10)
-            {
-                errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidGrammarNet", "Dil bilgisi neti",
-                    request.Grammar, 10, 0));
+                errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidTurkishNet", "Türkçe bilgisi neti",
+                    request.Turkish, 40, 0));
             }
             
             //Matematik: (Max 30, Min 0)
@@ -759,11 +751,11 @@ public static class Onboard
                     request.Physics, 7, 0));
             }
             
-            //Kimya: (Max 7, Min 0)
-            if (request.Chemistry > 7)
+            //Kimya: (Max 6, Min 0)
+            if (request.Chemistry > 6)
             {
                 errorDescriptors.Add(CommonErrorDescriptor.InvalidRange("InvalidChemistryNet", "Kimya neti",
-                    request.Chemistry, 7, 0));
+                    request.Chemistry, 6, 0));
             }
             
             //Biyoloji: (Max 6, Min 0)
@@ -1040,8 +1032,7 @@ public static class Onboard
 
         private StudentTytNets _validStudentTytNets = new StudentTytNets()
         {
-            Semantics = 22,
-            Grammar = 7,
+            Turkish = 21,
             Mathematics = 17,
             Geometry = 6,
             History = 3,
@@ -1055,8 +1046,7 @@ public static class Onboard
         
         private StudentTytNets _invalidStudentTytNets = new StudentTytNets()
         {
-            Semantics = 34,
-            Grammar = 22,
+            Turkish = 46,
             Mathematics = 31,
             Geometry = 18,
             History = 7,

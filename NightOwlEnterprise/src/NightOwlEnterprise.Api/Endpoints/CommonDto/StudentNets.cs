@@ -2,10 +2,8 @@
 
 public class StudentTytNets
 {
-    //Anlam Bilgisi: (Max 30, Min 0)
-    public byte Semantics { get; set; }
-    //Dil Bilgisi: (Max 10, Min 0)
-    public byte Grammar { get; set; }
+    //Türkçe: (Max 40, Min 0)
+    public byte Turkish { get; set; }
     //Matematik: (Max 30, Min 0)
     public byte Mathematics { get; set; }
     //Geometri: (Max 10, Min 0)

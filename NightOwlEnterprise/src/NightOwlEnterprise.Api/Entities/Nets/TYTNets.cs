@@ -6,10 +6,8 @@ public class TYTNets
     
     public ApplicationUser User { get; set; } // İlişkiyi burada tanımlıyoruz
     
-    //Anlam Bilgisi: (Max 30, Min 0)
-    public byte? Semantics { get; set; }
-    //Dil Bilgisi: (Max 10, Min 0)
-    public byte? Grammar { get; set; }
+    //Türkçe Bilgisi: (Max 40, Min 0)
+    public byte? Turkish { get; set; }
     //Matematik: (Max 30, Min 0)
     public byte? Mathematics { get; set; }
     //Geometri: (Max 10, Min 0)
@@ -24,7 +22,7 @@ public class TYTNets
     public byte? Religion { get; set; }
     //Fizik: (Max 7, Min 0)
     public byte? Physics { get; set; }
-    //Kimya: (Max 7, Min 0)
+    //Kimya: (Max 6, Min 0)
     public byte? Chemistry { get; set; }
     //Biology: (Max 6, Min 0)
     public byte? Biology { get; set; }
