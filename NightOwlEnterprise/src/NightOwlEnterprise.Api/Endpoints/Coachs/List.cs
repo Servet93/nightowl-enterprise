@@ -91,18 +91,27 @@ public static class List
                 .Take(paginationFilter.PageSize).ToListAsync();
                 
             var coachs = new List<CoachListItem>();
-            
-            coachs.AddRange(coachAppUsers.Select(x => new CoachListItem()
+
+            foreach (var coachAppUser in coachAppUsers)
             {
-                Id = x.Id,
-                Name = x.CoachDetail.Name,
-                Surname = x.CoachDetail.Surname,
-                UniversityName = x.CoachDetail.University.Name,
-                DepartmentName = x.CoachDetail.DepartmentName,
-                Year = x.CoachYksRankings?.LastOrDefault()?.Year,
-                Rank = x.CoachDetail.Rank.Value,
-                ProfilePhotoUrl = paginationUriBuilder.GetCoachProfilePhotoUri(x.Id)
-            }));
+                var last = coachAppUser.CoachYksRankings?.Where(x => x.Enter)
+                    .OrderByDescending(x => Convert.ToInt32(x.Year)).FirstOrDefault();
+                
+                var year = last?.Year;
+                var rank = last?.Rank;
+
+                coachs.Add(new CoachListItem()
+                {
+                    Id = coachAppUser.Id,
+                    Name = coachAppUser.CoachDetail.Name,
+                    Surname = coachAppUser.CoachDetail.Surname,
+                    UniversityName = coachAppUser.CoachDetail.University.Name,
+                    DepartmentName = coachAppUser.CoachDetail.DepartmentName,
+                    Year = year,
+                    Rank = rank,
+                    ProfilePhotoUrl = paginationUriBuilder.GetCoachProfilePhotoUri(coachAppUser.Id)
+                });
+            }
                 
             var pagedResponse = PagedResponse<CoachListItem>.CreatePagedResponse(
                 coachs, totalCount, paginationFilter, paginationUriBuilder,
@@ -377,7 +386,7 @@ public static class List
         public string DepartmentName { get; set; }
         
         public string ProfilePhotoUrl { get; set; }
-        public uint Rank { get; set; }
+        public uint? Rank { get; set; }
         public string Year { get; set; }
     }
     
@@ -418,7 +427,7 @@ public static class List
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public DepartmentType ToDepartment { get; set; }
         
-        public uint Rank { get; set; }
+        public uint? Rank { get; set; }
         public string Year { get; set; }
 
         public Dictionary<string, uint> YksRanks { get; set; }
