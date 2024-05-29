@@ -33,23 +33,29 @@ public static class InvitationDetailList
                     InvitationState.SpecifyHour, InvitationState.WaitingApprove,
                 };
 
-                var nextThreeDays = DateTime.UtcNow.AddDays(3);
+                var now = DateTime.UtcNow.ConvertUtcToTimeZone();
+                var nextThreeDays = DateTime.UtcNow.ConvertUtcToTimeZone().AddDays(2);
                 
                 var invitationEntities = await dbContext.Invitations
                     .Include(x => x.Student)
-                    .Where(x => x.CoachId == coachId && x.Date >= DateTime.UtcNow.ConvertUtcToTimeZone() && x.Date <= nextThreeDays)
+                    .Include(x => x.Student.StudentDetail)
+                    .Include(x => x.ZoomMeetDetail)
+                    .Where(x => x.CoachId == coachId && x.Date >= now && x.Date <= nextThreeDays)
                     .ToListAsync();
 
                 var invitations = invitationEntities.Select(invitationEntity => new InvitationResponse()
                     {
                         Id = invitationEntity.Id,
                         StudentId = invitationEntity.StudentId,
-                        StudentName = invitationEntity.Student.Name,
+                        StudentName = invitationEntity.Student.StudentDetail.Name,
+                        StudentSurname = invitationEntity.Student.StudentDetail.Surname,
                         Type = invitationEntity.Type,
                         State = invitationEntity.State,
                         Date = invitationEntity.Date,
                         StartTime = invitationEntity.StartTime,
-                        EndTime = invitationEntity.EndTime
+                        EndTime = invitationEntity.EndTime,
+                        JoinUrl = invitationEntity.ZoomMeetDetail?.CoachJoinUrl,
+                        Enabled = invitationEntity.Date == now && (now.TimeOfDay - invitationEntity.StartTime).Minutes < 5
                     })
                     .ToList();
 
@@ -68,20 +74,28 @@ public static class InvitationDetailList
 
                     var dbContext = sp.GetRequiredService<ApplicationDbContext>();
 
-                    var invitationEntity = await dbContext.Invitations.Include(x => x.Student)
+                    var invitationEntity = await dbContext.Invitations
+                        .Include(x => x.Student)
+                        .Include(x => x.Student.StudentDetail)
+                        .Include(x => x.ZoomMeetDetail)
                         .Where(x => x.CoachId == coachId && x.Id == invitationId)
                         .FirstOrDefaultAsync();
 
+                    var now = DateTime.UtcNow.ConvertUtcToTimeZone();
+                    
                     var invitation = new InvitationResponse()
                     {
                         Id = invitationEntity.Id,
                         StudentId = invitationEntity.StudentId,
-                        StudentName = invitationEntity.Student.Name,
+                        StudentName = invitationEntity.Student.StudentDetail.Name,
+                        StudentSurname = invitationEntity.Student.StudentDetail.Surname,
                         Type = invitationEntity.Type,
                         State = invitationEntity.State,
                         Date = invitationEntity.Date,
                         StartTime = invitationEntity.StartTime,
-                        EndTime = invitationEntity.EndTime
+                        EndTime = invitationEntity.EndTime,
+                        JoinUrl = invitationEntity.ZoomMeetDetail?.CoachJoinUrl,
+                        Enabled = invitationEntity.Date == now && (now.TimeOfDay - invitationEntity.StartTime).Minutes < 5
                     };
 
                     return TypedResults.Ok(invitation);
@@ -101,9 +115,16 @@ public static class InvitationDetailList
         
         public string StudentName { get; set; }
         
+        public string StudentSurname { get; set; }
+        
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public InvitationType Type { get; set; }
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public InvitationState State { get; set; }
+        
+        public string JoinUrl { get; set; }
+        
+        public bool Enabled { get; set; }
+        
     }
 }
