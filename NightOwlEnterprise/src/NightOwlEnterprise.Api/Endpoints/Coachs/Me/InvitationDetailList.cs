@@ -33,11 +33,11 @@ public static class InvitationDetailList
                     InvitationState.SpecifyHour, InvitationState.WaitingApprove,
                 };
 
-                var nextThreeDays = DateTime.Now.AddDays(4);
+                var nextThreeDays = DateTime.UtcNow.AddDays(3);
                 
                 var invitationEntities = await dbContext.Invitations
                     .Include(x => x.Student)
-                    .Where(x => x.CoachId == coachId && x.Date <= nextThreeDays && x.Date >= DateTime.Now)
+                    .Where(x => x.CoachId == coachId && x.Date >= DateTime.UtcNow.ConvertUtcToTimeZone() && x.Date <= nextThreeDays)
                     .ToListAsync();
 
                 var invitations = invitationEntities.Select(invitationEntity => new InvitationResponse()

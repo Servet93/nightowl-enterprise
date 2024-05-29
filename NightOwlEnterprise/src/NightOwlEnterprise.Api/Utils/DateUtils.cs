@@ -8,7 +8,7 @@ public class DateUtils
         DayOfWeek verilenGun = day;
 
         // Bugünkü tarih
-        DateTime bugun = DateTime.UtcNow;
+        DateTime bugun = DateTime.UtcNow.ConvertUtcToTimeZone();
 
         // Verilen günün bugünkü tarihle karşılaştırılması
         int gunFarki = ((int)verilenGun - (int)bugun.DayOfWeek + 7) % 7;

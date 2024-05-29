@@ -100,7 +100,7 @@ public static class ReserveCoach
                         CoachId = coachId,
                         StudentId = studentId,
                         Day = inviteRequest.Day,
-                        CreatedAt = DateTime.UtcNow
+                        CreatedAt = DateTime.UtcNow.ConvertUtcToTimeZone()
                     });
 
                     var date = DateUtils.FindDate(inviteRequest.Day);
@@ -139,6 +139,9 @@ public static class ReserveCoach
                     logger.LogCritical(e,
                         "Reserve record not created. CoachId: {CoachId}, StudentId: {StudentId}, ReserveDay: {ReserveDay}",
                         coachId, studentId, inviteRequest.Day);
+                    return new ErrorDescriptor("ReserveCoachFailed",
+                            $"Mentör rezervasyonu yapılamadı. Mentör: {coachId.ToString()}, Öğrenci: {studentId.ToString()}, Gün: {inviteRequest.Day}")
+                        .CreateProblem("Mentör rezervasyon İşlemi Başarısız");
                 }
                 finally
                 {

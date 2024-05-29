@@ -867,6 +867,10 @@ public class ApplicationDbContext : Microsoft.AspNetCore.Identity.EntityFramewor
             .WithMany(u => u.StudentCoachTrainingSchedules)
             .HasForeignKey(csts => csts.StudentId);
         
+        builder.Entity<CoachStudentTrainingSchedule>()
+            .Property(cc => cc.CreatedAt)
+            .HasColumnType("timestamp without time zone");
+        
         // Invitation ile Coach arasında ilişki
         builder.Entity<Invitation>()
             .HasOne(c => c.Coach)
