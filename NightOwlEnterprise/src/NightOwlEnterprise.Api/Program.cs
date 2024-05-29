@@ -516,6 +516,7 @@ app.MapUniversityApi();
 
 TimeZoneInfo localZone = TimeZoneInfo.Local;
 CultureInfo currentCulture = CultureInfo.CurrentCulture;
+var turkeyTimeZone = DateTimeExtensions.TimeZone;
 
 app.MapGet("/conf", async context =>
 {
@@ -528,15 +529,26 @@ app.MapGet("/conf", async context =>
     logger.LogInformation("Aws Cloud Watch Conf");
     
     StringBuilder sb = new();
+    sb.AppendLine($"TurkeyTimeZone.DisplayName -> {turkeyTimeZone.DisplayName}");
+    sb.AppendLine($"TurkeyTimeZone.BaseUtcOffset -> {turkeyTimeZone.BaseUtcOffset}");
+    sb.AppendLine($"TurkeyTimeZone.SystemStartPointNow -> {systemStartPointNow.ConvertToTimeZone()}");
+    sb.AppendLine($"TurkeyTimeZone.SystemStartPointUtcNow -> {systemStartPointUtcNow.ConvertUtcToTimeZone()}");
+    sb.AppendLine($"TurkeyTimeZone.SystemEndPointNow -> {systemEndPointNow.ConvertToTimeZone()}");
+    sb.AppendLine($"TurkeyTimeZone.SystemEndPointUtcNow -> {systemEndPointUtcNow.ConvertUtcToTimeZone()}");
+    sb.AppendLine($"---------------------------------------------------------------");
     sb.AppendLine($"LocalZone.DisplayName -> {localZone.DisplayName}");
     sb.AppendLine($"LocalZone.BaseUtcOffset -> {localZone.BaseUtcOffset}");
+    sb.AppendLine($"LocalZone.SystemStartPointNow -> {systemStartPointNow}");
+    sb.AppendLine($"LocalZone.SystemStartPointUtcNow -> {systemStartPointUtcNow}");
+    sb.AppendLine($"LocalZone.SystemEndPointNow -> {systemEndPointNow}");
+    sb.AppendLine($"LocalZone.SystemEndPointUtcNow -> {systemEndPointUtcNow}");
+    sb.AppendLine($"---------------------------------------------------------------");
+    sb.AppendLine($"TurkeyTimeZone.SystemNow -> {DateTime.Now.ConvertToTimeZone()}");
+    sb.AppendLine($"TurkeyTimeZone.SystemUtcNow -> {DateTime.UtcNow.ConvertUtcToTimeZone()}");
+    sb.AppendLine($"LocalZone.SystemNow -> {DateTime.Now}");
+    sb.AppendLine($"LocanZone.SystemUtcNow -> {DateTime.UtcNow}");
+    sb.AppendLine($"---------------------------------------------------------------");
     sb.AppendLine($"Culture.DisplayName -> {currentCulture.DisplayName}");
-    sb.AppendLine($"systemStartPointNow -> {systemStartPointNow}");
-    sb.AppendLine($"systemStartPointUtcNow -> {systemStartPointUtcNow}");
-    sb.AppendLine($"systemEndPointNow -> {systemEndPointNow}");
-    sb.AppendLine($"systemEndPointUtcNow -> {systemEndPointUtcNow}");
-    sb.AppendLine($"systemNow -> {DateTime.Now}");
-    sb.AppendLine($"systemUtcNow -> {DateTime.UtcNow}");
     sb.AppendLine($"---------------------------------------------------------------");
     sb.AppendLine($"IsMongoEnabled -> {isMongoEnabled}");
     sb.AppendLine($"Mongo -> {mongoConnectionString}");
@@ -584,10 +596,10 @@ app.MapGet("/zmeet", async context =>
     await context.Response.WriteAsync("Zoom Meet is running");
 });
 
-app.Run();
-
 systemEndPointNow = DateTime.Now;
 systemEndPointUtcNow = DateTime.UtcNow;
+
+app.Run();
 
 logger.Fatal("App is running.");
 

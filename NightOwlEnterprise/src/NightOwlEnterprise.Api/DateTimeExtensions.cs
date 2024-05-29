@@ -22,4 +22,16 @@ public static class DateTimeExtensions
 
         return weekDays;
     }
+    
+    public static readonly TimeZoneInfo TimeZone = TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time");
+
+    public static DateTime ConvertUtcToTimeZone(this DateTime utcDateTime)
+    {
+        return TimeZoneInfo.ConvertTimeFromUtc(utcDateTime, TimeZone);
+    }
+    
+    public static DateTime ConvertToTimeZone(this DateTime dateTime)
+    {
+        return TimeZoneInfo.ConvertTime(dateTime, TimeZone);
+    }
 }
