@@ -158,22 +158,22 @@ public static class List
                 UniversityName = coachApplicationUser.CoachDetail.University.Name,
                 DepartmentName = coachApplicationUser.CoachDetail.DepartmentName,
                 DepartmentType = coachApplicationUser.CoachDetail.DepartmentType.Value,
-                IsGraduated = coachApplicationUser.CoachDetail.IsGraduated.Value,
+                IsGraduated = coachApplicationUser.CoachDetail.IsGraduated ?? false,
                 //Yardımcı Kaynaklardan hangilerini kullandınız
-                GoneCramSchool = coachApplicationUser.CoachDetail.GoneCramSchool.Value,
-                UsedYoutube = coachApplicationUser.CoachDetail.UsedYoutube.Value,
-                School = coachApplicationUser.CoachDetail.School.Value,
-                PrivateTutoring = coachApplicationUser.CoachDetail.PrivateTutoring.Value,
+                GoneCramSchool = coachApplicationUser.CoachDetail.GoneCramSchool ?? false,
+                UsedYoutube = coachApplicationUser.CoachDetail.UsedYoutube ?? false,
+                School = coachApplicationUser.CoachDetail.School ?? false,
+                PrivateTutoring = coachApplicationUser.CoachDetail.PrivateTutoring ?? false,
                 //
-                ChangedDepartmentType = coachApplicationUser.CoachDetail.ChangedDepartmentType.Value,
-                FromDepartment = coachApplicationUser.CoachDetail.FromDepartment.Value,
-                ToDepartment = coachApplicationUser.CoachDetail.ToDepartment.Value,
+                ChangedDepartmentType = coachApplicationUser.CoachDetail.ChangedDepartmentType ?? false,
+                FromDepartment = coachApplicationUser.CoachDetail.FromDepartment,
+                ToDepartment = coachApplicationUser.CoachDetail.ToDepartment,
                 HighschoolName = coachApplicationUser.CoachDetail.HighSchool,
-                HighschoolGPA = coachApplicationUser.CoachDetail.HighSchoolGPA.Value,
-                FirstTytNet = coachApplicationUser.CoachDetail.FirstTytNet.Value,
-                LastTytNet = coachApplicationUser.CoachDetail.LastTytNet.Value,
-                FirstAytNet = coachApplicationUser.CoachDetail.FirstAytNet.Value,
-                LastAytNet = coachApplicationUser.CoachDetail.FirstAytNet.Value,
+                HighschoolGPA = coachApplicationUser.CoachDetail.HighSchoolGPA ?? 0,
+                FirstTytNet = coachApplicationUser.CoachDetail.FirstTytNet ?? 0,
+                LastTytNet = coachApplicationUser.CoachDetail.LastTytNet ?? 0,
+                FirstAytNet = coachApplicationUser.CoachDetail.FirstAytNet ?? 0,
+                LastAytNet = coachApplicationUser.CoachDetail.LastAytNet ?? 0,
                 YksRanks = new System.Collections.Generic.Dictionary<string, uint>(),
                 ProfilePhotoUrl = paginationUriBuilder.GetCoachProfilePhotoUri(coachId)
             };
@@ -182,16 +182,16 @@ public static class List
             {
                 coach.TytNets = new CoachTytNets()
                 {
-                    Biology = coachApplicationUser.TytNets.Biology.Value,
-                    Chemistry = coachApplicationUser.TytNets.Chemistry.Value,
-                    Geography = coachApplicationUser.TytNets.Geography.Value,
-                    Geometry = coachApplicationUser.TytNets.Geometry.Value,
-                    History = coachApplicationUser.TytNets.History.Value,
-                    Mathematics = coachApplicationUser.TytNets.Mathematics.Value,
-                    Philosophy = coachApplicationUser.TytNets.Philosophy.Value,
-                    Physics = coachApplicationUser.TytNets.Physics.Value,
-                    Religion = coachApplicationUser.TytNets.Religion.Value,
-                    Turkish = coachApplicationUser.TytNets.Turkish.Value,
+                    Biology = coachApplicationUser.TytNets.Biology ?? 0,
+                    Chemistry = coachApplicationUser.TytNets.Chemistry ?? 0,
+                    Geography = coachApplicationUser.TytNets.Geography ?? 0,
+                    Geometry = coachApplicationUser.TytNets.Geometry ?? 0,
+                    History = coachApplicationUser.TytNets.History ?? 0,
+                    Mathematics = coachApplicationUser.TytNets.Mathematics ?? 0,
+                    Philosophy = coachApplicationUser.TytNets.Philosophy ?? 0,
+                    Physics = coachApplicationUser.TytNets.Physics ?? 0,
+                    Religion = coachApplicationUser.TytNets.Religion ?? 0,
+                    Turkish = coachApplicationUser.TytNets.Turkish ?? 0,
                 };
             }
             
@@ -234,11 +234,11 @@ public static class List
                 {
                     coach.TmNets = new CoachTmNets()
                     {
-                        Geography = coachApplicationUser.TmNets.Geography.Value,
-                        Geometry = coachApplicationUser.TmNets.Geometry.Value,
-                        History = coachApplicationUser.TmNets.History.Value,
-                        Literature = coachApplicationUser.TmNets.Literature.Value,
-                        Mathematics = coachApplicationUser.TmNets.Mathematics.Value,
+                        Geography = coachApplicationUser.TmNets.Geography ?? 0,
+                        Geometry = coachApplicationUser.TmNets.Geometry ?? 0,
+                        History = coachApplicationUser.TmNets.History ?? 0,
+                        Literature = coachApplicationUser.TmNets.Literature ?? 0,
+                        Mathematics = coachApplicationUser.TmNets.Mathematics ?? 0,
                     };    
                 }
             }
@@ -263,11 +263,11 @@ public static class List
                 {
                     coach.MfNets = new CoachMfNets()
                     {
-                        Biology = coachApplicationUser.MfNets.Biology.Value,
-                        Chemistry = coachApplicationUser.MfNets.Chemistry.Value,
-                        Geometry = coachApplicationUser.MfNets.Geometry.Value,
-                        Mathematics = coachApplicationUser.MfNets.Mathematics.Value,
-                        Physics = coachApplicationUser.MfNets.Physics.Value,
+                        Biology = coachApplicationUser.MfNets.Biology ?? 0,
+                        Chemistry = coachApplicationUser.MfNets.Chemistry ?? 0,
+                        Geometry = coachApplicationUser.MfNets.Geometry ?? 0,
+                        Mathematics = coachApplicationUser.MfNets.Mathematics ?? 0,
+                        Physics = coachApplicationUser.MfNets.Physics ?? 0,
                     };    
                 }
             }
@@ -294,13 +294,13 @@ public static class List
                 {
                     coach.SozelNets = new CoachSozelNets()
                     {
-                        Geography1 = coachApplicationUser.SozelNets.Geography1.Value,
-                        Geography2 = coachApplicationUser.SozelNets.Geography2.Value,
-                        History1 = coachApplicationUser.SozelNets.History1.Value,
-                        History2 = coachApplicationUser.SozelNets.History2.Value,
-                        Literature1 = coachApplicationUser.SozelNets.Literature1.Value,
-                        Philosophy = coachApplicationUser.SozelNets.Philosophy.Value,
-                        Religion = coachApplicationUser.SozelNets.Religion.Value,
+                        Geography1 = coachApplicationUser.SozelNets.Geography1 ?? 0,
+                        Geography2 = coachApplicationUser.SozelNets.Geography2 ?? 0,
+                        History1 = coachApplicationUser.SozelNets.History1 ?? 0,
+                        History2 = coachApplicationUser.SozelNets.History2 ?? 0,
+                        Literature1 = coachApplicationUser.SozelNets.Literature1 ?? 0,
+                        Philosophy = coachApplicationUser.SozelNets.Philosophy ?? 0,
+                        Religion = coachApplicationUser.SozelNets.Religion ?? 0,
                     };
                 }
                 
@@ -322,7 +322,7 @@ public static class List
                 {
                     coach.DilNets = new CoachDilNets()
                     {
-                        YDT = coachApplicationUser.DilNets.YDT.Value
+                        YDT = coachApplicationUser.DilNets.YDT ?? 0
                     };
                 }
             }
@@ -421,10 +421,10 @@ public static class List
         public bool ChangedDepartmentType { get; set; }
     
         [JsonConverter(typeof(JsonStringEnumConverter))]
-        public DepartmentType FromDepartment { get; set; }
+        public DepartmentType? FromDepartment { get; set; }
     
         [JsonConverter(typeof(JsonStringEnumConverter))]
-        public DepartmentType ToDepartment { get; set; }
+        public DepartmentType? ToDepartment { get; set; }
         
         public uint? Rank { get; set; }
         public string Year { get; set; }
