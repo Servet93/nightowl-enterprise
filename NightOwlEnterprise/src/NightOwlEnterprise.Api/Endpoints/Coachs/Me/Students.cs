@@ -44,7 +44,10 @@ public static class Students
                 
             var totalCount = await studentOfCoachQueryable.CountAsync();
 
-            var studentOfCoach = await studentOfCoachQueryable.Skip((paginationFilter.PageNumber - 1) * paginationFilter.PageSize)
+            var studentOfCoach = await studentOfCoachQueryable
+                .Include(x => x.Student)
+                .Include(x => x.Student.StudentDetail)
+                .Skip((paginationFilter.PageNumber - 1) * paginationFilter.PageSize)
                 .Take(paginationFilter.PageSize).ToListAsync();
             
             var students = new List<StudentItem>();
@@ -176,10 +179,10 @@ public static class Students
                 studentOnboardInfo.IsTryPracticeTYTExamBefore = true;
                 studentOnboardInfo.LastPracticeTytExamPoints = new StudentTytNets()
                 {
-                    Biology = student.TytNets.Biology.Value,
-                    Chemistry = student.TytNets.Chemistry.Value,
-                    Geography = student.TytNets.Geography.Value,
-                    Geometry = student.TytNets.Geometry.Value,
+                    Biology = student.TytNets.Biology ?? 0,
+                    Chemistry = student.TytNets.Chemistry ?? 0,
+                    Geography = student.TytNets.Geography ?? 0,
+                    Geometry = student.TytNets.Geometry ?? 0,
                     History = student.TytNets.History.Value,
                     Mathematics = student.TytNets.Mathematics.Value,
                     Philosophy = student.TytNets.Philosophy.Value,
