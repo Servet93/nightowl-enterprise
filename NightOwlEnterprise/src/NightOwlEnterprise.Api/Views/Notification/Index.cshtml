@@ -167,7 +167,8 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
                 console.log(data.accessToken)
                 if (data.accessToken) {
                     alert('Login success.');
-                    if (document.getElementById("deviceToken").value){
+                    console.log("deviceToken -> " + document.getElementById("deviceToken").innerText);
+                    if (document.getElementById("deviceToken").innerText){
                         fetch('/Notification/update-device-token', {
                             method: 'POST', // GET, POST ya da diğer HTTP metodlarından birini kullanın
                             headers: {
