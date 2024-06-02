@@ -2,6 +2,8 @@
 using System.Text;
 using System.Text.Json.Serialization;
 using Amazon.Runtime;
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.Identity;
@@ -353,6 +355,31 @@ builder.Services.AddSwaggerGen(swaggerGenOptions =>
 
 //Swagger örneklerini nerede arayacağını belirtiyoruz
 builder.Services.AddSwaggerExamplesFromAssemblyOf<Program>();
+
+ string jsonString = @"
+        {
+            ""type"": ""service_account"",
+            ""project_id"": ""nightowlenterprise-7a6c9"",
+            ""private_key_id"": ""f3a979c352b94a2673ee5c95053643e3de5c541f"",
+            ""private_key"": ""-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCmHK7nnx0Cof3e\n4raCzwcPGCEoAz1iVoY4n2hLCpr1VS90vAWP4kR4sN91A0MkpwRSj16HxtYuetXZ\nHr0Eo9+jFWpg4mshpdpQEKmBwRmOm/Xd6JlBgBM6hMegbxdrS9xQK+gbmv+S6Df1\n9hSSBymDd53sOTiVuM/LFFGApahFI7XaVRDi77EYNb2kXy5VMxN30GcderQWCFLZ\n8sHHXoCP76JnNdoSvvpDXSB3ZWesRdbrDrDtPo6vz2D+8nI7bwEl9v4ORnER0K4t\naBPcBO3iyijmcA7PXAZVgprqVe84U70lu1DVMSRg/REj8cgqddBNJSycIkUQ9R11\nkO7fZjiZAgMBAAECggEAJNvMe5y0xTbIrEJGGTRy7oh+IvDFGCL22W2VqMELrVBf\nnVlzKoAcjWNB0icNKP7eWKtzYFFgiSO8e9b0PilWoEtKNYFIIEk67fUkh6QfVaOJ\npNnN19jha2S3HwRHgAlvM2Lqt+VmvGRGto8J9XUdYwyRwC7aPW6qvPcfNpqLgfuU\nS7Xl1+j88q9izaOvlbBtCJuJZuJbtkRtKrGuCCyB4a0ShyqBld+k2jnmgvlcRBJ0\nC5HqqYWTVPqI+aH2pPGl9Ifmpi6d9doKJIuOuWNsX0Fo0ns/0f5+sDjxX2oL7Ht3\n6JZBkM6AO5/sw0FFtTw8KNW07He8f3xICfqPPq/M2QKBgQDpy+cpbf2MGNHf3TRk\ncJJ/h0feAQJ0hvi4F3MXln7H8HSo5BsW+2E0/lgdnKpG2pMZ3omzTkeySqc9HysZ\nzTJT9z8gQXjHxPBT6o//2rPHgXbexsEW49LkArXKnT3jbI9PjYtRqci+O2NR6VrN\n6wy6fTnfMlBE9vrNNTWV3Hz/rwKBgQC14zmpq2YJDEU+ejFr5dL7yTsTuBhLhMcV\n1BaFFXjpayTZ9hOsBeqgX5+0Jfk2w5ElyxpgLdXtEvuaNNxcJY/SpBr+DKYnsKgo\n/ouMS6Olt4TulX1IvI/q0orgI3zk/K6ymhX5n4YYuLLF99WGnU/sAEM40DrVelRQ\nfkcd1uHWNwKBgD3Io7sAFRv7xyK4y0qrsRtAfc5+R87RiFLl54VZQQHHWpzzQvFs\n1wBxIooYx6rXwj344DzhN/M25UEyxmoYHu+vjCATDT8FnVkfyJQdkJrtbKNstMQ+\nypF04eO8cAl0u96TEjkvfBxBh3qzB0sZjZCO3UdNfYbsGdU29YU38lSDAoGAN8D8\nNvc0IsfhHeKk7ZcYUlf/xO6ke9mqkRVfBdJsKtjOBgX5R7zUi+5j7PvK5a+S+YvF\nfP/v2Gj+OOnFNnXJHV9yareD4xyyn0ZPjmTNOAoGNIAcVESAtRFuwn/+U87k2hiD\nbe4pU8CiBC8RA9+K1SPLd0nVDwUdfUMIF6x7s4cCgYB2ztCdWeDqKc4S60jQo2a5\nV/ifnxUowY8r5jyF8rww/6Y9QItYcvXkRCkO/tuzOlhYnUZ0pc8/GJmp/3nxZIs2\nhVRwDjBf6zpabGkCl9pNcIsfszvELagWAvnBlUi72gBw3fD3GaD5ulCMpavptsBz\nzYPfUKdOsAHtjvnIRXOsWw==\n-----END PRIVATE KEY-----\n"",
+            ""client_email"": ""firebase-adminsdk-59fjt@nightowlenterprise-7a6c9.iam.gserviceaccount.com"",
+            ""client_id"": ""114257815046827256383"",
+            ""auth_uri"": ""https://accounts.google.com/o/oauth2/auth"",
+            ""token_uri"": ""https://oauth2.googleapis.com/token"",
+            ""auth_provider_x509_cert_url"": ""https://www.googleapis.com/oauth2/v1/certs"",
+            ""client_x509_cert_url"": ""https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-59fjt%40nightowlenterprise-7a6c9.iam.gserviceaccount.com"",
+            ""universe_domain"": ""googleapis.com""
+        }";
+
+GoogleCredential googleCredential = GoogleCredential.FromJson(jsonString);
+
+// Firebase Admin SDK yapılandırması
+FirebaseApp.Create(new AppOptions()
+{
+    
+    // Credential = GoogleCredential.FromFile("nightowlenterprise-7a6c9-firebase-adminsdk-59fjt-f3a979c352.json")
+    Credential = googleCredential
+});
 
 builder.Services.AddProblemDetails();
 
@@ -833,6 +860,8 @@ public class ApplicationDbContext : Microsoft.AspNetCore.Identity.EntityFramewor
     
     public DbSet<ProfilePhoto> ProfilePhotos { get; set; }
 
+    public DbSet<UserDevice> UserDevices { get; set; }
+    
     public ApplicationDbContext(Microsoft.EntityFrameworkCore.DbContextOptions<ApplicationDbContext> options) :
         base(options)
     {

@@ -2,13 +2,210 @@
 
 <html>
 <head>
-    <title>Notification</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Push Notification</title>
+  <style>
+/* styles.css */
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background: #f0f0f0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    color: #333;
+}
+
+.container {
+    width: 100%;
+    max-width: 400px;
+    padding: 20px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.login-box {
+    position: relative;
+}
+
+.logo {
+    max-width: 100px;
+    margin-bottom: 20px;
+}
+
+.login-box h2 {
+    margin-bottom: 30px;
+    color: #3498db;
+}
+
+.user-box {
+    position: relative;
+    margin-bottom: 30px;
+}
+
+.user-box input {
+    width: 100%;
+    padding: 10px 0;
+    background: none;
+    border: none;
+    border-bottom: 1px solid #333;
+    outline: none;
+    color: #333;
+    font-size: 16px;
+}
+
+.user-box label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding: 10px 0;
+    font-size: 16px;
+    color: #333;
+    pointer-events: none;
+    transition: 0.5s;
+}
+
+.user-box input:focus ~ label,
+.user-box input:valid ~ label {
+    top: -20px;
+    left: 0;
+    color: #3498db;
+    font-size: 12px;
+}
+
+button {
+    background: none;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    outline: none;
+    color: #3498db;
+    font-size: 18px;
+    border: 1px solid #3498db;
+    border-radius: 5px;
+    transition: background-color 0.5s, color 0.5s;
+    margin-top: 10px;
+    width: 100%;
+}
+
+button:hover {
+    background: #3498db;
+    color: white;
+}
+
+.token {
+    display: none;
+    margin-top: 20px;
+    background: #f9f9f9;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+  </style>
 </head>
 <body>
 <div>
-  <b>Welcome to the Notification</b>
-  <textarea id="currentToken"></textarea> 
-</div>
+  
+         <div class="container">
+              <div class="login-box">
+                  <img src="https://cdn.pixabay.com/photo/2021/01/27/06/51/owl-5953875_1280.png" alt="Logo" class="logo">
+                  <h2>Login</h2>
+                  <form id="loginForm">
+                      <div class="user-box">
+                          <input type="text" id="email" name="email" required="" value="servet-package-coach@gmail.com">
+                          <label>Email</label>
+                      </div>
+                      <div class="user-box">
+                          <input type="password" id="password" name="password" required="" value="Aa123456">
+                          <label>Password</label>
+                      </div>
+                      <button type="submit">
+                          Submit
+                      </button>
+                  </form>
+                  <button class="toggle-token" onclick="toggleToken()">Show Device Token</button>
+                  <div id="token" class="token">
+                      <p>Your device token is: <span id="deviceToken"></span></p>
+                  </div>
+              </div>
+          </div>
+</div>       
+
+<script>
+function toggleToken() {
+  var tokenDiv = document.getElementById('token');
+  if (tokenDiv.style.display === "none" || tokenDiv.style.display === "") {
+      tokenDiv.style.display = "block";
+  } else {
+      tokenDiv.style.display = "none";
+  }
+}
+
+document.getElementById('loginForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            var formData = new FormData(this);
+
+            fetch('/login', {
+                method: 'POST',
+                 headers: {
+                        'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    email: document.getElementById('email').value,
+                    password: document.getElementById('password').value
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data.accessToken)
+                if (data.accessToken) {
+                    alert('Login success.');
+                    if (document.getElementById("deviceToken").value){
+                        fetch('/Notification/update-device-token', {
+                            method: 'POST', // GET, POST ya da diğer HTTP metodlarından birini kullanın
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': 'Bearer ' + data.accessToken // Token'ı Authorization başlığı altında Bearer kimlik doğrulaması olarak ekleyin
+                            },
+                            body: JSON.stringify({
+                                deviceToken : document.getElementById("deviceToken").innerText,
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            alert('Device Token sent.');
+                            // Sunucudan gelen yanıtı burada işleyin
+                            console.log(data);
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                        });    
+                    }
+                    
+                    // var welcomeBox = document.getElementById('welcomeBox');
+                    // var loginBox = document.getElementById('loginBox');
+                    //
+                    // welcomeBox.style.display = 'block';
+                    // loginBox.style.display = 'none';
+                    //
+                    // document.getElementById('welcomeMessage').innerText = 'Welcome, ' + data.username + '! Your token is: ' + data.token;
+                } else {
+                    alert('Login failed. Please check your credentials.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+</script>
+
 <script type="module">
   // // Import the functions you need from the SDKs you need
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -35,21 +232,23 @@
   // messages.
   const messaging = getMessaging(firebaseApp);
   
+  var serviceRegistration = null;
+  
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       console.log('Sayfa tamamen yüklendi.');
       navigator.serviceWorker.register('/firebase-messaging-sw.js')
         .then((registration) => {
           console.log('Service Worker registered:', registration);                 
-          
+          serviceRegistration = registration;
           // Add the public key generated from the console here. 
           // getToken(messaging, {vapidKey: "BKagOny0KF_2pCJQ3m....moL0ewzQ8rZu"}); 
           getToken(messaging, {
             serviceWorkerRegistration: registration,
             vapidKey: 'BG8ZPBU7X7lnasY_Tm-VISROjf6K_u84baTYN705IureHKjj2LfaxkzFDPWAg91f5fC-BaGJg8mkeyDEbr3aaL4' }).then((currentToken) => { 
             if (currentToken) { 
-              console.log("currentToken -> " + currentToken);
-              document.getElementById("currentToken").value = currentToken;
+              console.log("deviceToken -> " + currentToken);
+              document.getElementById("deviceToken").innerText = currentToken;
               // Send the token to your server and update the UI if necessary 
               // ... 
             } else { 
@@ -68,16 +267,10 @@
     });
   }
   
-  
-
   onMessage(messaging, (payload) => {
     console.log('Message received. ', payload);
     var notif = payload.notification;
-    
-    console.log(notif);
-     
-    // ...
-   window.ServiceWorkerRegistration.showNotification(notif.title, {
+    serviceRegistration.showNotification(notif.title, {
         body: notif.body,
         icon: notif.image,
         data: {
@@ -94,49 +287,9 @@
     }
   });
   
+
 </script>
 
-@*   <script type="module"> *@
-@*     import { initializeApp  } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js' *@
-@*     // import { auth } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js' *@
-@*     import { getMessaging, getToken  } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js' *@
-@*      *@
-@*     // TODO: Replace the following with your app's Firebase project configuration *@
-@*     const firebaseConfig = { *@
-@*       //... *@
-@*     }; *@
-@*      *@
-@*     // Initialize Firebase *@
-@*     const app = initializeApp(firebaseConfig); *@
-@*      *@
-@*     // Initialize Firebase Cloud Messaging and get a reference to the service *@
-@*     const messaging = getMessaging(app); *@
-@*      *@
-@*     // Add the public key generated from the console here. *@
-@*     // getToken(messaging, {vapidKey: "BKagOny0KF_2pCJQ3m....moL0ewzQ8rZu"}); *@
-@*     getToken(messaging, { vapidKey: '<YOUR_PUBLIC_VAPID_KEY_HERE>' }).then((currentToken) => { *@
-@*       if (currentToken) { *@
-@*         // Send the token to your server and update the UI if necessary *@
-@*         // ... *@
-@*       } else { *@
-@*         // Show permission request UI *@
-@*         console.log('No registration token available. Request permission to generate one.'); *@
-@*         // ... *@
-@*       } *@
-@*     }).catch((err) => { *@
-@*       console.log('An error occurred while retrieving token. ', err); *@
-@*       // ... *@
-@*     }); *@
-@*      *@
-@*     function requestPermission() { *@
-@*       console.log('Requesting permission...'); *@
-@*       Notification.requestPermission().then((permission) => { *@
-@*         if (permission === 'granted') { *@
-@*           console.log('Notification permission granted.'); *@
-@*           } *@
-@*         }); *@
-@*     } *@
-@*      *@
-@*   </script> *@
+
 </body>
 </html>
