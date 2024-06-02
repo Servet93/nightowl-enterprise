@@ -21,6 +21,7 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
+    console.log("hmm");
     console.log(
         '[firebase-messaging-sw.js] Received background message ',
         payload
@@ -31,6 +32,22 @@ messaging.onBackgroundMessage((payload) => {
         body: 'Background Message body.',
         icon: '/firebase-logo.png'
     };
-
     self.registration.showNotification(notificationTitle, notificationOptions);
 });
+
+// self.addEventListener("push", (event) => {
+//     const notif = event.data.json().notification;
+//    
+//     event.waitUntil(self.registration.showNotification(notif.title, {
+//         body: notif.body,
+//         icon: notif.image,
+//         data: {
+//             url: notif.click_action
+//         }
+//     }));
+// });
+//
+// self.addEventListener("notificationClick", (event) => {
+//     event.waitUntil(clients.openWindow(event.notification.data.url));
+// });
+
