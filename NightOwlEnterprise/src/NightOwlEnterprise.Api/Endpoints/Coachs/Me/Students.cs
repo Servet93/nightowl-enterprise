@@ -15,6 +15,7 @@ using MongoDB.Driver;
 using NightOwlEnterprise.Api.Endpoints.CommonDto;
 using NightOwlEnterprise.Api.Endpoints.Students;
 using NightOwlEnterprise.Api.Entities.Enums;
+using NightOwlEnterprise.Api.Utils;
 using Stripe;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.Filters;
@@ -44,23 +45,47 @@ public static class Students
                 
             var totalCount = await studentOfCoachQueryable.CountAsync();
 
-            var studentOfCoach = await studentOfCoachQueryable
+            var studentsOfCoach = await studentOfCoachQueryable
                 .Include(x => x.Student)
                 .Include(x => x.Student.StudentDetail)
                 .Skip((paginationFilter.PageNumber - 1) * paginationFilter.PageSize)
                 .Take(paginationFilter.PageSize).ToListAsync();
             
             var students = new List<StudentItem>();
+            
+            var studentProfilePhotos = new List<Guid>();
 
-            students.AddRange(studentOfCoach.Select(x => new StudentItem()
+            if (studentsOfCoach.Any())
             {
-                Id = x.Id,
-                Name = x.Student.StudentDetail.Name,
-                Surname = x.Student.StudentDetail.Surname,
-                Highschool = x.Student.StudentDetail.HighSchool,
-                Grade = x.Student.StudentDetail.Grade,
-                ProfilePhotoUrl = paginationUriBuilder.GetStudentProfilePhotoUri(x.Id)
-            }));
+                var studentIds = studentsOfCoach.Select(x => x.StudentId);
+                
+                studentProfilePhotos = dbContext.ProfilePhotos.Where(x => studentIds.Contains(x.UserId)).Select(x => x.UserId).ToList();
+            }
+            
+            foreach (var studentOfCoach in studentsOfCoach)
+            {
+                var studentDetail = studentOfCoach.Student.StudentDetail;
+                
+                var studentItem = new StudentItem()
+                {
+                    Id = studentOfCoach.StudentId,
+                    Name = studentDetail.Name,
+                    Surname = studentDetail.Surname,
+                    Highschool = studentDetail.HighSchool,
+                    Grade = studentOfCoach.Student.StudentDetail.Grade,
+                    GradeText = GradeConverters.GetText(studentDetail.Grade),
+                    ExamType = studentOfCoach.Student.StudentDetail.ExamType,
+                    ExamTypeText = ExamTypeConverters.GetText(studentDetail.ExamType),
+                };
+
+                if (studentProfilePhotos.Contains(studentOfCoach.StudentId))
+                {
+                    studentItem.ProfilePhotoUrl =
+                        paginationUriBuilder.GetStudentProfilePhotoUri(studentOfCoach.StudentId);
+                }
+                
+                students.Add(studentItem);
+            }
                 
             var pagedResponse = PagedResponse<StudentItem>.CreatePagedResponse(
                 students, totalCount, paginationFilter, paginationUriBuilder,
@@ -68,7 +93,7 @@ public static class Students
         
             return TypedResults.Ok(pagedResponse);
         
-        }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags(TagConstants.CoachMeStudents).RequireAuthorization("Coach");
+        }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags(TagConstants.CoachMeStudents).RequireAuthorization("CoachOrPdr");
         
         endpoints.MapGet("me/students/{studentId}", async Task<Results<Ok<StudentItem>, ProblemHttpResult>>
             ([FromQuery] Guid studentId, ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
@@ -91,19 +116,30 @@ public static class Students
 
             var student = hasCoachStudentTrainingSchedule.Student;
 
+            var studentDetail = student.StudentDetail;
+            
             var studentItem = new StudentItem()
             {
                 Id = studentId,
-                Name = student.StudentDetail.Name,
-                Surname = student.StudentDetail.Surname,
-                Highschool = student.StudentDetail.HighSchool,
+                Name = studentDetail.Name,
+                Surname = studentDetail.Surname,
+                Highschool = studentDetail.HighSchool,
                 Grade = student.StudentDetail.Grade,
-                ProfilePhotoUrl = paginationUriBuilder.GetStudentProfilePhotoUri(studentId)
+                ExamType = student.StudentDetail.ExamType,
+                GradeText = GradeConverters.GetText(studentDetail.Grade),
+                ExamTypeText = ExamTypeConverters.GetText(studentDetail.ExamType) ,
             };
+
+            var isExist = dbContext.ProfilePhotos.Any(x => x.UserId == studentId);
+
+            if (isExist)
+            {
+                studentItem.ProfilePhotoUrl = paginationUriBuilder.GetStudentProfilePhotoUri(studentId);
+            }
         
             return TypedResults.Ok(studentItem);
             
-        }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags(TagConstants.CoachMeStudents).RequireAuthorization("Coach");
+        }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags(TagConstants.CoachMeStudents).RequireAuthorization("CoachOrPdr");
         
         endpoints.MapGet("me/students/{studentId}/onboard-info", async Task<Results<Ok<StudentOnboardInfo>, ProblemHttpResult>>
             ([FromQuery] Guid studentId, ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
@@ -352,9 +388,68 @@ public static class Students
         
             return TypedResults.Ok(studentOnboardInfo);
             
-        }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags(TagConstants.CoachMeStudents).RequireAuthorization("Coach");
-    }
+        }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags(TagConstants.CoachMeStudents).RequireAuthorization("CoachOrPdr");
+        
+         endpoints.MapPost("/me/students/invitation-day-info", async Task<Results<Ok<PagedResponse<StudentInvitationDayInfo>>, ProblemHttpResult>>
+            ([FromQuery] int? page,[FromQuery] int? pageSize, ClaimsPrincipal claimsPrincipal, HttpContext httpContext, [FromServices] IServiceProvider sp) =>
+        {
+            var paginationFilter = new PaginationFilter(page, pageSize);
+            
+            var dbContext = sp.GetRequiredService<ApplicationDbContext>();
+            
+            var paginationUriBuilder = sp.GetRequiredService<PaginationUriBuilder>();
+        
+            var coachId = claimsPrincipal.GetId();
 
+            var studentOfCoachQueryable = dbContext.CoachStudentTrainingSchedules.Where(x => x.CoachId == coachId);
+                
+            var totalCount = await studentOfCoachQueryable.CountAsync();
+
+            var studentsOfCoach = await studentOfCoachQueryable
+                .Include(x => x.Student)
+                .Include(x => x.Student.StudentDetail)
+                .Skip((paginationFilter.PageNumber - 1) * paginationFilter.PageSize)
+                .Take(paginationFilter.PageSize).ToListAsync();
+            
+            var students = new List<StudentInvitationDayInfo>();
+            
+            var studentProfilePhotos = new List<Guid>();
+
+            if (studentsOfCoach.Any())
+            {
+                var studentIds = studentsOfCoach.Select(x => x.StudentId);
+                
+                studentProfilePhotos = dbContext.ProfilePhotos.Where(x => studentIds.Contains(x.UserId)).Select(x => x.UserId).ToList();
+            }
+
+            foreach (var studentOfCoach in studentsOfCoach)
+            {
+                var studentItem = new StudentInvitationDayInfo()
+                {
+                    Id = studentOfCoach.StudentId,
+                    Name = studentOfCoach.Student.StudentDetail.Name,
+                    Surname = studentOfCoach.Student.StudentDetail.Surname,
+                    Day = studentOfCoach.Day
+                };
+
+                if (studentProfilePhotos.Contains(studentOfCoach.StudentId))
+                {
+                    studentItem.ProfilePhotoUrl =
+                        paginationUriBuilder.GetStudentProfilePhotoUri(studentOfCoach.StudentId);
+                }
+                
+                students.Add(studentItem);
+            }
+                
+            var pagedResponse = PagedResponse<StudentInvitationDayInfo>.CreatePagedResponse(
+                students, totalCount, paginationFilter, paginationUriBuilder,
+                httpContext.Request.Path.Value ?? string.Empty);
+        
+            return TypedResults.Ok(pagedResponse);
+        
+        }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags(TagConstants.CoachMeStudents).RequireAuthorization("CoachOrPdr");
+    }
+    
     public sealed class StudentItem
     {
         public Guid Id { get; set; }
@@ -367,7 +462,26 @@ public static class Students
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public Grade Grade { get; set; }
         
+        public string GradeText { get; set; }
+        
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public ExamType ExamType { get; set; }
+        
+        public string ExamTypeText { get; set; }
         public string? ProfilePhotoUrl { get; set; }
+    }
+
+    public sealed class StudentInvitationDayInfo
+    {
+        public Guid Id { get; set; }
+        
+        public string Name { get; set; }
+        
+        public string Surname { get; set; }
+        
+        public string? ProfilePhotoUrl { get; set; }
+        
+        public DayOfWeek? Day { get; set; }
     }
     
     public class StudentOnboardInfo

@@ -280,7 +280,7 @@ public static class Onboard
                 await dbContext.SaveChangesAsync();
                 
                 return TypedResults.Ok();
-            }).RequireAuthorization().Produces<ProblemHttpResult>(400).WithOpenApi()
+            }).RequireAuthorization("Coach").Produces<ProblemHttpResult>(400).WithOpenApi()
             .WithTags(TagConstants.CoachMeOnboard);
         
         
@@ -381,11 +381,11 @@ public static class Onboard
                         continue;
                     }
                 
-                    if (yearToYksRanking.Value > 10000)
-                    {
-                        errorDescriptors.Add(
-                            CommonErrorDescriptor.InvalidYksRanking(yearToYksRanking.Key, yearToYksRanking.Value));
-                    }
+                    // if (yearToYksRanking.Value > 10000)
+                    // {
+                    //     errorDescriptors.Add(
+                    //         CommonErrorDescriptor.InvalidYksRanking(yearToYksRanking.Key, yearToYksRanking.Value));
+                    // }
                 }    
             }
         }

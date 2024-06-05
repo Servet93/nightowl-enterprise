@@ -92,6 +92,11 @@ public static class List
                 
             var coachs = new List<CoachListItem>();
 
+            var coachIds = coachAppUsers.Select(x => x.Id);
+
+            var isExistPhotoUserIds =
+                dbContext.ProfilePhotos.Where(x => coachIds.Contains(x.UserId)).Select(x => x.UserId).ToList();
+
             foreach (var coachAppUser in coachAppUsers)
             {
                 var last = coachAppUser.CoachYksRankings?.Where(x => x.Enter)
@@ -109,7 +114,7 @@ public static class List
                     DepartmentName = coachAppUser.CoachDetail.DepartmentName,
                     Year = year,
                     Rank = rank,
-                    ProfilePhotoUrl = paginationUriBuilder.GetCoachProfilePhotoUri(coachAppUser.Id)
+                    ProfilePhotoUrl = isExistPhotoUserIds.Contains(coachAppUser.Id) ? paginationUriBuilder.GetCoachProfilePhotoUri(coachAppUser.Id) : null
                 });
             }
                 
@@ -175,7 +180,6 @@ public static class List
                 FirstAytNet = coachApplicationUser.CoachDetail.FirstAytNet ?? 0,
                 LastAytNet = coachApplicationUser.CoachDetail.LastAytNet ?? 0,
                 YksRanks = new System.Collections.Generic.Dictionary<string, uint>(),
-                ProfilePhotoUrl = paginationUriBuilder.GetCoachProfilePhotoUri(coachId)
             };
             
             if (coachApplicationUser.TytNets is not null)
@@ -338,6 +342,13 @@ public static class List
             {
                 coach.Year = coach.YksRanks.OrderByDescending(x => Convert.ToInt32(x.Key)).FirstOrDefault().Key;
                 coach.Rank = coach.YksRanks.OrderByDescending(x => Convert.ToInt32(x.Key)).FirstOrDefault().Value;
+            }
+
+            var isExist = dbContext.ProfilePhotos.Any(x => x.UserId == coachId && !string.IsNullOrEmpty(x.Photo));
+
+            if (isExist)
+            {
+                coach.ProfilePhotoUrl = paginationUriBuilder.GetCoachProfilePhotoUri(coach.Id);
             }
 
             return TypedResults.Ok(coach);

@@ -33,6 +33,7 @@ public static class Register
             var errorDescriber = sp.GetRequiredService<TurkishIdentityErrorDescriber>();
 
             var name = registration.Name;
+            var surname = registration.Surname;
             var email = registration.Email;
             var phoneNumber = registration.PhoneNumber;
             var address = registration.Address;
@@ -47,6 +48,12 @@ public static class Register
             if (string.IsNullOrEmpty(name) || name.Length < 3) // :)
             {
                 identityErrors.Add(errorDescriber.InvalidName(name));
+                //return errorDescriber.InvalidName(name).CreateProblem();
+            }
+            
+            if (string.IsNullOrEmpty(surname) || surname.Length < 3) // :)
+            {
+                identityErrors.Add(errorDescriber.InvalidSurname(surname));
                 //return errorDescriber.InvalidName(name).CreateProblem();
             }
 
@@ -89,6 +96,8 @@ public static class Register
                 UserType = registration.CoachType == CoachType.Coach ? UserType.Coach : UserType.Pdr,
                 CoachDetail = new CoachDetail()
                 {
+                    Name = registration.Name,
+                    Surname =  registration.Surname,
                     Status = registration.CoachType == CoachType.Coach ? CoachStatus.OnboardProgress : CoachStatus.Active
                 }
             };
@@ -114,6 +123,9 @@ public static class Register
     {
         [DefaultValue("NightOwlCoach")]
         public required string Name { get; init; }
+        
+        [DefaultValue("NightOwlCoach")]
+        public required string Surname { get; init; }
         
         [DefaultValue("coach-nightowl-enterprise@gmail.com")]
         public required string Email { get; init; }
@@ -147,46 +159,46 @@ public static class Register
         {
             yield return SwaggerExample.Create("Servet,CoachType:Coach", new CoachRegisterRequest()
             {
-                Name = "Servet", Address = "Bağcılar", City = "İstanbul", Email = "servet-coach@gmail.com",
+                Name = "Servet", Surname = "ŞEKER", Address = "Bağcılar", City = "İstanbul", Email = "servet-coach@gmail.com",
                 Password = "Aa123456", PhoneNumber = "533-333-33-33", CoachType = CoachType.Coach
             });
             
             yield return SwaggerExample.Create("Servet,CoachType:Pdr", new CoachRegisterRequest()
             {
-                Name = "Servet", Address = "Bağcılar", City = "İstanbul", Email = "servet-pdr@gmail.com",
+                Name = "Servet", Surname = "ŞEKER", Address = "Bağcılar", City = "İstanbul", Email = "servet-pdr@gmail.com",
                 Password = "Aa123456", PhoneNumber = "533-333-33-33", CoachType = CoachType.Pdr
             });
             
             yield return SwaggerExample.Create("Burak,Package:Coach", new CoachRegisterRequest()
             {
-                Name = "Burak", Address = "Güngören", City = "İstanbul", Email = "burak-coach@gmail.com",
+                Name = "Burak", Surname = "Alparslan", Address = "Güngören", City = "İstanbul", Email = "burak-coach@gmail.com",
                 Password = "Aa123456", PhoneNumber = "533-333-33-33", CoachType = CoachType.Coach,
             });
             
             yield return SwaggerExample.Create("Burak,Package:Pdr", new CoachRegisterRequest()
             {
-                Name = "Burak", Address = "Güngören", City = "İstanbul", Email = "burak-pdr@gmail.com",
+                Name = "Burak", Surname = "Alparslan", Address = "Güngören", City = "İstanbul", Email = "burak-pdr@gmail.com",
                 Password = "Aa123456", PhoneNumber = "533-333-33-33", CoachType = CoachType.Pdr,
             });
             yield return SwaggerExample.Create("Eren,Package:Coach", new CoachRegisterRequest()
             {
-                Name = "Eren", Address = "Maltepe", City = "İstanbul", Email = "eren-koc@gmail.com",
+                Name = "Eren", Surname = "Gündüz", Address = "Maltepe", City = "İstanbul", Email = "eren-koc@gmail.com",
                 Password = "Aa123456", PhoneNumber = "533-333-33-33", CoachType = CoachType.Coach,
             });
             
             yield return SwaggerExample.Create("Eren,Package:Pdr", new CoachRegisterRequest()
             {
-                Name = "Eren", Address = "Maltepe", City = "İstanbul", Email = "eren-pdr@gmail.com",
+                Name = "Eren", Surname = "Gündüz", Address = "Maltepe", City = "İstanbul", Email = "eren-pdr@gmail.com",
                 Password = "Aa123456", PhoneNumber = "533-333-33-33", CoachType = CoachType.Pdr,
             });
             yield return SwaggerExample.Create("Turgay,Package:Coach", new CoachRegisterRequest()
             {
-                Name = "Turgay", Address = "Maltepe", City = "İstanbul", Email = "turgay-koc@gmail.com",
+                Name = "Turgay", Surname = "Çelik", Address = "Maltepe", City = "İstanbul", Email = "turgay-koc@gmail.com",
                 Password = "Aa123456", PhoneNumber = "533-333-33-33", CoachType = CoachType.Coach,
             });
             yield return SwaggerExample.Create("Turgay,Package:Pdr", new CoachRegisterRequest()
             {
-                Name = "Turgay", Address = "Maltepe", City = "İstanbul", Email = "turgay-pdr@gmail.com",
+                Name = "Turgay", Surname = "Çelik", Address = "Maltepe", City = "İstanbul", Email = "turgay-pdr@gmail.com",
                 Password = "Aa123456", PhoneNumber = "533-333-33-33", CoachType = CoachType.Pdr,
             });
         }

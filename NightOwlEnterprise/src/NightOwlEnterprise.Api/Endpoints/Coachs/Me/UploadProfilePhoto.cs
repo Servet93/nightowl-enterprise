@@ -102,7 +102,7 @@ public static class UploadProfilePhoto
 
                 return TypedResults.Ok();
                 
-            }).RequireAuthorization("Coach").ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi()
+            }).RequireAuthorization("CoachOrPdr").ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi()
             .Accepts<IFormFile>("multipart/form-data")
             .DisableAntiforgery()
             .WithTags(TagConstants.CoachMeInfo);
@@ -133,7 +133,7 @@ public static class UploadProfilePhoto
 
                 return TypedResults.Empty;
                 
-            }).RequireAuthorization("Coach").ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi()
+            }).RequireAuthorization("CoachOrPdr").ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi()
             .WithTags(TagConstants.CoachMeInfo);
         
          endpoints.MapGet("/me/profile-photo/as-base64", async Task<Results<Ok<CoachProfilePhotoInfo>, ProblemHttpResult>>
@@ -150,7 +150,7 @@ public static class UploadProfilePhoto
                     ProfilePhoto = profilePhoto?.Photo
                 });
                 
-            }).RequireAuthorization("Coach").ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi()
+            }).RequireAuthorization("CoachOrPdr").ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi()
              .WithTags(TagConstants.CoachMeInfo);
     }
 

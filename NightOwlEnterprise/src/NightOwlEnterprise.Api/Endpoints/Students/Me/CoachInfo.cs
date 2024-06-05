@@ -19,6 +19,8 @@ public static class CoachInfo
 
                 var dbContext = sp.GetRequiredService<ApplicationDbContext>();
 
+                var paginationUriBuilder = sp.GetRequiredService<PaginationUriBuilder>();
+                
                 var coachInfoResponse = dbContext.CoachStudentTrainingSchedules
                     .Include(x => x.Coach.CoachDetail)
                     .OrderByDescending(x => x.CreatedAt)
@@ -28,9 +30,16 @@ public static class CoachInfo
                         Id = x.Coach.Id,
                         Name = x.Coach.CoachDetail.Name,
                         Surname = x.Coach.CoachDetail.Surname,
-                        UniversityName = x.Coach.CoachDetail.University.Name
+                        UniversityName = x.Coach.CoachDetail.University.Name,
                     })
                     .FirstOrDefault();
+                
+                var coachProfilePhotoExist = dbContext.ProfilePhotos.Any(x => x.UserId == coachInfoResponse.Id);
+
+                if (coachProfilePhotoExist)
+                {
+                    coachInfoResponse.PhotoUrl = paginationUriBuilder.GetCoachProfilePhotoUri(coachInfoResponse.Id);
+                }
 
                 return TypedResults.Ok(coachInfoResponse);
 
@@ -46,6 +55,8 @@ public static class CoachInfo
         public string Surname { get; set; }
         
         public string UniversityName { get; set; }
+        
+        public string PhotoUrl { get; set; }
     }
 
 }

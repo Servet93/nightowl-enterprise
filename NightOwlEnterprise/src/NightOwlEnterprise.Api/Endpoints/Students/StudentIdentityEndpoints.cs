@@ -34,7 +34,8 @@ public static class StudentIdentityEndpoints
         //routeGroup.MapConfirmEmail<ApplicationUser>();
         //routeGroup.MapResendConfirmationEmail<TUser>(emailSender, linkGenerator);
 
-        routeGroup.MapManageInfo<TUser>();
+        routeGroup.MapManageInfo();
+        routeGroup.MapStateInfo();
         routeGroup.MapCoachInfo();
         routeGroup.MapCallInfo();
         routeGroup.MapOnboard();

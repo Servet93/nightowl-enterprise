@@ -226,6 +226,7 @@ if (jwtConfig is not null && !string.IsNullOrEmpty(jwtConfig.Key))
         options.AddPolicy("Student", policy => policy.RequireRole("Student"));
         options.AddPolicy("Coach", policy => policy.RequireRole("Coach"));
         options.AddPolicy("Pdr", policy => policy.RequireRole("Pdr"));
+        options.AddPolicy("CoachOrPdr", policy => policy.RequireRole("Coach", "Pdr"));
     });    
 }
 
@@ -247,6 +248,9 @@ builder.Services.AddSingleton<LockManager>();
 
 builder.Services.Configure<CoachConfig>(
     builder.Configuration.GetSection(CoachConfig.CoachSection));
+
+builder.Services.Configure<PdrConfig>(
+    builder.Configuration.GetSection(PdrConfig.PdrSection));
 
 builder.Services.AddSignalR();
 

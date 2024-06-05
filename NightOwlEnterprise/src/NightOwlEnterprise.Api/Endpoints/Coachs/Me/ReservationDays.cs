@@ -4,25 +4,27 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NightOwlEnterprise.Api.Utils;
 
-namespace NightOwlEnterprise.Api.Endpoints.Coachs;
+namespace NightOwlEnterprise.Api.Endpoints.Coachs.Me;
 
-public static class ReservationDays
+public static class MeReservationDays
 {
-    public static void MapReservationDays(this IEndpointRouteBuilder endpoints)
+    public static void MapMeReservationDays(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapPost("/{coachId}/reservation-days/",
-                async Task<Results<Ok<DaysAvailability>, ProblemHttpResult>>
-                    ([FromRoute] Guid coachId, [FromServices] IServiceProvider sp) =>
+        endpoints.MapPost("/me/reservation-days/",
+                async Task<Results<Ok<CoachMeDaysAvailability>, ProblemHttpResult>>
+                    (ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
                 {
+                    var coachId = claimsPrincipal.GetId();
+                    
                     var dbContext = sp.GetRequiredService<ApplicationDbContext>();
 
                     var dayToStudentCount = dbContext.CoachStudentTrainingSchedules
-                        .Where(x => x.CoachId == coachId)
+                        .Where(x => x.CoachId == coachId && x.Day.HasValue)
                         .GroupBy(x => x.Day)
                         .ToDictionary(x => x.Key, x => (byte)x.Count());
 
                     var coachDaysQuota = await dbContext.CoachDetail.Where(x => x.CoachId == coachId).Select(x =>
-                        new CoachDaysQuota()
+                        new CoachMeDaysQuota()
                         {
                             MondayQuota = x.MondayQuota.Value,
                             TuesdayQuota = x.TuesdayQuota.Value,
@@ -89,7 +91,7 @@ public static class ReservationDays
                         ? coachDaysQuota.SundayQuota - sundayStudentCount
                         : 0;
 
-                    var daysAvailability = new DaysAvailability()
+                    var daysAvailability = new CoachMeDaysAvailability()
                     {
                         Monday =
                         {
@@ -134,7 +136,7 @@ public static class ReservationDays
                             Date = DateUtils.FindDate(DayOfWeek.Sunday),
                         }
                     };
-                    
+
                     daysAvailability.HasAvailableDay = daysAvailability.Monday.IsAbleToReserve ||
                                                        daysAvailability.Tuesday.IsAbleToReserve ||
                                                        daysAvailability.Wednesday.IsAbleToReserve ||
@@ -145,11 +147,11 @@ public static class ReservationDays
 
                     return TypedResults.Ok(daysAvailability);
 
-                }).ProducesProblem(StatusCodes.Status400BadRequest).RequireAuthorization("Student").WithOpenApi()
-            .WithTags(TagConstants.StudentsCoachListAndReserve);
+                }).ProducesProblem(StatusCodes.Status400BadRequest).RequireAuthorization("CoachOrPdr").WithOpenApi()
+            .WithTags(TagConstants.CoachScheduling);
     }
     
-    public sealed class CoachDaysQuota
+    public sealed class CoachMeDaysQuota
     {
         public byte MondayQuota { get; set; }
         public byte TuesdayQuota { get; set; }
@@ -160,7 +162,7 @@ public static class ReservationDays
         public byte SundayQuota { get; set; }
     }
     
-    public sealed class DateQuota
+    public sealed class CoachMeDateQuota
     {
         public int TotalQuota { get; set; }
         
@@ -171,15 +173,15 @@ public static class ReservationDays
         public DateTime Date { get; set; }
     }
 
-    public sealed class DaysAvailability
+    public sealed class CoachMeDaysAvailability
     {
         public bool HasAvailableDay { get; set; }
-        public DateQuota Sunday { get; } = new DateQuota();
-        public DateQuota Monday { get; } = new DateQuota();
-        public DateQuota Tuesday { get; } = new DateQuota();
-        public DateQuota Wednesday { get; } = new DateQuota();
-        public DateQuota Thursday { get; } = new DateQuota();
-        public DateQuota Friday { get; } = new DateQuota();
-        public DateQuota Saturday { get; } = new DateQuota();
+        public CoachMeDateQuota Sunday { get; } = new CoachMeDateQuota();
+        public CoachMeDateQuota Monday { get; } = new CoachMeDateQuota();
+        public CoachMeDateQuota Tuesday { get; } = new CoachMeDateQuota();
+        public CoachMeDateQuota Wednesday { get; } = new CoachMeDateQuota();
+        public CoachMeDateQuota Thursday { get; } = new CoachMeDateQuota();
+        public CoachMeDateQuota Friday { get; } = new CoachMeDateQuota();
+        public CoachMeDateQuota Saturday { get; } = new CoachMeDateQuota();
     }
 }

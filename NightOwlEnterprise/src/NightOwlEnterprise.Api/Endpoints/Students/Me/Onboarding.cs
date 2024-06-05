@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NightOwlEnterprise.Api.Endpoints.CommonDto;
+using NightOwlEnterprise.Api.Entities;
 using NightOwlEnterprise.Api.Entities.Enums;
 using NightOwlEnterprise.Api.Entities.Nets;
 using NightOwlEnterprise.Api.Entities.PrivateTutoring;
@@ -243,6 +244,45 @@ public static class Onboard
                 if (subscription.Type == SubscriptionType.Pdr)
                 {
                     student!.StudentDetail.Status = StudentStatus.Active;
+
+                    var pdrUsers = dbContext.Users
+                        .Include(x => x.CoachStudentTrainingSchedules)
+                        .Include(x => x.CoachDetail)
+                        .Where(x => x.UserType == UserType.Pdr)
+                        .Where(x => x.CoachStudentTrainingSchedules.Count < (x.CoachDetail.MondayQuota ?? 0 +
+                            x.CoachDetail.TuesdayQuota ?? 0 +
+                            x.CoachDetail.WednesdayQuota ?? 0 +
+                            x.CoachDetail.ThursdayQuota ?? 0 +
+                            x.CoachDetail.FridayQuota ?? 0 +
+                            x.CoachDetail.SaturdayQuota ?? 0 +
+                            x.CoachDetail.SundayQuota ?? 0))
+                        .Select(x => new
+                        {
+                            Id = x.Id,
+                            Difference = (x.CoachDetail.MondayQuota ?? 0 +
+                                x.CoachDetail.TuesdayQuota ?? 0 +
+                                x.CoachDetail.WednesdayQuota ?? 0 +
+                                x.CoachDetail.ThursdayQuota ?? 0 +
+                                x.CoachDetail.FridayQuota ?? 0 +
+                                x.CoachDetail.SaturdayQuota ?? 0 +
+                                x.CoachDetail.SundayQuota ?? 0) - x.CoachStudentTrainingSchedules.Count,
+                        })
+                        .ToList();
+
+                    var pdrUser = pdrUsers.MaxBy(x => x.Difference);
+
+                    if (pdrUser is null)
+                    {
+                        return new ErrorDescriptor("NotFoundPdr",
+                            "Sistemde uygun Pdr bulunamadığından Pdr atataması yapılamadı").CreateProblem();
+                    }
+
+                    dbContext.CoachStudentTrainingSchedules.Add(new CoachStudentTrainingSchedule()
+                    {
+                        CoachId = pdrUser.Id,
+                        StudentId = studentId
+                    });
+
                 }
                 else if (subscription.Type == SubscriptionType.Coach)
                 {
@@ -250,50 +290,6 @@ public static class Onboard
                 }
 
                 await dbContext.SaveChangesAsync();
-
-                // if (onboardStudent is null)
-                // {
-                //     await onboardStudentCollection.InsertOneAsync(new OnboardStudent()
-                //     {
-                //         UserId = strUserId,
-                //         Data = request,
-                //     });
-                //
-                //     Guid.TryParse(strUserId, out var userId);
-                //
-                //     var user = await dbContext.Users
-                //         .Include(x => x.StudentDetail)
-                //         .Include(x => x.SubscriptionHistories)
-                //         .FirstOrDefaultAsync(x => x.Id == userId);
-                //
-                //     if (user is not null)
-                //     {
-                //         var subscription = user.SubscriptionHistories.Where(x => x.SubscriptionEndDate != null)
-                //             .OrderBy(x => x.SubscriptionEndDate.Value)
-                //             .FirstOrDefault(x => x.SubscriptionEndDate.Value > DateTime.UtcNow);
-                //         
-                //         if (subscription.Type == SubscriptionType.Pdr)
-                //         {
-                //             user!.StudentDetail.Status = StudentStatus.Active;    
-                //         }else if (subscription.Type == SubscriptionType.Coach)
-                //         {
-                //             user!.StudentDetail.Status = StudentStatus.CoachSelect;
-                //         }
-                //         
-                //         await dbContext.SaveChangesAsync();
-                //     }
-                // }
-                // else
-                // {
-                //     filter = Builders<OnboardStudent>.Filter.Eq(s => s.Id, onboardStudent.Id);
-                //
-                //     await onboardStudentCollection.ReplaceOneAsync(filter, new OnboardStudent()
-                //     {
-                //         Id = onboardStudent.Id,
-                //         UserId = strUserId,
-                //         Data = request,
-                //     });
-                // }
 
                 return TypedResults.Ok();
             }).RequireAuthorization("Student").Produces<ProblemHttpResult>(StatusCodes.Status400BadRequest)

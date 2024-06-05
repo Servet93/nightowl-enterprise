@@ -31,7 +31,8 @@ public static class SpecifyHour
 
                 if (invitationEntity is null)
                 {
-                    return TypedResults.Problem("Davetiye bulunamadı!", statusCode: StatusCodes.Status400BadRequest);
+                    var errorDescriptor = new ErrorDescriptor("NotFoundInvitation", "Davetiye bulunamadı!");
+                    return errorDescriptor.CreateProblem("Davetiye bulunamadı!");
                 }
 
                 invitationEntity.StartTime = specifyHourRequest.StartTime;
@@ -39,20 +40,27 @@ public static class SpecifyHour
                 invitationEntity.State = InvitationState.WaitingApprove;
                 invitationEntity.Type = specifyHourRequest.Type;
 
-                await dbContext.SaveChangesAsync();
+                try
+                {
+                    await dbContext.SaveChangesAsync();
+                }
+                catch (Exception e)
+                {
+                    var errorDescriptor = new ErrorDescriptor("NotSpecifiedHour", "Saat bilgisi atanamadı!");
+                    return errorDescriptor.CreateProblem("Saat bilgisi hatalı!");
+                }
 
                 return TypedResults.Ok();
-
             }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi()
             .WithDescription("Koç görüşme saatini belirler").WithTags(TagConstants.CoachScheduling)
-            .RequireAuthorization("Coach");
+            .RequireAuthorization("CoachOrPdr");
     }
     
     public sealed class SpecifyHourRequest
     {
-        public TimeSpan StartTime { get; set; }
+        public required TimeSpan StartTime { get; set; }
         
         [JsonConverter(typeof(JsonStringEnumConverter))]
-        public InvitationType Type { get; set; }
+        public required InvitationType Type { get; set; }
     }
 }

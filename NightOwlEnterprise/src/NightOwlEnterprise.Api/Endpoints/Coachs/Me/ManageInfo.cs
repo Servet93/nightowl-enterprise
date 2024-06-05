@@ -14,7 +14,7 @@ public static class ManageInfo
 {
     public static void MapManageInfo(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapGet("/me/info", async Task<Results<Ok<CoachStateResponse>, ProblemHttpResult>>
+        endpoints.MapGet("/me/info", async Task<Results<Ok<CoachProfileInfoResponse>, ProblemHttpResult>>
                 (ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
             {
                 var paginationUriBuilder = sp.GetRequiredService<PaginationUriBuilder>();
@@ -28,19 +28,26 @@ public static class ManageInfo
                     .Include(x => x.CoachDetail.University)
                     .FirstOrDefault(x => x.Id == coachId && x.UserType != UserType.Student);
 
-                var rank = dbContext.CoachYksRankings.OrderByDescending(x => Convert.ToInt32(x.Year))
-                    .FirstOrDefault(x => x.Enter == true && x.CoachId == coachId).Rank;
+                var rank = dbContext.CoachYksRankings?.OrderByDescending(x => Convert.ToInt32(x.Year))
+                    .FirstOrDefault(x => x.Enter == true && x.CoachId == coachId)?.Rank;
 
-                var profilePhotoUrl = paginationUriBuilder.GetCoachProfilePhotoUri(coachId);
+                var coachProfilePhotoExist = dbContext.ProfilePhotos.Any(x => x.UserId == coachId);
+                
+                string profilePhotoUrl = null;
+                
+                if (coachProfilePhotoExist)
+                {
+                    profilePhotoUrl = paginationUriBuilder.GetCoachProfilePhotoUri(coachId);    
+                }
 
                 return TypedResults.Ok(CreateInfoResponseAsync(user!, rank, profilePhotoUrl));
-            }).RequireAuthorization("Coach").ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi()
+            }).RequireAuthorization("CoachOrPdr").ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi()
             .WithTags(TagConstants.CoachMeInfo);
     }
     
-    private static CoachStateResponse CreateInfoResponseAsync(ApplicationUser user, uint? rank, string? profilePhotoUrl)
+    private static CoachProfileInfoResponse CreateInfoResponseAsync(ApplicationUser user, uint? rank, string? profilePhotoUrl)
     {
-        return new CoachStateResponse
+        return new CoachProfileInfoResponse
         {
             Name = user.CoachDetail.Name,
             Surname = user.CoachDetail.Surname,
@@ -54,7 +61,7 @@ public static class ManageInfo
         };
     }
 
-    public class CoachStateResponse
+    public class CoachProfileInfoResponse
     {
         public string Name { get; set; }
         public string Surname { get; set; }
