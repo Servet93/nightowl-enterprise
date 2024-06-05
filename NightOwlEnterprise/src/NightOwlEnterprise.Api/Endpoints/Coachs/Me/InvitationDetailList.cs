@@ -42,6 +42,7 @@ public static class InvitationDetailList
                     .Include(x => x.ZoomMeetDetail)
                     // .Where(x => x.CoachId == coachId && x.Date >= now && x.Date <= nextThreeDays)
                     .Where(x => x.CoachId == coachId)
+                    .OrderBy(x => x.Date)
                     .ToListAsync();
 
                 var invitations = invitationEntities.Select(invitationEntity => new InvitationResponse()

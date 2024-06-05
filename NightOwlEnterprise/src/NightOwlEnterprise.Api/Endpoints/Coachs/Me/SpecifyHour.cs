@@ -31,14 +31,19 @@ public static class SpecifyHour
 
                 if (invitationEntity is null)
                 {
-                    var errorDescriptor = new ErrorDescriptor("NotFoundInvitation", "Davetiye bulunamadı!");
-                    return errorDescriptor.CreateProblem("Davetiye bulunamadı!");
+                    var errorDescriptor = new ErrorDescriptor("NotFoundInvitation", "Randevu bulunamadı!");
+                    return errorDescriptor.CreateProblem("Görüşme saati belirlenemedi!");
+                }
+                
+                if (invitationEntity.Date < DateTime.UtcNow.ConvertUtcToTimeZone())
+                {
+                    var errorDescriptor = new ErrorDescriptor("InvitationDayExpired", "Randevu günü geçmiş!");
+                    return errorDescriptor.CreateProblem("Görüşme saati belirlenemedi!");
                 }
 
                 invitationEntity.StartTime = specifyHourRequest.StartTime;
                 invitationEntity.EndTime = specifyHourRequest.StartTime.Add(TimeSpan.FromHours(1));
                 invitationEntity.State = InvitationState.WaitingApprove;
-                invitationEntity.Type = specifyHourRequest.Type;
 
                 try
                 {
@@ -47,7 +52,7 @@ public static class SpecifyHour
                 catch (Exception e)
                 {
                     var errorDescriptor = new ErrorDescriptor("NotSpecifiedHour", "Saat bilgisi atanamadı!");
-                    return errorDescriptor.CreateProblem("Saat bilgisi hatalı!");
+                    return errorDescriptor.CreateProblem("Görüşme saati belirlenemedi!");
                 }
 
                 return TypedResults.Ok();
@@ -59,8 +64,5 @@ public static class SpecifyHour
     public sealed class SpecifyHourRequest
     {
         public required TimeSpan StartTime { get; set; }
-        
-        [JsonConverter(typeof(JsonStringEnumConverter))]
-        public required InvitationType Type { get; set; }
     }
 }
