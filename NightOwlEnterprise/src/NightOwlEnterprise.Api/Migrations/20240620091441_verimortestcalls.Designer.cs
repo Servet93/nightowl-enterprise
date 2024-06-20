@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -10,9 +11,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace NightOwlEnterprise.Api.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240620091441_verimortestcalls")]
+    partial class verimortestcalls
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -491,6 +494,12 @@ namespace NightOwlEnterprise.Api.Migrations
 
                     b.Property<int>("Type")
                         .HasColumnType("integer");
+
+                    b.Property<string>("VerimorCallFailed")
+                        .HasColumnType("text");
+
+                    b.Property<string>("VerimorCallId")
+                        .HasColumnType("text");
 
                     b.Property<Guid?>("ZoomMeetDetailId")
                         .HasColumnType("uuid");
@@ -992,14 +1001,11 @@ namespace NightOwlEnterprise.Api.Migrations
                     b.ToTable("UserDevices");
                 });
 
-            modelBuilder.Entity("NightOwlEnterprise.Api.Entities.VoiceCallsHistory", b =>
+            modelBuilder.Entity("NightOwlEnterprise.Api.Entities.VerimorTestCallsHistory", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
-
-                    b.Property<string>("CallDetailResult")
-                        .HasColumnType("text");
 
                     b.Property<string>("Content")
                         .HasColumnType("text");
@@ -1010,22 +1016,7 @@ namespace NightOwlEnterprise.Api.Migrations
                     b.Property<string>("Destination")
                         .HasColumnType("text");
 
-                    b.Property<string>("DestinationResult")
-                        .HasColumnType("text");
-
-                    b.Property<Guid?>("InvitationId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool?>("Ok")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Pair")
-                        .HasColumnType("text");
-
                     b.Property<string>("Source")
-                        .HasColumnType("text");
-
-                    b.Property<string>("SourceResult")
                         .HasColumnType("text");
 
                     b.Property<string>("Status")
@@ -1033,7 +1024,7 @@ namespace NightOwlEnterprise.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("VoiceCallsHistories");
+                    b.ToTable("VerimorTestCallsHistories");
                 });
 
             modelBuilder.Entity("NightOwlEnterprise.Api.Entities.ZoomMeetDetail", b =>

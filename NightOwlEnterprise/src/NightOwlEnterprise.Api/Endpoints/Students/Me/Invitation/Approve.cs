@@ -5,6 +5,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Encodings.Web;
+using Hangfire;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -27,6 +28,7 @@ public static class Approve
                 var studentId = claimsPrincipal.GetId();
 
                 var dbContext = sp.GetRequiredService<ApplicationDbContext>();
+                var bgJobClient = sp.GetRequiredService<IBackgroundJobClient>();
                 var zoom = sp.GetRequiredService<Zoom>();
 
                 var invitationEntity = await dbContext.Invitations
@@ -85,6 +87,12 @@ public static class Approve
                     await dbContext.ZoomMeetDetails.AddAsync(zoomMeetDetail);
 
                     invitationEntity.ZoomMeetDetailId = zoomMeetDetail.Id;
+                }
+                else if (invitationEntity.Type == InvitationType.VoiceCall)
+                {
+                    var scheduledTime = invitationEntity.Date.Add(invitationEntity.StartTime).AddMinutes(-1);
+
+                    bgJobClient.Schedule<VerimorService>((v) => v.Call(invitationId), scheduledTime);
                 }
 
                 await dbContext.SaveChangesAsync();

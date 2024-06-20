@@ -4,6 +4,8 @@ using System.Text.Json.Serialization;
 using Amazon.Runtime;
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
+using Hangfire;
+using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.Identity;
@@ -18,6 +20,7 @@ using NightOwlEnterprise.Api;
 using NightOwlEnterprise.Api.Endpoints;
 using NightOwlEnterprise.Api.Endpoints.Coachs;
 using NightOwlEnterprise.Api.Endpoints.Students;
+using NightOwlEnterprise.Api.Endpoints.Tests;
 using NightOwlEnterprise.Api.Endpoints.Universities;
 using NightOwlEnterprise.Api.Entities;
 using NightOwlEnterprise.Api.Entities.Enums;
@@ -106,7 +109,7 @@ try
                 logger.Fatal("ApplicationDbContext is using postgresql.");
                 options.UseNpgsql(postgresConnectionString);    
             }    
-        });    
+        });
     }
 }
 catch (Exception e)
@@ -114,6 +117,25 @@ catch (Exception e)
     logger.Error(e, "Postgres Connection Failed.");
     throw;
 }
+
+if (isPostgresEnabled)
+{
+    builder.Services.AddHangfire(config =>
+    {
+        config.UsePostgreSqlStorage(postgresConnectionString);
+    });
+
+    builder.Services.AddHangfireServer(configure =>
+    {
+        configure.SchedulePollingInterval = TimeSpan.FromMinutes(1);
+    });
+}
+
+// HttpClient'ı ekleyin
+builder.Services.AddHttpClient();
+
+// Arka plan işlerinin ihtiyaç duyduğu diğer bağımlılıkları ekleyin
+builder.Services.AddTransient<VerimorService>();
 
 var isMongoEnabled = builder.Configuration.GetValue<bool>("IsMongoEnabled");
 var mongoConnectionString = builder.Configuration.GetConnectionString("MongoConnection");
@@ -435,6 +457,8 @@ if (isPostgresEnabled)
     await SeedCoachs(db, userManager);
 }
 
+app.UseHangfireDashboard();
+
 app.UseCors("AllowAll");
 
 app.UseStaticFiles();
@@ -544,6 +568,7 @@ app.MapCommonIdentityApi();
 app.MapStudentsIdentityApi<ApplicationUser>();
 app.MapCoachsIdentityApi<ApplicationUser>();
 app.MapUniversityApi();
+app.MapTestsApi();
 
 TimeZoneInfo localZone = TimeZoneInfo.Local;
 CultureInfo currentCulture = CultureInfo.CurrentCulture;
@@ -865,6 +890,8 @@ public class ApplicationDbContext : Microsoft.AspNetCore.Identity.EntityFramewor
     public DbSet<ProfilePhoto> ProfilePhotos { get; set; }
 
     public DbSet<UserDevice> UserDevices { get; set; }
+    
+    public DbSet<VoiceCallsHistory> VoiceCallsHistories { get; set; }
     
     public ApplicationDbContext(Microsoft.EntityFrameworkCore.DbContextOptions<ApplicationDbContext> options) :
         base(options)
