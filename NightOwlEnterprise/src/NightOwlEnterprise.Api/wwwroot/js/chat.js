@@ -417,7 +417,7 @@ function fillMeManageInfoForCoach(accessToken){
             const meIdInput = document.getElementById('meId');
             meIdInput.value = data.id;
             meUserId = data.id;
-
+            console.log(data);
             document.getElementById('infoContainerTitle').innerText = "Mentör -> " + data.name + " " + data.surname;
         })
         .catch(error => console.error('Error fetching manage info for coach:', error));
