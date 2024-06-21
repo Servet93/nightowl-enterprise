@@ -49,6 +49,7 @@ public static class ManageInfo
     {
         return new CoachProfileInfoResponse
         {
+            Id = user.CoachDetail.CoachId,
             Name = user.CoachDetail.Name,
             Surname = user.CoachDetail.Surname,
             Birthdate = user.CoachDetail.BirthDate,
@@ -63,6 +64,7 @@ public static class ManageInfo
 
     public class CoachProfileInfoResponse
     {
+        public Guid Id { get; set; }
         public string Name { get; set; }
         public string Surname { get; set; }
         public string Email { get; set; }

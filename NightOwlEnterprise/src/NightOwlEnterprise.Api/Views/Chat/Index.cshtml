@@ -1,11 +1,11 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>One-to-One Chat</title>
-<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-<style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>One-to-One Chat</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
     #messagesList {
         list-style-type: none;
         padding: 0;
@@ -59,30 +59,152 @@
             color: white; /* Yazı rengi */
             font-size: 12px; /* Yazı boyutu */
         }
+               
+        .container {
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .login-box {
+            position: relative;
+        }
+        
+        .logo {
+            max-width: 100px;
+            margin-bottom: 20px;
+        }
+        
+        .login-box h2 {
+            margin-bottom: 30px;
+            color: #3498db;
+        }
+        
+        .user-box {
+            position: relative;
+            margin-bottom: 30px;
+        }
+        
+        .user-box input {
+            width: 100%;
+            padding: 10px 0;
+            background: none;
+            border: none;
+            border-bottom: 1px solid #333;
+            outline: none;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .user-box label {
+            position: absolute;
+            top: 0;
+            left: 0;
+            padding: 10px 0;
+            font-size: 16px;
+            color: #333;
+            pointer-events: none;
+            transition: 0.5s;
+        }
+        
+        .user-box input:focus ~ label,
+        .user-box input:valid ~ label {
+            top: -20px;
+            left: 0;
+            color: #3498db;
+            font-size: 12px;
+        }
+        
+        button {
+            background: none;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            outline: none;
+            color: #3498db;
+            font-size: 18px;
+            border: 1px solid #3498db;
+            border-radius: 5px;
+            transition: background-color 0.5s, color 0.5s;
+            margin-top: 10px;
+            width: 100%;
+        }
+        
+        button:hover {
+            background: #3498db;
+            color: white;
+        }
     
 </style>
 </head>
 <body>
 
 <div class="container-fluid">
-    <div class="row mt-5">
-        <div id="accessTokenContainer" class="col-md-6 offset-md-3">
-            <div class="form-group row">
-                <label for="accessToken" class="col-sm-2 col-form-label">Access Token</label>
-                <div class="col-sm-10">
-                    <input type="text" class="form-control" id="accessToken" placeholder="Access Token">
+    <div id="loginContainer" class="container">
+        <div class="login-box">
+            <img src="https://cdn.pixabay.com/photo/2021/01/27/06/51/owl-5953875_1280.png" alt="Logo" class="logo">
+            <select name="appUsers" id="appUsers">
+                <optgroup label="Koç-Öğrenciler-1">
+                    <option value="adem.kel@example.com">AdemKel,Type:Coach</option>
+                    <option value="eren-package-coach@gmail.com">Öğrenci -> Eren,Package:Coach</option>
+                </optgroup>
+                <optgroup label="Koç-Öğrenciler-2">
+                    <option value="ahmet.celik@example.com">AhmetCelik,Type:Coach</option>
+                    <option value="servet-package-coach@gmail.com">Öğrenci -> Servet,Package:Coach</option>
+                    <option value="turgay-package-coach@gmail.com">Öğrenci -> Turgay,Package:Coach</option>
+                </optgroup>
+                <optgroup label="Koç-Öğrenciler-3">
+                    <option value="hakan.arslan@example.com">"HakanArslan",Type:Coach</option>
+                    <option value="serap-package-coach@gmail.com">Öğrenci -> Serap,Package:Coach</option>
+                </optgroup>
+                <optgroup label="Koç-Öğrenciler-4">
+                    <option value="berkay.celik@example.com">BerkayCelik,Type:Coach</option>
+                    <option value="melike-package-coach@gmail.com">Öğrenci -> Melike,Package:Coach</option>
+                </optgroup>
+                <optgroup label="Koç-Öğrenciler-5">
+                    <option value="servet-pdr@gmail.com">Servet,Type:Pdr</option>
+                    <option value="burak-package-pdr@gmail.com">Öğrenci -> Burak,Package:Pdr</option>
+                </optgroup>
+                <optgroup label="Prod -> Koç-Öğrenciler-1">
+                    <option value="ahmet.kaya@example.com">AhmetKaya,Type:Coach</option>
+                    <option value="test2@test.com">Öğrenci -> test2,Package:Coach</option>
+                    <option value="test7@test.com">Öğrenci -> test7,Package:Coach</option>
+                    <option value="test9@test.com">Öğrenci -> test9,Package:Coach</option>
+                    <option value="eren-package-coach@gmail.com">Öğrenci -> eren-package-coach,Package:Coach</option>
+                </optgroup>
+                <optgroup label="Prod -> Koç-Öğrenciler-2">
+                    <option value="erdem.arslan@example.com">"ErdemArslan",Type:Coach</option>
+                    <option value="burak-package-coach@gmail.com">Öğrenci -> "burak-package-coach",Package:Coach</option>
+                    <option value="gunduz-eren@yandex.com">Öğrenci -> "gunduz-eren",Package:Coach</option>
+                    <option value="gunduz-eren+2@yandex.com">Öğrenci -> "gunduz-eren+2",Package:Coach</option>
+                </optgroup>
+            </select>
+            <h2>Login</h2>
+            <form id="loginForm">
+                <div class="user-box">
+                    <input type="text" id="email" name="email" required="" value="servet-package-coach@gmail.com">
+                    <label>Email</label>
                 </div>
-            </div>
-            <div class="form-group row">
-                <div class="col-sm-10 offset-sm-2">
-                    <button type="button" class="btn btn-primary" id="startConnectionButton">Start Connection</button>
+                <div class="user-box">
+                    <input type="password" id="password" name="password" required="" value="Aa123456">
+                    <label>Password</label>
                 </div>
-            </div>
-        </div>
+                <button type="submit">
+                    Submit
+                </button>
+            </form>
+        </div>    
+    </div>
+    <div class="row mt-5" id="infoContainer" style="justify-content: center;">
+        <h2 id="infoContainerTitle"></h2>
     </div>
     <div class="row mt-5" id="chatContainer">
         <div class="col-md-3" id="userListContainer">
-            <h3>Kişiler</h3>
+            <h3 id="userListTitle">Kişiler</h3>
             <ul id="userList" class="list-group">
                 <!-- Kişi listesi buraya gelecek -->
                 @* <li class="list-group-item">Kullanıcı 1</li> *@
@@ -90,11 +212,11 @@
                 @* <li class="list-group-item">Kullanıcı 3</li> *@
             </ul>
         </div>
-        <div class="col-md-6" id="sessionContainer">
-             <div class="row">
+        <div class="col-md-6" id="chatSessionContainer">
+            <div class="row">
                 <div class="col">
                     <ul id="messagesList" style="height: 400px; overflow-y: auto;" class="list-group">
-                         <!-- Örnek Mesajlar -->
+                        <!-- Örnek Mesajlar -->
                         @* <li class="list-group-item text-right">Benim Mesajım<span class="message-timestamp">23 Mart 2024 14:30</span></li> *@
                         @* <li class="list-group-item text-left">Karşı Tarafın Mesajı<span class="message-timestamp">23 Mart 2024 14:32</span></li> *@
                     </ul>
@@ -119,5 +241,10 @@
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
 <script src="~/js/signalr/signalr.js"></script>
 <script src="~/js/chat.js"></script>
+<script>
+  document.getElementById('appUsers').addEventListener('change', function() {
+    document.getElementById('email').value = document.getElementById('appUsers').value;
+  });
+</script>
 </body>
 </html>

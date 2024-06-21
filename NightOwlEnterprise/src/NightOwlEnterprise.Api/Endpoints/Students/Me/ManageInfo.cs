@@ -36,6 +36,7 @@ public static class ManageInfo
                 
                 var studentProfileInfoResponse =  new StudentProfileInfoResponse
                 {
+                    Id = studentId,
                     Email = user.Email!,
                     Status = studentDetail.Status,
                     Name = studentDetail.Name,
@@ -43,9 +44,9 @@ public static class ManageInfo
                     Grade = GradeConverters.GetText(studentDetail.Grade),
                     ExamType = ExamTypeConverters.GetText(studentDetail.ExamType),
                     
-                    SubscriptionType = subscription!.Type,
-                    SubscriptionStartDate = subscription.SubscriptionStartDate,
-                    SubscriptionEndDate = subscription.SubscriptionEndDate
+                    SubscriptionType = subscription?.Type,
+                    SubscriptionStartDate = subscription?.SubscriptionStartDate,
+                    SubscriptionEndDate = subscription?.SubscriptionEndDate
                 };
                 
                 var profilePhotoExist = dbContext.ProfilePhotos.Any(x => x.UserId == studentId);
@@ -79,6 +80,7 @@ public static class ManageInfo
 
     public class StudentProfileInfoResponse
     {
+        public Guid Id { get; set; }
         public string Name { get; set; }
         
         public string Surname { get; set; }
@@ -97,8 +99,8 @@ public static class ManageInfo
         public StudentStatus Status { get; set; }
         
         [JsonConverter(typeof(JsonStringEnumConverter))]
-        public SubscriptionType SubscriptionType { get; set; }
-        public DateTime SubscriptionStartDate { get; set; }
+        public SubscriptionType? SubscriptionType { get; set; }
+        public DateTime? SubscriptionStartDate { get; set; }
         public DateTime? SubscriptionEndDate { get; set; }
     }
 }

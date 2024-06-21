@@ -2,18 +2,74 @@
 
 var connection = null;
 
-document.getElementById("chatContainer").style.visibility = "hidden";
+document.getElementById("chatContainer").style.display = "none";
+document.getElementById("chatSessionContainer").style.display = "none";
 document.getElementById("sendButton").disabled = true;
 
 // Aktif olan kişiyi izlemek için değişken tanımla
 let activeUser = null;
+let accessToken = null;
 let activeUserId = null;
 let meUserId = null;
+
+//first
+document.getElementById('loginForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+    fetch('/login', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value
+        })
+    })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data);
+            console.log(data.accessToken)
+            if (data.accessToken) {
+                accessToken = data.accessToken;
+                alert('Login success.');
+                document.getElementById("loginContainer").style.display = "none";
+                var resultConnection = startConnection(data.accessToken);
+                if (resultConnection == null){
+                    alert('Chat connection couldnt be obtained.');
+                }else{
+                    connection = resultConnection;
+                    
+                    if (data.userType === 'Student'){
+                        document.getElementById("userListTitle").text = "Mentörüm";
+                        //Öğrenci ise koçu getir.
+                        fillCoach(data.accessToken);
+                        fillMeManageInfoForStudent(data.accessToken);
+                    }else{
+                        //Koç veya Pdr ise öğrencileri getir.
+                        document.getElementById("userListTitle").text = "Öğrencilerim";
+                        fillStudents(data.accessToken);    
+                        fillMeManageInfoForCoach(data.accessToken);
+                    }
+                    // fillMeId(data.accessToken);
+                }
+            } else {
+                alert('Login failed. Please check your credentials.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Login failed. Error:' +  error);
+        });
+});
+
 
 // Kişi listesine tıklama olayını dinle
 document.getElementById("userList").addEventListener("click", function(event) {
     // Eğer tıklanan öğe bir list item ise
     if (event.target.tagName === "LI") {
+
+        document.getElementById("chatSessionContainer").style.display = "block";
+        
         // Önceki aktif kişiyi işaretleme kaldır
         if (activeUser) {
             activeUser.classList.remove("active");
@@ -24,7 +80,7 @@ document.getElementById("userList").addEventListener("click", function(event) {
         activeUserId = event.target.dataset.userId;
         clearChatHistory();
 
-        var accessToken = document.getElementById("accessToken").value;
+        // var accessToken = document.getElementById("accessToken").value;
         
         const headers = {
             'Authorization': `Bearer ${accessToken}`
@@ -53,17 +109,17 @@ document.getElementById("userList").addEventListener("click", function(event) {
     }
 });
 
-document.getElementById("startConnectionButton").addEventListener("click", function (event) {
-    var accessToken = document.getElementById("accessToken").value;
-
-    connection = startConnection(accessToken);
-
-    fillUsers(accessToken);
-    
-    fillMeId(accessToken);
-    
-    event.preventDefault();
-});
+// document.getElementById("startConnectionButton").addEventListener("click", function (event) {
+//     var accessToken = document.getElementById("accessToken").value;
+//
+//     connection = startConnection(accessToken);
+//
+//     fillUsers(accessToken);
+//    
+//     fillMeId(accessToken);
+//    
+//     event.preventDefault();startConnection
+// });
 
 function startConnection(accessToken)
 {
@@ -77,10 +133,10 @@ function startConnection(accessToken)
     }).build();
     
     connection.start().then(function () {
-        
+
+        document.getElementById("chatContainer").style.display = "flex";
         document.getElementById("sendButton").disabled = false;
-        document.getElementById("accessTokenContainer").style.visibility = "hidden";
-        document.getElementById("chatContainer").style.visibility = "visible";
+        // document.getElementById("accessTokenContainer").style.visibility = "hidden";
 
         connection.on("ReceiveMessage", function (senderId, receiverId, message, timestamp) {
             // console.log("connectionId -> " + connectionId);
@@ -100,19 +156,25 @@ function startConnection(accessToken)
             //     li.textContent = `${receiverId} says -> ${message}`;
             // }
             
-            addMessage(meUserId == senderId, message, timestamp);
-
-            var messagesList = document.getElementById("messagesList");
+            console.log("Receive Event -> ReceiverId: " + receiverId + ", SenderId: " + senderId + ", ActiveUserId : " + activeUserId);
             
-            //kullanıcı bilinçli bir şekilde scroll downı en aşağı çekmişse
-            if (userSelectTheScrollDown){
-                console.log("mesaj geldi scroll down edildi")
-                messagesList.scrollTop = messagesList.scrollHeight;
+            if (senderId === activeUserId || receiverId === activeUserId){
+                addMessage(meUserId == senderId, message, timestamp);
+
+                var messagesList = document.getElementById("messagesList");
+
+                //kullanıcı bilinçli bir şekilde scroll downı en aşağı çekmişse
+                if (userSelectTheScrollDown){
+                    console.log("mesaj geldi scroll down edildi")
+                    messagesList.scrollTop = messagesList.scrollHeight;
+                }    
             }
         });
         
     }).catch(function (err) {
-        return console.error(err.toString());
+        console.error(err.toString());
+        alert('Start Connection Failed. Error:' +  err.toString());
+        return null;
     });
     
     return connection;
@@ -175,39 +237,128 @@ function addBeforeMessage(isMine, content, timestamp) {
     messageList.prepend(li);
 }
 
-function fillUsers(accessToken){
+function fillStudents(accessToken){
     // Header'da Bearer token gönder
     const headers = {
         'Authorization': `Bearer ${accessToken}`
     };
-    // API'den kişi listesini çekmek için bir GET isteği yap
+
+    // API'den kişi listesini çekmek için bir GET isteği yap -> 
+    fetch('/coachs/me/students',{
+        method: 'POST',
+        headers: headers
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log(data);
+        
+        var studentItems = data.data;
+        
+        const userList = document.getElementById('userList');
+        
+        // Her kişi için bir liste öğesi oluştur ve HTML'e ekle
+        studentItems.forEach(studentItem => {
+            const listItem = document.createElement('li');
+            listItem.textContent = studentItem.name + " " + studentItem.surname;
+            listItem.dataset.userId = studentItem.id;
+            listItem.classList.add('list-group-item');
+            // Liste öğesine tıklanınca aktif olması için olay ekle
+            listItem.addEventListener('click', function() {
+                // Önceki aktif kişiyi işaretleme kaldır
+                const previousActive = document.querySelector('.list-group-item.active');
+                if (previousActive) {
+                    previousActive.classList.remove('active');
+                }
+                // Yeni aktif kişiyi işaretle
+                listItem.classList.add('active');
+            });
+            userList.appendChild(listItem);
+        });
+    })
+    .catch(error => {
+        console.error('Error fetching students: ', error);
+        alert('Error fetching students: ' + error.toString());
+    });
+}
+
+function fillCoach(accessToken){
+    // Header'da Bearer token gönder
+    const headers = {
+        'Authorization': `Bearer ${accessToken}`
+    };
+
+    // API'den kişi listesini çekmek için bir GET isteği yap -> 
+    fetch('/students/me/coach-info',{
+        method: 'GET',
+        headers: headers
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log(data);
+
+        var coachInfo = data;
+
+        const userList = document.getElementById('userList');
+
+        const listItem = document.createElement('li');
+        
+        listItem.textContent = coachInfo.name + " " + coachInfo.surname;
+        listItem.dataset.userId = coachInfo.id;
+        listItem.classList.add('list-group-item');
+        
+        // Liste öğesine tıklanınca aktif olması için olay ekle
+        listItem.addEventListener('click', function() {
+            // Önceki aktif kişiyi işaretleme kaldır
+            const previousActive = document.querySelector('.list-group-item.active');
+            if (previousActive) {
+                previousActive.classList.remove('active');
+            }
+            // Yeni aktif kişiyi işaretle
+            listItem.classList.add('active');
+        });
+        userList.appendChild(listItem);
+        
+    })
+    .catch(error => {
+        console.error('Error fetching coach: ', error);
+        alert('Error fetching coach: ' + error.toString());
+    });
+}
+
+function fillUsers(accessToken, userType){
+    // Header'da Bearer token gönder
+    const headers = {
+        'Authorization': `Bearer ${accessToken}`
+    };
+    
+    // API'den kişi listesini çekmek için bir GET isteği yap -> 
     fetch('/chat/users',{
         method: 'GET',
         headers: headers
     })
-        .then(response => response.json())
-        .then(data => {
-            const userList = document.getElementById('userList');
-            // Her kişi için bir liste öğesi oluştur ve HTML'e ekle
-            data.forEach(user => {
-                const listItem = document.createElement('li');
-                listItem.textContent = user.name;
-                listItem.dataset.userId = user.id;
-                listItem.classList.add('list-group-item');
-                // Liste öğesine tıklanınca aktif olması için olay ekle
-                listItem.addEventListener('click', function() {
-                    // Önceki aktif kişiyi işaretleme kaldır
-                    const previousActive = document.querySelector('.list-group-item.active');
-                    if (previousActive) {
-                        previousActive.classList.remove('active');
-                    }
-                    // Yeni aktif kişiyi işaretle
-                    listItem.classList.add('active');
-                });
-                userList.appendChild(listItem);
+    .then(response => response.json())
+    .then(data => {
+        const userList = document.getElementById('userList');
+        // Her kişi için bir liste öğesi oluştur ve HTML'e ekle
+        data.forEach(user => {
+            const listItem = document.createElement('li');
+            listItem.textContent = user.name;
+            listItem.dataset.userId = user.id;
+            listItem.classList.add('list-group-item');
+            // Liste öğesine tıklanınca aktif olması için olay ekle
+            listItem.addEventListener('click', function() {
+                // Önceki aktif kişiyi işaretleme kaldır
+                const previousActive = document.querySelector('.list-group-item.active');
+                if (previousActive) {
+                    previousActive.classList.remove('active');
+                }
+                // Yeni aktif kişiyi işaretle
+                listItem.classList.add('active');
             });
-        })
-        .catch(error => console.error('Error fetching users:', error));
+            userList.appendChild(listItem);
+        });
+    })
+    .catch(error => console.error('Error fetching users:', error));
 }
 
 function fillMeId(accessToken){
@@ -225,8 +376,51 @@ function fillMeId(accessToken){
             const meIdInput = document.getElementById('meId');
             meIdInput.value = data.id;
             meUserId = data.id;
+            
         })
         .catch(error => console.error('Error fetching users:', error));
+}
+
+function fillMeManageInfoForStudent(accessToken){
+    // Header'da Bearer token gönder
+    const headers = {
+        'Authorization': `Bearer ${accessToken}`
+    };
+    // API'den kişi listesini çekmek için bir GET isteği yap
+    fetch('/students/me/info',{
+        method: 'GET',
+        headers: headers
+    })
+    .then(response => response.json())
+    .then(data => {
+        const meIdInput = document.getElementById('meId');
+        meIdInput.value = data.id;
+        meUserId = data.id;
+        console.log(data);
+        document.getElementById('infoContainerTitle').innerText = "Öğrenci -> " + data.name + " " + data.surname;
+    })
+    .catch(error => console.error('Error fetching manage info for student:', error));
+}
+
+function fillMeManageInfoForCoach(accessToken){
+    // Header'da Bearer token gönder
+    const headers = {
+        'Authorization': `Bearer ${accessToken}`
+    };
+    // API'den kişi listesini çekmek için bir GET isteği yap
+    fetch('/coachs/me/info',{
+        method: 'GET',
+        headers: headers
+    })
+        .then(response => response.json())
+        .then(data => {
+            const meIdInput = document.getElementById('meId');
+            meIdInput.value = data.id;
+            meUserId = data.id;
+
+            document.getElementById('infoContainerTitle').innerText = "Mentör -> " + data.name + " " + data.surname;
+        })
+        .catch(error => console.error('Error fetching manage info for coach:', error));
 }
 
 // Sohbet geçmişini temizleme fonksiyonu
@@ -286,7 +480,7 @@ document.getElementById('messagesList').addEventListener('scroll', function() {
             // AJAX veya fetch ile veri tabanından mesajları al
             // Örneğin:
 
-            var accessToken = document.getElementById("accessToken").value;
+            // var accessToken = document.getElementById("accessToken").value;
             
             const headers = {
                 'Authorization': `Bearer ${accessToken}`
