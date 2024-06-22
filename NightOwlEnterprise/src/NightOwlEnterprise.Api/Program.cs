@@ -457,7 +457,11 @@ if (isPostgresEnabled)
     await SeedCoachs(db, userManager);
 }
 
-app.UseHangfireDashboard();
+app.UseHangfireDashboard("/hangfire", new DashboardOptions()
+{
+    IgnoreAntiforgeryToken = true,
+    Authorization = new [] { new DashboardNoAuthorizationFilter() }
+});
 
 app.UseCors("AllowAll");
 
