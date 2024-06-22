@@ -138,6 +138,28 @@
             background: #3498db;
             color: white;
         }
+        
+         .connection-status {
+                    display: inline-block;
+                    width: 15px;
+                    height: 15px;
+                    border-radius: 50%;
+                    margin-right: 5px;
+                    border: 2px solid #ccc;
+                    background-color: grey; /* Varsayılan olarak gri */
+                }
+        
+                .connected {
+                    background-color: green;
+                }
+        
+                .connecting {
+                    background-color: grey;
+                }
+        
+                .disconnected {
+                    background-color: red;
+                }
     
 </style>
 </head>
@@ -200,7 +222,7 @@
         </div>    
     </div>
     <div class="row mt-5" id="infoContainer" style="justify-content: center;">
-        <h2 id="infoContainerTitle"></h2>
+        <h2 id="infoContainerTitle"></h2><span id="connectionStatus" class="connection-status"></span>
     </div>
     <div class="row mt-5" id="chatContainer">
         <div class="col-md-3" id="userListContainer">

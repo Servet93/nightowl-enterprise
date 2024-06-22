@@ -3,6 +3,7 @@
 var connection = null;
 
 document.getElementById("chatContainer").style.display = "none";
+document.getElementById("connectionStatus").style.display = "none";
 document.getElementById("chatSessionContainer").style.display = "none";
 document.getElementById("sendButton").disabled = true;
 
@@ -33,6 +34,7 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
                 accessToken = data.accessToken;
                 alert('Login success.');
                 document.getElementById("loginContainer").style.display = "none";
+                document.getElementById("connectionStatus").style.display = "inline";
                 var resultConnection = startConnection(data.accessToken);
                 if (resultConnection == null){
                     alert('Chat connection couldnt be obtained.');
@@ -133,6 +135,8 @@ function startConnection(accessToken)
     }).build();
     
     connection.start().then(function () {
+        
+        updateConnectionStatus("connected");
 
         document.getElementById("chatContainer").style.display = "flex";
         document.getElementById("sendButton").disabled = false;
@@ -170,14 +174,54 @@ function startConnection(accessToken)
                 }    
             }
         });
+
+        // Bağlantı durumu izleme
+        connection.onclose(function (error) {
+            console.log("Bağlantı kapandı:", error);
+            updateConnectionStatus("disconnected");
+            alert("Connection Closed, Error: " + error);
+        });
+
+        connection.onreconnecting(function () {
+            console.log("Yeniden bağlanılıyor...");
+            updateConnectionStatus("reconnecting");
+            alert("Connection is reconnectiong.");
+        });
+
+        connection.onreconnected(function (connectionId) {
+            console.log("Yeniden bağlandı. Bağlantı Kimliği:", connectionId);
+            updateConnectionStatus("connected");
+            alert("Connection is recconected. ConnectionId: " + connectionId);
+        });
         
     }).catch(function (err) {
         console.error(err.toString());
+        updateConnectionStatus("disconnected");
         alert('Start Connection Failed. Error:' +  err.toString());
         return null;
     });
     
     return connection;
+}
+
+// Bağlantı durumunu güncelleyen yardımcı fonksiyon
+function updateConnectionStatus(status) {
+    var statusElement = $("#connectionStatus");
+
+    // Duruma göre stil ve metin güncelle
+    switch (status) {
+        case "connected":
+            statusElement.removeClass().addClass("connection-status connected");
+            break;
+        case "connecting":
+            statusElement.removeClass().addClass("connection-status connecting");
+            break;
+        case "disconnected":
+            statusElement.removeClass().addClass("connection-status disconnected");
+            break;
+        default:
+            statusElement.removeClass().addClass("connection-status");
+    }
 }
 
 function addMessage(isMine, content, timestamp) {
@@ -441,7 +485,8 @@ document.getElementById("sendButton").addEventListener("click", function (event)
             messagesList.scrollTop = messagesList.scrollHeight;
             console.log("Mesaj başarıyla gönderildi.");
         }).catch(function (err) {
-            return console.error(err.toString());
+            console.error(err.toString());
+            alert("Message couldn't be sent to server, Error: " + err.toString());
         });
     }
     
