@@ -11,9 +11,12 @@ namespace NightOwlEnterprise.Api;
 [Authorize]
 public class ChatHub : Hub
 {
-    private readonly static Dictionary<string, (string name, List<string> connectionIds)> userIdentifierToConnectionIds =
-        new Dictionary<string, (string name, List<string> connectionIds)>();
+    //user identifier -> connections [ connectionId, connectionInfo ],
+    public readonly static Dictionary<string, Dictionary<string, ConnectionInfo>> userIdentifierToConnections = new();
     
+    //user identifier -> user info
+    public readonly static Dictionary<string, UserInfo> userIdentifierToUserInfo = new();
+
     private readonly IMongoCollection<Conversation> _conversationCollection;
     private readonly IMongoCollection<Message> _messageCollection;
 
@@ -58,7 +61,7 @@ public class ChatHub : Hub
         
         await _messageCollection.InsertOneAsync(messageObj);
         
-        var isReceiverIdExist = userIdentifierToConnectionIds.ContainsKey(receiverId);
+        //var isReceiverIdExist = userIdentifierToConnectionIds.ContainsKey(receiverId);
 
         var senderIds = new List<string>() { senderId, receiverId };
         
@@ -89,18 +92,60 @@ public class ChatHub : Hub
     {
         var connectionId = this.Context.ConnectionId;
         var userIdentifier = this.Context.UserIdentifier;
-        var name = this.Context.User.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Name).Value;
-
+        
         if (userIdentifier is null) return base.OnConnectedAsync();
         
-        var isUserIdentifierExist = userIdentifierToConnectionIds.ContainsKey(userIdentifier);
+        var isUserIdentifierExist = userIdentifierToConnections.ContainsKey(userIdentifier);
         if (isUserIdentifierExist)
         {
-            userIdentifierToConnectionIds[userIdentifier].connectionIds.Add(connectionId);
+            var isConnectionExistForUserIdentifier =
+                userIdentifierToConnections[userIdentifier].ContainsKey(connectionId);
+
+            if (isConnectionExistForUserIdentifier)
+            {
+                var connectionInfo = userIdentifierToConnections[userIdentifier][connectionId];
+                connectionInfo.CurrentState = "Connected";
+                connectionInfo.UpdatedAt = DateTime.UtcNow.ConvertUtcToTimeZone();
+            }
+            else
+            {
+                userIdentifierToConnections[userIdentifier].Add(connectionId, new ConnectionInfo()
+                {
+                    ConnectionId = connectionId,
+                    CurrentState = "Connected",
+                    CreatedAt = DateTime.UtcNow.ConvertUtcToTimeZone(),
+                    UpdatedAt = DateTime.UtcNow.ConvertUtcToTimeZone(),
+                });
+            }
         }
         else
         {
-            userIdentifierToConnectionIds.Add(userIdentifier, (name, new List<string>() { connectionId }));
+            userIdentifierToConnections.Add(userIdentifier, new Dictionary<string, ConnectionInfo>()
+            {
+                {
+                    connectionId, new ConnectionInfo()
+                    {
+                        ConnectionId = connectionId,
+                        CurrentState = "Connected",
+                        CreatedAt = DateTime.UtcNow.ConvertUtcToTimeZone(),
+                        UpdatedAt = DateTime.UtcNow.ConvertUtcToTimeZone(),
+                    }
+                }
+            });
+        }
+        
+        if (!userIdentifierToUserInfo.ContainsKey(userIdentifier))
+        {
+            var name = this.Context.User.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Name).Value;
+            var role = this.Context.User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Role).Value;
+            var email = this.Context.User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Email).Value;
+            
+            userIdentifierToUserInfo.Add(userIdentifier, new UserInfo()
+            {
+                Role = role,
+                Email = email,
+                Name = name
+            });
         }
         
         return base.OnConnectedAsync();
@@ -108,8 +153,46 @@ public class ChatHub : Hub
 
     public override Task OnDisconnectedAsync(Exception? exception)
     {
+        var connectionId = this.Context.ConnectionId;
+        var userIdentifier = this.Context.UserIdentifier;
+        var name = this.Context.User.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Name).Value;
+
+        if (userIdentifierToConnections.ContainsKey(userIdentifier))
+        {
+            if (userIdentifierToConnections[userIdentifier].ContainsKey(connectionId))
+            {
+                var connectionInfo = userIdentifierToConnections[userIdentifier][connectionId];
+                connectionInfo.CurrentState = "Disconnected";
+                connectionInfo.DisconnectedTime = DateTime.UtcNow.ConvertUtcToTimeZone();
+                connectionInfo.UpdatedAt = DateTime.UtcNow.ConvertUtcToTimeZone();
+            }
+        }
+
+        
+        
         return base.OnDisconnectedAsync(exception);
     }
+}
+
+public class ConnectionInfo
+{
+    public string ConnectionId { get; set; }
+    
+    public DateTime DisconnectedTime { get; set; }
+    
+    public DateTime CreatedAt { get; set; }
+    
+    public DateTime UpdatedAt { get; set; }
+    public string CurrentState { get; set; }
+}
+
+public class UserInfo
+{
+    public string Name { get; set; }
+
+    public string Email { get; set; }
+
+    public string Role { get; set; }
 }
 
 // MongoDB Model

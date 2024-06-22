@@ -91,6 +91,77 @@ public class ChatController : Controller
         
         return messages;
     }
+    
+    // GET
+    [HttpGet("connectioninfo")]
+    public IActionResult ConnectionInfo()
+    {
+        return View();
+    }
+    
+    [HttpGet("getConnections")]
+    public ActionResult<IEnumerable<UserConnectionDto>> GetConnections(string userIdentifier = null, string email = null, string role = null, int page = 1, int pageSize = 10)
+    {
+        try
+        {
+            var searchedUserIdentifier = new List<string>();
+            
+            if (!string.IsNullOrEmpty(email))
+            {
+                searchedUserIdentifier.AddRange(ChatHub.userIdentifierToUserInfo
+                    .Where(x => x.Value.Email.Contains(email)).Select(x => x.Key));
+            }
+            
+            if (!string.IsNullOrEmpty(role))
+            {
+                searchedUserIdentifier.AddRange(ChatHub.userIdentifierToUserInfo.Where(x => x.Value.Role.Contains(role))
+                    .Select(x => x.Key));
+            }
+            
+            // Tüm bağlantı bilgilerini al
+            var pagedConnections = ChatHub.userIdentifierToConnections
+                .Where(kv => userIdentifier == null || kv.Key == userIdentifier || searchedUserIdentifier.Contains(kv.Key))
+                .Skip((page - 1) * pageSize).Take(pageSize)
+                .SelectMany(kv => kv.Value.Select(ci => new UserConnectionDto
+                {
+                    UserIdentifier = kv.Key,
+                    ConnectionId = ci.Key,
+                    DisconnectedTime = ci.Value.DisconnectedTime,
+                    CreatedAt = ci.Value.CreatedAt,
+                    UpdatedAt = ci.Value.UpdatedAt,
+                    CurrentState = ci.Value.CurrentState,
+                    Email = ChatHub.userIdentifierToUserInfo[kv.Key].Email,
+                    Name = ChatHub.userIdentifierToUserInfo[kv.Key].Name,
+                    Role = ChatHub.userIdentifierToUserInfo[kv.Key].Role,
+                })).ToList();
+
+            // Sayfalama işlemi
+            //var pagedConnections = allConnections.Skip((page - 1) * pageSize).Take(pageSize);
+
+            return Ok(pagedConnections);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Internal server error: {ex}");
+        }
+    }
+}
+
+public class UserConnectionDto
+{
+    public string UserIdentifier { get; set; }
+    public string ConnectionId { get; set; }
+    
+    public DateTime DisconnectedTime { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+    public string CurrentState { get; set; }
+    
+    public string Role { get; set; }
+    
+    public string Name { get; set; }
+    
+    public string Email { get; set; }
 }
 
 public record User(Guid id, string name);
