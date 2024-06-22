@@ -60,13 +60,13 @@ public class ChatHub : Hub
         
         var isReceiverIdExist = userIdentifierToConnectionIds.ContainsKey(receiverId);
 
-        var senderIds = new List<string>() { senderId };
+        var senderIds = new List<string>() { senderId, receiverId };
         
-        if (isReceiverIdExist)
-        {
-            var receiverName = userIdentifierToConnectionIds[receiverId].name;
-            senderIds.Add(receiverId);
-        }
+        // if (isReceiverIdExist)
+        // {
+        //     var receiverName = userIdentifierToConnectionIds[receiverId].name;
+        //     senderIds.Add(receiverId);
+        // }
         
         // Gönderen ve alıcıya mesajı gönder
         await Clients.Users(senderIds)
@@ -102,7 +102,7 @@ public class ChatHub : Hub
         {
             userIdentifierToConnectionIds.Add(userIdentifier, (name, new List<string>() { connectionId }));
         }
-
+        
         return base.OnConnectedAsync();
     }
 

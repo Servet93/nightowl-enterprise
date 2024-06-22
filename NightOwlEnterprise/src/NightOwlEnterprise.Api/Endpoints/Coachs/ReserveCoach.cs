@@ -79,8 +79,9 @@ public static class ReserveCoach
 
                 try
                 {
-                    var hasCoach = coach.CoachStudentTrainingSchedules.Any(x => x.StudentId == studentId);
-
+                    var hasCoach = dbContext.CoachStudentTrainingSchedules.Any(x => x.StudentId == studentId);
+                    //var hasCoach = coach.CoachStudentTrainingSchedules.Any(x => x.StudentId == studentId);
+                    
                     if (hasCoach)
                     {
                         return new ErrorDescriptor("AlreadyHasCoach", "Koç seçimi yapılmış").CreateProblem(
