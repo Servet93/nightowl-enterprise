@@ -185,7 +185,8 @@ builder.Services.AddCors(options =>
             .WithOrigins("http://localhost:5254", "https://api.baykusmentorluk.com")
             .AllowAnyMethod()
             .AllowAnyHeader()
-            .SetIsOriginAllowed(origin => true);
+            .SetIsOriginAllowed(origin => true)
+            .AllowCredentials();
     });
 });
 
