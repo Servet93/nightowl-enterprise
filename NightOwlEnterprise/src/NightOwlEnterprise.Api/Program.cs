@@ -173,7 +173,18 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policyBuilder =>
     {
-        policyBuilder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+        policyBuilder
+            .AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+    });
+    
+    options.AddPolicy("ForSignalRHub", policyBuilder =>
+    {
+        policyBuilder
+            .WithOrigins("http://localhost:5254", "https://api.baykusmentorluk.com")
+            .AllowAnyMethod()
+            .AllowAnyHeader();
     });
 });
 
@@ -507,7 +518,7 @@ if (isMongoEnabled && !string.IsNullOrEmpty(mongoConnectionString))
     app.MapHub<ChatHub>("/chatHub", options =>
     {
         options.Transports = HttpTransportType.WebSockets;
-    });    
+    }).RequireCors("ForSignalRHub");    
 }
 else
 {
