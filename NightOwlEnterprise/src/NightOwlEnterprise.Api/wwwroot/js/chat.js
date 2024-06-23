@@ -126,12 +126,18 @@ document.getElementById("userList").addEventListener("click", function(event) {
 function startConnection(accessToken)
 {
     // /chatHub
-    var connection = new signalR.HubConnectionBuilder().withUrl("https://chat.baykusmentorluk.com/chatHub", {
-        accessTokenFactory: () => {
-            // Get and return the access token.
-            // This function can return a JavaScript Promise if asynchronous
-            // logic is required to retrieve the access token.
-            return accessToken;
+    // var connection = new signalR.HubConnectionBuilder().withUrl("https://chat.baykusmentorluk.com/chatHub", {
+    //     accessTokenFactory: () => {
+    //         // Get and return the access token.
+    //         // This function can return a JavaScript Promise if asynchronous
+    //         // logic is required to retrieve the access token.
+    //         return accessToken;
+    //     }
+    // }).build();
+
+    var connection = new signalR.HubConnectionBuilder().withUrl("https://chat.baykusmentorluk.com/chatHub?access_token=" + accessToken, {
+        fetchOptions: {
+            credentials: 'omit',
         }
     }).build();
     
