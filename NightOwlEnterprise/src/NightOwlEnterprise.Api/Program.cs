@@ -476,7 +476,7 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions()
     Authorization = new [] { new DashboardNoAuthorizationFilter() }
 });
 
-app.UseCors("ForSignalRHub");
+app.UseCors("AllowAll");
 
 app.UseStaticFiles();
 
