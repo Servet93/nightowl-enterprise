@@ -48,13 +48,13 @@ public static class List
                 .Include(x => x.InvitationsAsCoach)
                 .Where(x => x.UserType == UserType.Coach)
                 .Where(x =>
-                    (x.CoachStudentTrainingSchedules.Where(i => i.CoachId == x.Id && i.Day == DayOfWeek.Monday).Count() < x.CoachDetail.MondayQuota) ||
-                    (x.CoachStudentTrainingSchedules.Where(i => i.CoachId == x.Id && i.Day == DayOfWeek.Tuesday).Count() < x.CoachDetail.TuesdayQuota) ||
-                    (x.CoachStudentTrainingSchedules.Where(i => i.CoachId == x.Id && i.Day == DayOfWeek.Wednesday).Count() < x.CoachDetail.WednesdayQuota) ||
-                    (x.CoachStudentTrainingSchedules.Where(i => i.CoachId == x.Id && i.Day == DayOfWeek.Thursday).Count() < x.CoachDetail.ThursdayQuota) ||
-                    (x.CoachStudentTrainingSchedules.Where(i => i.CoachId == x.Id && i.Day == DayOfWeek.Friday).Count() < x.CoachDetail.FridayQuota) ||
-                    (x.CoachStudentTrainingSchedules.Where(i => i.CoachId == x.Id && i.Day == DayOfWeek.Saturday).Count() < x.CoachDetail.SaturdayQuota) ||
-                    (x.CoachStudentTrainingSchedules.Where(i => i.CoachId == x.Id && i.Day == DayOfWeek.Sunday).Count() < x.CoachDetail.SundayQuota)
+                    (x.CoachStudentTrainingSchedules.Where(i => i.CoachId == x.Id && i.VideoDay == DayOfWeek.Monday).Count() < x.CoachDetail.MondayQuota) ||
+                    (x.CoachStudentTrainingSchedules.Where(i => i.CoachId == x.Id && i.VideoDay == DayOfWeek.Tuesday).Count() < x.CoachDetail.TuesdayQuota) ||
+                    (x.CoachStudentTrainingSchedules.Where(i => i.CoachId == x.Id && i.VideoDay == DayOfWeek.Wednesday).Count() < x.CoachDetail.WednesdayQuota) ||
+                    (x.CoachStudentTrainingSchedules.Where(i => i.CoachId == x.Id && i.VideoDay == DayOfWeek.Thursday).Count() < x.CoachDetail.ThursdayQuota) ||
+                    (x.CoachStudentTrainingSchedules.Where(i => i.CoachId == x.Id && i.VideoDay == DayOfWeek.Friday).Count() < x.CoachDetail.FridayQuota) ||
+                    (x.CoachStudentTrainingSchedules.Where(i => i.CoachId == x.Id && i.VideoDay == DayOfWeek.Saturday).Count() < x.CoachDetail.SaturdayQuota) ||
+                    (x.CoachStudentTrainingSchedules.Where(i => i.CoachId == x.Id && i.VideoDay == DayOfWeek.Sunday).Count() < x.CoachDetail.SundayQuota)
                 );
 
             coachQueryable = studentExamType switch

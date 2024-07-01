@@ -18,7 +18,7 @@ public static class ReservationDays
 
                     var dayToStudentCount = dbContext.CoachStudentTrainingSchedules
                         .Where(x => x.CoachId == coachId)
-                        .GroupBy(x => x.Day)
+                        .GroupBy(x => x.VideoDay)
                         .ToDictionary(x => x.Key, x => (byte)x.Count());
 
                     var coachDaysQuota = await dbContext.CoachDetail.Where(x => x.CoachId == coachId).Select(x =>

@@ -86,7 +86,7 @@ public static class MeReserveDayForStudent
 
                 try
                 {
-                    var hasCoach = coach.CoachStudentTrainingSchedules.Any(x => x.StudentId == studentId && x.Day.HasValue);
+                    var hasCoach = coach.CoachStudentTrainingSchedules.Any(x => x.StudentId == studentId && x.VideoDay.HasValue);
 
                     if (hasCoach)
                     {
@@ -95,7 +95,7 @@ public static class MeReserveDayForStudent
                     }
                     
                     var studentCountForDay = coach.CoachStudentTrainingSchedules
-                        .Where(x => x.Day.HasValue && x.Day == inviteRequest.Day)
+                        .Where(x => x.VideoDay.HasValue && x.VideoDay == inviteRequest.Day)
                         .Count();
 
                     if (studentCountForDay >= dayQuota)
@@ -105,11 +105,12 @@ public static class MeReserveDayForStudent
                     }
 
                     var coachStudentTrainingSchedule = dbContext.CoachStudentTrainingSchedules.FirstOrDefault(x =>
-                        x.StudentId == studentId && x.CoachId == coachId && !x.Day.HasValue);
-
-                    coachStudentTrainingSchedule.Day = inviteRequest.Day;
+                        x.StudentId == studentId && x.CoachId == coachId && !x.VideoDay.HasValue);
 
                     var date = DateUtils.FindDate(inviteRequest.Day);
+                    
+                    coachStudentTrainingSchedule.VideoDay = inviteRequest.Day;
+                    coachStudentTrainingSchedule.VoiceDay = date.AddDays(3).DayOfWeek;
 
                     for (int i = 1; i <= 4; i++)
                     {
@@ -120,6 +121,7 @@ public static class MeReserveDayForStudent
                             State = InvitationState.SpecifyHour,
                             Type = InvitationType.VideoCall,
                             Date = date,
+                            Day = date.DayOfWeek,
                         });
                     
                         dbContext.Invitations.Add(new Invitation()
@@ -129,6 +131,7 @@ public static class MeReserveDayForStudent
                             State = InvitationState.SpecifyHour,
                             Type = InvitationType.VoiceCall,
                             Date = date.AddDays(3),
+                            Day = date.AddDays(3).DayOfWeek
                         });
 
                         date = date.AddDays(7);

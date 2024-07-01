@@ -19,8 +19,8 @@ public static class MeReservationDays
                     var dbContext = sp.GetRequiredService<ApplicationDbContext>();
 
                     var dayToStudentCount = dbContext.CoachStudentTrainingSchedules
-                        .Where(x => x.CoachId == coachId && x.Day.HasValue)
-                        .GroupBy(x => x.Day)
+                        .Where(x => x.CoachId == coachId && x.VideoDay.HasValue)
+                        .GroupBy(x => x.VideoDay)
                         .ToDictionary(x => x.Key, x => (byte)x.Count());
 
                     var coachDaysQuota = await dbContext.CoachDetail.Where(x => x.CoachId == coachId).Select(x =>

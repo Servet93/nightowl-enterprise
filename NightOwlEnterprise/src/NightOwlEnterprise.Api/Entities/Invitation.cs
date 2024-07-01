@@ -10,6 +10,8 @@ public class Invitation
     public Guid StudentId { get; set; }
     public ApplicationUser Student { get; set; }
     public DateTime Date { get; set; }
+    
+    public DayOfWeek Day { get; set; }
     public TimeSpan StartTime { get; set; }
     
     public TimeSpan EndTime { get; set; }

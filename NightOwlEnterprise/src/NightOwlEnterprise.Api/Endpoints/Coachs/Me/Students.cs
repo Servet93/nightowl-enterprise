@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using MongoDB.Driver;
 using NightOwlEnterprise.Api.Endpoints.CommonDto;
 using NightOwlEnterprise.Api.Endpoints.Students;
+using NightOwlEnterprise.Api.Entities;
 using NightOwlEnterprise.Api.Entities.Enums;
 using NightOwlEnterprise.Api.Utils;
 using Stripe;
@@ -31,7 +32,7 @@ public static class Students
         // NOTE: We cannot inject UserManager<TUser> directly because the TUser generic parameter is currently unsupported by RDG.
         // https://github.com/dotnet/aspnetcore/issues/47338
         endpoints.MapPost("/me/students", async Task<Results<Ok<PagedResponse<StudentItem>>, ProblemHttpResult>>
-            ([FromQuery] int? page,[FromQuery] int? pageSize, ClaimsPrincipal claimsPrincipal, HttpContext httpContext, [FromServices] IServiceProvider sp) =>
+            ([FromBody] StudentFilterRequest? filter, [FromQuery] int? page,[FromQuery] int? pageSize, ClaimsPrincipal claimsPrincipal, HttpContext httpContext, [FromServices] IServiceProvider sp) =>
         {
             var paginationFilter = new PaginationFilter(page, pageSize);
             
@@ -45,9 +46,126 @@ public static class Students
                 
             var totalCount = await studentOfCoachQueryable.CountAsync();
 
-            var studentsOfCoach = await studentOfCoachQueryable
+            studentOfCoachQueryable = studentOfCoachQueryable
                 .Include(x => x.Student)
-                .Include(x => x.Student.StudentDetail)
+                .Include(x => x.Student.StudentDetail);
+            
+            if (filter is not null)
+            {
+                if (filter.Grade is not null)
+                {
+                    var gradeFilterItems = new List<Grade>();
+                    
+                    if (filter.Grade.Dokuz.HasValue && filter.Grade.Dokuz.Value)
+                        gradeFilterItems.Add(Grade.Dokuz);
+                    
+                    if (filter.Grade.On.HasValue && filter.Grade.On.Value)
+                        gradeFilterItems.Add(Grade.On);
+                    
+                    if (filter.Grade.Onbir.HasValue && filter.Grade.Onbir.Value)
+                        gradeFilterItems.Add(Grade.Onbir);
+                    
+                    if (filter.Grade.Oniki.HasValue && filter.Grade.Oniki.Value)
+                        gradeFilterItems.Add(Grade.Oniki);
+                    
+                    if (filter.Grade.Mezun.HasValue && filter.Grade.Mezun.Value)
+                        gradeFilterItems.Add(Grade.Mezun);
+
+                    studentOfCoachQueryable = studentOfCoachQueryable.WhereIf(x => gradeFilterItems.Contains(x.Student.StudentDetail.Grade),
+                        gradeFilterItems.Any());
+                }
+
+                if (filter.Video is not null)
+                {
+                    var videoReservationDayFilterItems = new List<DayOfWeek>();
+                    
+                    if (filter.Video.Monday.HasValue && filter.Video.Monday.Value)
+                        videoReservationDayFilterItems.Add(DayOfWeek.Monday);
+                    
+                    if (filter.Video.Tuesday.HasValue && filter.Video.Tuesday.Value)
+                        videoReservationDayFilterItems.Add(DayOfWeek.Tuesday);
+                    
+                    if (filter.Video.Wednesday.HasValue && filter.Video.Wednesday.Value)
+                        videoReservationDayFilterItems.Add(DayOfWeek.Wednesday);
+
+                    if (filter.Video.Thursday.HasValue && filter.Video.Thursday.Value)
+                        videoReservationDayFilterItems.Add(DayOfWeek.Thursday);
+                    
+                    if (filter.Video.Friday.HasValue && filter.Video.Friday.Value)
+                        videoReservationDayFilterItems.Add(DayOfWeek.Friday);
+                    
+                    if (filter.Video.Saturday.HasValue && filter.Video.Saturday.Value)
+                        videoReservationDayFilterItems.Add(DayOfWeek.Saturday);
+                    
+                    if (filter.Video.Sunday.HasValue && filter.Video.Sunday.Value)
+                        videoReservationDayFilterItems.Add(DayOfWeek.Sunday);
+                    
+                    studentOfCoachQueryable = studentOfCoachQueryable.WhereIf(
+                        x => x.VideoDay.HasValue && videoReservationDayFilterItems.Contains(x.VideoDay.Value),
+                        videoReservationDayFilterItems.Any());
+                }
+                
+                if (filter.Voice is not null)
+                {
+                    var voiceReservationDayFilterItems = new List<DayOfWeek>();
+                    
+                    if (filter.Voice.Monday.HasValue && filter.Voice.Monday.Value)
+                        voiceReservationDayFilterItems.Add(DayOfWeek.Monday);
+                    
+                    if (filter.Voice.Tuesday.HasValue && filter.Voice.Tuesday.Value)
+                        voiceReservationDayFilterItems.Add(DayOfWeek.Tuesday);
+                    
+                    if (filter.Voice.Wednesday.HasValue && filter.Voice.Wednesday.Value)
+                        voiceReservationDayFilterItems.Add(DayOfWeek.Wednesday);
+
+                    if (filter.Voice.Thursday.HasValue && filter.Voice.Thursday.Value)
+                        voiceReservationDayFilterItems.Add(DayOfWeek.Thursday);
+                    
+                    if (filter.Voice.Friday.HasValue && filter.Voice.Friday.Value)
+                        voiceReservationDayFilterItems.Add(DayOfWeek.Friday);
+                    
+                    if (filter.Voice.Saturday.HasValue && filter.Voice.Saturday.Value)
+                        voiceReservationDayFilterItems.Add(DayOfWeek.Saturday);
+                    
+                    if (filter.Voice.Sunday.HasValue && filter.Voice.Sunday.Value)
+                        voiceReservationDayFilterItems.Add(DayOfWeek.Sunday);
+                    
+                    studentOfCoachQueryable = studentOfCoachQueryable.WhereIf(
+                        x => x.VoiceDay.HasValue && voiceReservationDayFilterItems.Contains(x.VoiceDay.Value),
+                        voiceReservationDayFilterItems.Any());
+                }
+
+                if (filter.ExamFilter is not null)
+                {
+                    var examFilterItems = new List<ExamType>();
+                    
+                    if (filter.ExamFilter.TYT_TM.HasValue && filter.ExamFilter.TYT_TM.Value)
+                        examFilterItems.Add(ExamType.TYT_TM);
+                    
+                    if (filter.ExamFilter.TYT_MF.HasValue && filter.ExamFilter.TYT_MF.Value)
+                        examFilterItems.Add(ExamType.TYT_MF);
+                    
+                    if (filter.ExamFilter.TYT_SOZEL.HasValue && filter.ExamFilter.TYT_SOZEL.Value)
+                        examFilterItems.Add(ExamType.TYT_SOZEL);
+                    
+                    if (filter.ExamFilter.TM.HasValue && filter.ExamFilter.TM.Value)
+                        examFilterItems.Add(ExamType.TM);
+                    
+                    if (filter.ExamFilter.MF.HasValue && filter.ExamFilter.MF.Value)
+                        examFilterItems.Add(ExamType.MF);
+                    
+                    if (filter.ExamFilter.Sozel.HasValue && filter.ExamFilter.Sozel.Value)
+                        examFilterItems.Add(ExamType.Sozel);
+                    
+                    if (filter.ExamFilter.Dil.HasValue && filter.ExamFilter.Dil.Value)
+                        examFilterItems.Add(ExamType.Dil);
+                    
+                    studentOfCoachQueryable = studentOfCoachQueryable.WhereIf(x => examFilterItems.Contains(x.Student.StudentDetail.ExamType),
+                        examFilterItems.Any());
+                }
+            }
+
+            var studentsOfCoach = await studentOfCoachQueryable
                 .Skip((paginationFilter.PageNumber - 1) * paginationFilter.PageSize)
                 .Take(paginationFilter.PageSize).ToListAsync();
             
@@ -429,7 +547,7 @@ public static class Students
                     Id = studentOfCoach.StudentId,
                     Name = studentOfCoach.Student.StudentDetail.Name,
                     Surname = studentOfCoach.Student.StudentDetail.Surname,
-                    Day = studentOfCoach.Day
+                    Day = studentOfCoach.VideoDay
                 };
 
                 if (studentProfilePhotos.Contains(studentOfCoach.StudentId))
@@ -448,6 +566,48 @@ public static class Students
             return TypedResults.Ok(pagedResponse);
         
         }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags(TagConstants.CoachMeStudents).RequireAuthorization("CoachOrPdr");
+    }
+    
+    public sealed class StudentFilterRequest
+    {
+        public GradeFilter? Grade { get; set; }
+        
+        public ExamFilter ExamFilter { get; set; }
+
+        public ReservationDayFilter? Video { get; set; }
+        
+        public ReservationDayFilter? Voice { get; set; }
+    }
+    
+    public sealed class GradeFilter
+    {
+        public bool? Dokuz { get; set; }
+        public bool? On { get; set; }
+        public bool? Onbir { get; set; }
+        public bool? Oniki { get; set; }
+        public bool? Mezun { get; set; }
+    }
+    
+    public sealed class ExamFilter
+    {
+        public bool? TYT_TM { get; set; }
+        public bool? TYT_MF { get; set; }
+        public bool? TYT_SOZEL { get; set; }
+        public bool? TM { get; set; }
+        public bool? MF { get; set; }
+        public bool? Sozel { get; set; }
+        public bool? Dil { get; set; }
+    }
+    
+    public sealed class ReservationDayFilter
+    {
+        public bool? Sunday { get; set; }
+        public bool? Monday { get; set; }
+        public bool? Tuesday { get; set; }
+        public bool? Wednesday { get; set; }
+        public bool? Thursday { get; set; }
+        public bool? Friday { get; set; }
+        public bool? Saturday { get; set; }
     }
     
     public sealed class StudentItem

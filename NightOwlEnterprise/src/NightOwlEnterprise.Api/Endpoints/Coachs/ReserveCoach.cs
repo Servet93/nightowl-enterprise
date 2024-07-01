@@ -88,23 +88,24 @@ public static class ReserveCoach
                             "Koç Seçimi Yapılamadı!");
                     }
                     
-                    var studentCountForDay = coach.CoachStudentTrainingSchedules.Count(x => x.Day == inviteRequest.Day);
+                    var studentCountForDay = coach.CoachStudentTrainingSchedules.Count(x => x.VideoDay == inviteRequest.Day);
 
                     if (studentCountForDay >= dayQuota)
                     {
                         return new ErrorDescriptor("QuotaFull", "Belirtilen gün için koçun kontenjanı dolu!").CreateProblem(
                             "Koç seçilemedi!");
                     }
+                    
+                    var date = DateUtils.FindDate(inviteRequest.Day);
 
                     dbContext.CoachStudentTrainingSchedules.Add(new CoachStudentTrainingSchedule()
                     {
                         CoachId = coachId,
                         StudentId = studentId,
-                        Day = inviteRequest.Day,
+                        VideoDay = inviteRequest.Day,
+                        VoiceDay = date.AddDays(3).DayOfWeek, 
                         CreatedAt = DateTime.UtcNow.ConvertUtcToTimeZone()
                     });
-
-                    var date = DateUtils.FindDate(inviteRequest.Day);
 
                     for (int i = 1; i <= 4; i++)
                     {
@@ -115,6 +116,7 @@ public static class ReserveCoach
                             State = InvitationState.SpecifyHour,
                             Type = InvitationType.VideoCall,
                             Date = date,
+                            Day = date.DayOfWeek,
                         });
                     
                         dbContext.Invitations.Add(new Invitation()
@@ -124,6 +126,7 @@ public static class ReserveCoach
                             State = InvitationState.SpecifyHour,
                             Type = InvitationType.VoiceCall,
                             Date = date.AddDays(3),
+                            Day = date.AddDays(3).DayOfWeek
                         });
 
                         date = date.AddDays(7);

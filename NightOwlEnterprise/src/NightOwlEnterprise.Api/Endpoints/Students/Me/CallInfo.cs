@@ -23,7 +23,7 @@ public static class CallInfo
                 var invitations = dbContext.Invitations
                     .Include(x => x.ZoomMeetDetail)
                     .Where(x => x.StudentId == studentId)
-                    .OrderByDescending(x => x.Date)
+                    .OrderBy(x => x.Date)
                     .Take(2).Select(x => new
                     {
                         Id = x.Id,
