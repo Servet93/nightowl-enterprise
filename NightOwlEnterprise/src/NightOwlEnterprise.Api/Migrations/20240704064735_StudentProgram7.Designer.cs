@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -10,9 +11,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace NightOwlEnterprise.Api.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240704064735_StudentProgram7")]
+    partial class StudentProgram7
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1000,18 +1003,11 @@ namespace NightOwlEnterprise.Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("CoachId")
-                        .HasColumnType("uuid");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp without time zone");
 
                     b.Property<DateTime>("Date")
                         .HasColumnType("date");
-
-                    b.Property<string>("DateText")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<int>("Day")
                         .HasColumnType("integer");
@@ -1026,9 +1022,10 @@ namespace NightOwlEnterprise.Api.Migrations
                     b.Property<Guid>("StudentProgramWeeklyId")
                         .HasColumnType("uuid");
 
-                    b.HasKey("Id");
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
 
-                    b.HasIndex("CoachId");
+                    b.HasKey("Id");
 
                     b.HasIndex("StudentId");
 
@@ -1050,21 +1047,24 @@ namespace NightOwlEnterprise.Api.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("Excuse")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<int>("Lesson")
                         .HasColumnType("integer");
 
-                    b.Property<byte?>("Minute")
+                    b.Property<byte>("Minute")
                         .HasColumnType("smallint");
 
                     b.Property<string>("Not")
+                        .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int?>("QuestionCount")
+                    b.Property<int>("QuestionCount")
                         .HasColumnType("integer");
 
                     b.Property<string>("Resource")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<int>("State")
@@ -1076,9 +1076,6 @@ namespace NightOwlEnterprise.Api.Migrations
                     b.Property<string>("Subject")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<int>("TaskType")
-                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -1578,12 +1575,6 @@ namespace NightOwlEnterprise.Api.Migrations
 
             modelBuilder.Entity("NightOwlEnterprise.Api.Entities.StudentProgramDaily", b =>
                 {
-                    b.HasOne("NightOwlEnterprise.Api.Entities.ApplicationUser", "Coach")
-                        .WithMany()
-                        .HasForeignKey("CoachId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("NightOwlEnterprise.Api.Entities.ApplicationUser", "Student")
                         .WithMany()
                         .HasForeignKey("StudentId")
@@ -1595,8 +1586,6 @@ namespace NightOwlEnterprise.Api.Migrations
                         .HasForeignKey("StudentProgramWeeklyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Coach");
 
                     b.Navigation("Student");
 

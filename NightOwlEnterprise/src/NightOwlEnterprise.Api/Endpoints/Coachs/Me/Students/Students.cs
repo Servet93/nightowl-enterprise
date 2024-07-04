@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -23,7 +24,7 @@ using Swashbuckle.AspNetCore.Filters;
 using ResourcesAYT = NightOwlEnterprise.Api.Entities.ResourcesAYT;
 using ResourcesTYT = NightOwlEnterprise.Api.Entities.ResourcesTYT;
 
-namespace NightOwlEnterprise.Api.Endpoints.Coachs.Me;
+namespace NightOwlEnterprise.Api.Endpoints.Coachs.Me.Students;
 
 public static class Students
 {
@@ -139,14 +140,8 @@ public static class Students
                 {
                     var examFilterItems = new List<ExamType>();
                     
-                    if (filter.ExamFilter.TYT_TM.HasValue && filter.ExamFilter.TYT_TM.Value)
-                        examFilterItems.Add(ExamType.TYT_TM);
-                    
-                    if (filter.ExamFilter.TYT_MF.HasValue && filter.ExamFilter.TYT_MF.Value)
-                        examFilterItems.Add(ExamType.TYT_MF);
-                    
-                    if (filter.ExamFilter.TYT_SOZEL.HasValue && filter.ExamFilter.TYT_SOZEL.Value)
-                        examFilterItems.Add(ExamType.TYT_SOZEL);
+                    if (filter.ExamFilter.TYT.HasValue && filter.ExamFilter.TYT.Value)
+                        examFilterItems.Add(ExamType.TYT);
                     
                     if (filter.ExamFilter.TM.HasValue && filter.ExamFilter.TM.Value)
                         examFilterItems.Add(ExamType.TM);
@@ -590,9 +585,11 @@ public static class Students
     
     public sealed class ExamFilter
     {
-        public bool? TYT_TM { get; set; }
-        public bool? TYT_MF { get; set; }
-        public bool? TYT_SOZEL { get; set; }
+        // public bool? TYT_TM { get; set; }
+        // public bool? TYT_MF { get; set; }
+        // public bool? TYT_SOZEL { get; set; }
+        
+        public bool? TYT { get; set; }
         public bool? TM { get; set; }
         public bool? MF { get; set; }
         public bool? Sozel { get; set; }

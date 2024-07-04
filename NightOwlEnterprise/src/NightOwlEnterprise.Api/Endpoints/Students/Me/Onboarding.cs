@@ -348,9 +348,10 @@ public static class Onboard
                 errorDescriptors.AddRange(ValidateLastPracticeTytExamPoints(request.LastPracticeTytExamPoints));
             }
             
-            if (request.StudentGeneralInfo?.ExamType != ExamType.TYT_TM 
-                && request.StudentGeneralInfo?.ExamType != ExamType.TYT_MF
-                && request.StudentGeneralInfo?.ExamType != ExamType.TYT_SOZEL
+            if (request.StudentGeneralInfo?.ExamType != ExamType.TYT 
+                // request.StudentGeneralInfo?.ExamType != ExamType.TYT_TM 
+                // && request.StudentGeneralInfo?.ExamType != ExamType.TYT_MF
+                // && request.StudentGeneralInfo?.ExamType != ExamType.TYT_SOZEL
                 && request.IsTryPracticeAYTExamBefore) // Alan Yeterlilik Testi
             {
                 switch (request.StudentGeneralInfo.ExamType)
@@ -930,7 +931,7 @@ public static class Onboard
             Surname = "ŞEKER",
             Email = "servetseker@gmail.com",
             Grade = Grade.Oniki,
-            ExamType = ExamType.TYT_TM,
+            ExamType = ExamType.TYT,
             Mobile = "533-333-33-33",
         };
         

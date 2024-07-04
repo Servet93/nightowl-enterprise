@@ -2,9 +2,10 @@
 
 public enum ExamType
 {
-    TYT_TM,
-    TYT_MF,
-    TYT_SOZEL,
+    // TYT_TM,
+    // TYT_MF,
+    // TYT_SOZEL,
+    TYT,
     TM,
     MF,
     Sozel,

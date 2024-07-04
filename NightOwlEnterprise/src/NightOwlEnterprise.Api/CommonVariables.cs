@@ -1,4 +1,6 @@
-﻿namespace NightOwlEnterprise.Api;
+﻿using NightOwlEnterprise.Api.Entities.Enums;
+
+namespace NightOwlEnterprise.Api;
 
 public class CommonVariables
 {

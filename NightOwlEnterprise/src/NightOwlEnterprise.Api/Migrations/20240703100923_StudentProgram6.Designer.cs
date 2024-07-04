@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -10,9 +11,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace NightOwlEnterprise.Api.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240703100923_StudentProgram6")]
+    partial class StudentProgram6
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1000,18 +1003,11 @@ namespace NightOwlEnterprise.Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("CoachId")
-                        .HasColumnType("uuid");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp without time zone");
 
                     b.Property<DateTime>("Date")
                         .HasColumnType("date");
-
-                    b.Property<string>("DateText")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<int>("Day")
                         .HasColumnType("integer");
@@ -1020,71 +1016,58 @@ namespace NightOwlEnterprise.Api.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("StudentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("StudentProgramWeeklyId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CoachId");
-
-                    b.HasIndex("StudentId");
-
-                    b.HasIndex("StudentProgramWeeklyId");
-
-                    b.ToTable("StudentProgramDaily");
-                });
-
-            modelBuilder.Entity("NightOwlEnterprise.Api.Entities.StudentProgramDailyTasks", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
-
                     b.Property<int>("ExamType")
                         .HasColumnType("integer");
 
                     b.Property<string>("Excuse")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<int>("Lesson")
                         .HasColumnType("integer");
 
-                    b.Property<byte?>("Minute")
+                    b.Property<byte>("Minute")
                         .HasColumnType("smallint");
 
                     b.Property<string>("Not")
+                        .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int?>("QuestionCount")
+                    b.Property<int>("QuestionCount")
                         .HasColumnType("integer");
 
                     b.Property<string>("Resource")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<int>("State")
                         .HasColumnType("integer");
 
-                    b.Property<Guid>("StudentProgramDailyId")
+                    b.Property<Guid>("StudentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("StudentProgramId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("StudentProgramWeeklyId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Subject")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("TaskType")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("StudentProgramDailyId");
+                    b.HasIndex("StudentId");
 
-                    b.ToTable("StudentProgramDailyTasks");
+                    b.HasIndex("StudentProgramId");
+
+                    b.HasIndex("StudentProgramWeeklyId");
+
+                    b.ToTable("StudentProgramDaily");
                 });
 
             modelBuilder.Entity("NightOwlEnterprise.Api.Entities.StudentProgramWeekly", b =>
@@ -1578,40 +1561,29 @@ namespace NightOwlEnterprise.Api.Migrations
 
             modelBuilder.Entity("NightOwlEnterprise.Api.Entities.StudentProgramDaily", b =>
                 {
-                    b.HasOne("NightOwlEnterprise.Api.Entities.ApplicationUser", "Coach")
-                        .WithMany()
-                        .HasForeignKey("CoachId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("NightOwlEnterprise.Api.Entities.ApplicationUser", "Student")
                         .WithMany()
                         .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("NightOwlEnterprise.Api.Entities.StudentProgram", "StudentProgram")
+                        .WithMany()
+                        .HasForeignKey("StudentProgramId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("NightOwlEnterprise.Api.Entities.StudentProgramWeekly", "StudentProgramWeekly")
-                        .WithMany("Dailies")
+                        .WithMany()
                         .HasForeignKey("StudentProgramWeeklyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Coach");
-
                     b.Navigation("Student");
 
+                    b.Navigation("StudentProgram");
+
                     b.Navigation("StudentProgramWeekly");
-                });
-
-            modelBuilder.Entity("NightOwlEnterprise.Api.Entities.StudentProgramDailyTasks", b =>
-                {
-                    b.HasOne("NightOwlEnterprise.Api.Entities.StudentProgramDaily", "StudentProgramDaily")
-                        .WithMany("DailyTasks")
-                        .HasForeignKey("StudentProgramDailyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("StudentProgramDaily");
                 });
 
             modelBuilder.Entity("NightOwlEnterprise.Api.Entities.StudentProgramWeekly", b =>
@@ -1715,16 +1687,6 @@ namespace NightOwlEnterprise.Api.Migrations
             modelBuilder.Entity("NightOwlEnterprise.Api.Entities.StudentProgram", b =>
                 {
                     b.Navigation("Weeklies");
-                });
-
-            modelBuilder.Entity("NightOwlEnterprise.Api.Entities.StudentProgramDaily", b =>
-                {
-                    b.Navigation("DailyTasks");
-                });
-
-            modelBuilder.Entity("NightOwlEnterprise.Api.Entities.StudentProgramWeekly", b =>
-                {
-                    b.Navigation("Dailies");
                 });
 
             modelBuilder.Entity("NightOwlEnterprise.Api.Entities.ZoomMeetDetail", b =>

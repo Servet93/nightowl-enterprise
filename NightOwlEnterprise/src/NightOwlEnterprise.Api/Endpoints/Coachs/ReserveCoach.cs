@@ -95,9 +95,11 @@ public static class ReserveCoach
                         return new ErrorDescriptor("QuotaFull", "Belirtilen gün için koçun kontenjanı dolu!").CreateProblem(
                             "Koç seçilemedi!");
                     }
+
+                    var turkishCulture = new System.Globalization.CultureInfo("tr-TR");
                     
                     var date = DateUtils.FindDate(inviteRequest.Day);
-
+                    
                     dbContext.CoachStudentTrainingSchedules.Add(new CoachStudentTrainingSchedule()
                     {
                         CoachId = coachId,
@@ -107,8 +109,20 @@ public static class ReserveCoach
                         CreatedAt = DateTime.UtcNow.ConvertUtcToTimeZone()
                     });
 
+                    var studentProgram = new StudentProgram()
+                    {
+                        CoachId = coachId,
+                        StudentId = studentId,
+                        StartDate = date,
+                        StartDateText = date.ToString("dd MMMM yyyy, dddd",
+                            new System.Globalization.CultureInfo("tr-TR")),
+                        CreatedAt = DateTime.UtcNow.ConvertUtcToTimeZone()
+                    };
+
                     for (int i = 1; i <= 4; i++)
                     {
+                        var weeklyStartDate = date;
+                        
                         dbContext.Invitations.Add(new Invitation()
                         {
                             CoachId = coachId,
@@ -130,7 +144,43 @@ public static class ReserveCoach
                         });
 
                         date = date.AddDays(7);
+
+                        var weeklyEndDate = date;
+
+                        var weekly = new StudentProgramWeekly()
+                        {
+                            CoachId = coachId,
+                            StudentId = studentId,
+                            StartDate = weeklyStartDate,
+                            StartDateText = weeklyStartDate.ToString("dd MMMM yyyy, dddd", turkishCulture),
+                            EndDate = weeklyEndDate,
+                            EndDateText = date.ToString("dd MMMM yyyy, dddd", turkishCulture),
+                            CreatedAt = DateTime.UtcNow.ConvertUtcToTimeZone()
+                        };
+                        
+                        for (DateTime dailyStartDate = weeklyStartDate; dailyStartDate <= weeklyEndDate; dailyStartDate = dailyStartDate.AddDays(1))
+                        {
+                            var dayText = turkishCulture.DateTimeFormat.GetDayName(dailyStartDate.DayOfWeek);
+                            
+                            weekly.Dailies.Add(new StudentProgramDaily()
+                            {
+                                StudentId = studentId,
+                                CoachId = coachId,
+                                Date = dailyStartDate,
+                                DateText = dailyStartDate.ToString("dd MMMM yyyy, dddd", turkishCulture),
+                                Day = dailyStartDate.DayOfWeek,
+                                DayText = dayText,
+                                CreatedAt = DateTime.UtcNow.ConvertUtcToTimeZone()
+                            });
+                        }
+                        
+                        studentProgram.Weeklies.Add(weekly);
                     }
+
+                    studentProgram.EndDate = date;
+                    studentProgram.EndDateText = date.ToString("dd MMMM yyyy, dddd", turkishCulture);
+                    
+                    dbContext.StudentPrograms.Add(studentProgram);
 
                     var student = dbContext.StudentDetail.FirstOrDefault(x => x.StudentId == studentId);
                     

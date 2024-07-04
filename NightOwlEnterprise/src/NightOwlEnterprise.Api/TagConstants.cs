@@ -26,5 +26,7 @@ public class TagConstants
     
     public const string CoachMeStudents = "Koç -> Öğrencilere ait bilgileri edinme";
     
+    public const string CoachMeStudentsProgram = "Koç -> Öğrencilere ait program bilgilerini edinme";
+    
     public const string PdrMeReservationDay = "Pdr -> Görüşme günü belirleme";
 }

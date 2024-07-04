@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -10,9 +11,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace NightOwlEnterprise.Api.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240704071156_StudentProgram8")]
+    partial class StudentProgram8
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1050,21 +1053,24 @@ namespace NightOwlEnterprise.Api.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("Excuse")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<int>("Lesson")
                         .HasColumnType("integer");
 
-                    b.Property<byte?>("Minute")
+                    b.Property<byte>("Minute")
                         .HasColumnType("smallint");
 
                     b.Property<string>("Not")
+                        .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int?>("QuestionCount")
+                    b.Property<int>("QuestionCount")
                         .HasColumnType("integer");
 
                     b.Property<string>("Resource")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<int>("State")
@@ -1076,9 +1082,6 @@ namespace NightOwlEnterprise.Api.Migrations
                     b.Property<string>("Subject")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<int>("TaskType")
-                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 

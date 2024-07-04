@@ -59,11 +59,11 @@ public static class List
 
             coachQueryable = studentExamType switch
             {
-                ExamType.TYT_TM => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.TM),
+                // ExamType.TYT_TM => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.TM),
                 ExamType.TM => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.TM),
-                ExamType.TYT_MF => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.MF),
+                // ExamType.TYT_MF => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.MF),
                 ExamType.MF => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.MF),
-                ExamType.TYT_SOZEL => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.Sozel),
+                // ExamType.TYT_SOZEL => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.Sozel),
                 ExamType.Sozel => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.Sozel),
                 ExamType.Dil => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.Dil),
             };

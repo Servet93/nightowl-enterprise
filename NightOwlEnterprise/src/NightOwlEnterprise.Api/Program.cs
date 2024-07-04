@@ -910,6 +910,11 @@ public class ApplicationDbContext : Microsoft.AspNetCore.Identity.EntityFramewor
     
     public DbSet<VoiceCallsHistory> VoiceCallsHistories { get; set; }
     
+    public DbSet<StudentProgram> StudentPrograms { get; set; }
+    public DbSet<StudentProgramWeekly> StudentProgramWeekly { get; set; }
+    public DbSet<StudentProgramDaily> StudentProgramDaily { get; set; }
+    public DbSet<StudentProgramDailyTasks> StudentProgramDailyTasks { get; set; }
+    
     public ApplicationDbContext(Microsoft.EntityFrameworkCore.DbContextOptions<ApplicationDbContext> options) :
         base(options)
     {
@@ -1111,5 +1116,107 @@ public class ApplicationDbContext : Microsoft.AspNetCore.Identity.EntityFramewor
         // ProfilePhoto tablosunun ilişkilerini belirtiyoruz
         builder.Entity<ProfilePhoto>()
             .HasKey(cd => cd.UserId); // Primary key'i belirtiyoruz
+        
+        builder.Entity<StudentProgram>()
+            .Property(sp => sp.StartDate)
+            .HasColumnType("date");
+        
+        builder.Entity<StudentProgram>()
+            .Property(sp => sp.EndDate)
+            .HasColumnType("date");
+        
+        builder.Entity<StudentProgram>()
+            .Property(sp => sp.CreatedAt)
+            .HasColumnType("timestamp without time zone");
+        
+        builder.Entity<StudentProgram>()
+            .HasOne(sp => sp.Student)
+            .WithMany()
+            .HasForeignKey(sp => sp.StudentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<StudentProgram>()
+            .HasOne(sp => sp.Coach)
+            .WithMany()
+            .HasForeignKey(sp => sp.CoachId)
+            .OnDelete(DeleteBehavior.Cascade);
+        
+        builder.Entity<StudentProgram>()
+            .HasMany(sp => sp.Weeklies)
+            .WithOne(wk => wk.StudentProgram)
+            .HasForeignKey(sp => sp.StudentProgramId)
+            .OnDelete(DeleteBehavior.Cascade);
+        
+        builder.Entity<StudentProgramWeekly>()
+            .HasOne(spw => spw.StudentProgram)
+            .WithMany(x => x.Weeklies)
+            .HasForeignKey(spw => spw.StudentProgramId)
+            .OnDelete(DeleteBehavior.Cascade);
+        
+        builder.Entity<StudentProgramWeekly>()
+            .Property(spw => spw.StartDate)
+            .HasColumnType("date");
+        
+        builder.Entity<StudentProgramWeekly>()
+            .Property(spw => spw.EndDate)
+            .HasColumnType("date");
+        
+        builder.Entity<StudentProgramWeekly>()
+            .Property(sp => sp.CreatedAt)
+            .HasColumnType("timestamp without time zone");
+        
+        builder.Entity<StudentProgramWeekly>()
+            .HasOne(spw => spw.StudentProgram)
+            .WithMany(x => x.Weeklies)
+            .HasForeignKey(spw => spw.StudentProgramId)
+            .OnDelete(DeleteBehavior.Cascade);
+        
+        builder.Entity<StudentProgramWeekly>()
+            .HasOne(sp => sp.Student)
+            .WithMany()
+            .HasForeignKey(sp => sp.StudentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<StudentProgramWeekly>()
+            .HasOne(sp => sp.Coach)
+            .WithMany()
+            .HasForeignKey(sp => sp.CoachId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<StudentProgramDaily>()
+            .HasOne(spw => spw.StudentProgramWeekly)
+            .WithMany(x => x.Dailies)
+            .HasForeignKey(spw => spw.StudentProgramWeeklyId)
+            .OnDelete(DeleteBehavior.Cascade);
+        
+        builder.Entity<StudentProgramDaily>()
+            .Property(spd => spd.Date)
+            .HasColumnType("date");
+        
+        builder.Entity<StudentProgramDaily>()
+            .Property(sp => sp.CreatedAt)
+            .HasColumnType("timestamp without time zone");
+        
+        builder.Entity<StudentProgramDaily>()
+            .HasOne(sp => sp.Student)
+            .WithMany()
+            .HasForeignKey(sp => sp.StudentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<StudentProgramDaily>()
+            .HasOne(sp => sp.Coach)
+            .WithMany()
+            .HasForeignKey(sp => sp.CoachId)
+            .OnDelete(DeleteBehavior.Cascade);
+        
+        builder.Entity<StudentProgramDailyTasks>()
+            .Property(sp => sp.CreatedAt)
+            .HasColumnType("timestamp without time zone");
+        
+        builder.Entity<StudentProgramDailyTasks>()
+            .HasOne(spw => spw.StudentProgramDaily)
+            .WithMany(x => x.DailyTasks)
+            .HasForeignKey(spw => spw.StudentProgramDailyId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

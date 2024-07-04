@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Options;
 using NightOwlEnterprise.Api.Endpoints.Coachs.Identity;
 using NightOwlEnterprise.Api.Endpoints.Coachs.Me;
+using NightOwlEnterprise.Api.Endpoints.Coachs.Me.Students;
 using NightOwlEnterprise.Api.Entities;
 
 namespace NightOwlEnterprise.Api.Endpoints.Coachs;
@@ -42,6 +43,7 @@ public static class CoachIdentityEndpoints
         routeGroup.MapManageInfo();
         routeGroup.MapStateInfo();
         routeGroup.MapStudents();
+        routeGroup.MapProgram();
         routeGroup.MapGetProfilePhoto();
         routeGroup.MapUploadProfilePhoto();
         
