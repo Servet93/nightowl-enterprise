@@ -100,6 +100,8 @@ public class StudentProgramDailyTasks
     public Lesson Lesson { get; set; }
 
     public DateTime CreatedAt { get; set; }
+    
+    public DateTime? UpdatedAt { get; set; }
 
     public string Subject { get; set; }
     
@@ -107,11 +109,16 @@ public class StudentProgramDailyTasks
 
     public ushort? QuestionCount { get; set; }
     
-    public byte? Minute { get; set; }
+    public ushort? EstimatedMinute { get; set; }
     
     public string? Not { get; set; }
     
     public string? Excuse { get; set; }
+    
+    public ushort? CompletedMinute { get; set; }
+
+    public DateTime? DoneTime { get; set; }
+    
 }
 
 

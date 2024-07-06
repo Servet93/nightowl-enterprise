@@ -2,7 +2,7 @@
 
 public enum TaskState
 {
-    Done,
-    PartiallyDone,
-    Idle,
+    Done = 2,
+    PartiallyDone = 1,
+    Idle = 0,
 }

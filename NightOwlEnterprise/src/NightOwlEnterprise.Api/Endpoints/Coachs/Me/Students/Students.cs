@@ -49,7 +49,11 @@ public static class Students
 
             studentOfCoachQueryable = studentOfCoachQueryable
                 .Include(x => x.Student)
-                .Include(x => x.Student.StudentDetail);
+                .Include(x => x.Student.StudentDetail)
+                .WhereIf(x => x.Student.StudentDetail.Name.Contains(filter.Search) ||
+                              x.Student.Email.Contains(filter.Search) ||
+                              x.Student.StudentDetail.Email.Contains(filter.Search),
+                    !string.IsNullOrEmpty(filter.Search));
             
             if (filter is not null)
             {
@@ -209,7 +213,7 @@ public static class Students
         }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags(TagConstants.CoachMeStudents).RequireAuthorization("CoachOrPdr");
         
         endpoints.MapGet("me/students/{studentId}", async Task<Results<Ok<StudentItem>, ProblemHttpResult>>
-            ([FromQuery] Guid studentId, ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
+            ([FromRoute] Guid studentId, ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
         {
             var dbContext = sp.GetRequiredService<ApplicationDbContext>();
             
@@ -255,7 +259,7 @@ public static class Students
         }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags(TagConstants.CoachMeStudents).RequireAuthorization("CoachOrPdr");
         
         endpoints.MapGet("me/students/{studentId}/onboard-info", async Task<Results<Ok<StudentOnboardInfo>, ProblemHttpResult>>
-            ([FromQuery] Guid studentId, ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
+            ([FromRoute] Guid studentId, ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
         {
             var dbContext = sp.GetRequiredService<ApplicationDbContext>();
             
@@ -561,10 +565,70 @@ public static class Students
             return TypedResults.Ok(pagedResponse);
         
         }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags(TagConstants.CoachMeStudents).RequireAuthorization("CoachOrPdr");
+         
+         endpoints.MapGet("/me/students/{studentId}/call-info", async Task<Results<Ok<CallInfoResponse>, ProblemHttpResult>>
+                ([FromRoute] Guid studentId, ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
+            {
+                var coachId = claimsPrincipal.GetId();
+
+                var dbContext = sp.GetRequiredService<ApplicationDbContext>();
+
+                var now = DateTime.UtcNow.ConvertUtcToTimeZone();
+                
+                var invitations = dbContext.Invitations
+                    .Include(x => x.ZoomMeetDetail)
+                    .Where(x => x.StudentId == studentId && x.CoachId == coachId && x.Date >= now)
+                    .OrderBy(x => x.Date)
+                    .Take(2).Select(x => new
+                    {
+                        Id = x.Id,
+                        Date = x.Date,
+                        State = x.State,
+                        Type = x.Type,
+                        StartTime = x.StartTime,
+                        EndTime = x.EndTime,
+                        Enabled = x.State == InvitationState.Open,
+                        JoinUrl = x.ZoomMeetDetail.CoachJoinUrl,
+                    }).ToList();
+
+                var callInfoResponse = new CallInfoResponse();
+
+                var videoCall = invitations.FirstOrDefault(x => x.Type == InvitationType.VideoCall);
+                var voiceCall = invitations.FirstOrDefault(x => x.Type == InvitationType.VoiceCall);
+
+                if (videoCall is not null)
+                {
+                    callInfoResponse.VideoCall = new VideoCall()
+                    {
+                        Id = videoCall.Id,
+                        Date = videoCall.Date,
+                        StartTime = videoCall.StartTime,
+                        State = videoCall.State,
+                        Enabled = videoCall.Enabled,
+                        JoinUrl = videoCall.JoinUrl
+                    };
+                }
+
+                if (voiceCall is not null)
+                {
+                    callInfoResponse.VoiceCall = new VoiceCall()
+                    {
+                        Id = voiceCall.Id,
+                        Date = voiceCall.Date,
+                        StartTime = voiceCall.StartTime,
+                        State = voiceCall.State,
+                        Enabled = voiceCall.Enabled
+                    };
+                }
+
+                return TypedResults.Ok(callInfoResponse);
+            }).RequireAuthorization("CoachOrPdr").ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi()
+            .WithTags(TagConstants.CoachMeStudents);
     }
     
     public sealed class StudentFilterRequest
     {
+        public string Search { get; set; }
         public GradeFilter? Grade { get; set; }
         
         public ExamFilter ExamFilter { get; set; }

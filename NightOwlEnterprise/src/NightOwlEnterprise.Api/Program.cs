@@ -1218,5 +1218,13 @@ public class ApplicationDbContext : Microsoft.AspNetCore.Identity.EntityFramewor
             .WithMany(x => x.DailyTasks)
             .HasForeignKey(spw => spw.StudentProgramDailyId)
             .OnDelete(DeleteBehavior.Cascade);
+        
+        builder.Entity<StudentProgramDailyTasks>()
+            .Property(spd => spd.DoneTime)
+            .HasColumnType("date");
+        
+        builder.Entity<StudentProgramDailyTasks>()
+            .Property(spd => spd.UpdatedAt)
+            .HasColumnType("date");
     }
 }

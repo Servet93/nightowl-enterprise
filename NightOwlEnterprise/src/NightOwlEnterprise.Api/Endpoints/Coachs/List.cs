@@ -57,16 +57,19 @@ public static class List
                     (x.CoachStudentTrainingSchedules.Where(i => i.CoachId == x.Id && i.VideoDay == DayOfWeek.Sunday).Count() < x.CoachDetail.SundayQuota)
                 );
 
-            coachQueryable = studentExamType switch
+            if (studentExamType != ExamType.TYT)
             {
-                // ExamType.TYT_TM => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.TM),
-                ExamType.TM => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.TM),
-                // ExamType.TYT_MF => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.MF),
-                ExamType.MF => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.MF),
-                // ExamType.TYT_SOZEL => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.Sozel),
-                ExamType.Sozel => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.Sozel),
-                ExamType.Dil => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.Dil),
-            };
+                coachQueryable = studentExamType switch
+                {
+                    // ExamType.TYT_TM => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.TM),
+                    ExamType.TM => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.TM),
+                    // ExamType.TYT_MF => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.MF),
+                    ExamType.MF => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.MF),
+                    // ExamType.TYT_SOZEL => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.Sozel),
+                    ExamType.Sozel => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.Sozel),
+                    ExamType.Dil => coachQueryable.Where(x => x.CoachDetail.DepartmentType == DepartmentType.Dil),
+                };    
+            }
             
             if (filter is not null)
             {

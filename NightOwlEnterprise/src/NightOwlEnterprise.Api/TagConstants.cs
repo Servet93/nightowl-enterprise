@@ -14,6 +14,8 @@ public class TagConstants
     
     public const string StudentsInvitationApproveOrCancel = "Öğrenci -> Randevu Onay & İptal";
     
+    public const string StudentsMeProgram = "Öğrenci -> Program Bilgilerini Edinme";
+    
     public const string CoachScheduling = "Koç -> Randevularını görüntüler ve Saat belirler";
     
     public const string CoachIdentity = "Koç -> Üyelik";

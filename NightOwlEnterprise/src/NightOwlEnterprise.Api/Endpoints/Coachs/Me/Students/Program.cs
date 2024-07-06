@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using NightOwlEnterprise.Api.Endpoints.CommonDto;
 using NightOwlEnterprise.Api.Entities;
 using NightOwlEnterprise.Api.Entities.Enums;
 using NightOwlEnterprise.Api.Utils;
@@ -16,7 +17,7 @@ public static class Program
     {
         endpoints.MapGet("me/students/{studentId}/programs",
                 async Task<Results<Ok<List<StudentProgramInfo>>, ProblemHttpResult>>
-                    ([FromQuery] Guid studentId, ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
+                    ([FromRoute] Guid studentId, ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
                 {
                     var dbContext = sp.GetRequiredService<ApplicationDbContext>();
 
@@ -25,10 +26,10 @@ public static class Program
                     var mountIndex = 1;
                     var weekIndex = 1;
 
-                    var studentPrograms = dbContext.StudentPrograms
+                    var studentPrograms = await dbContext.StudentPrograms
                         .Where(x => x.CoachId == coachId && x.StudentId == studentId)
                         .Include(x => x.Weeklies)
-                        .OrderBy(x => x.StartDate).ToList();
+                        .OrderBy(x => x.StartDate).ToListAsync();
 
                     var studentProgramInfoList = new List<StudentProgramInfo>();
 
@@ -36,8 +37,8 @@ public static class Program
 
                     foreach (var studentProgram in studentPrograms)
                     {
-                        var startDateText = studentProgram.StartDate.ToString("dd MMMM", cultureInfo);
-                        var endDateText = studentProgram.EndDate.ToString("dd MMMM / yyyy", cultureInfo);
+                        var startDateText = studentProgram.StartDate.ToString("dd MMMM \\/ yyyy", cultureInfo);
+                        var endDateText = studentProgram.EndDate.ToString("dd MMMM \\/ yyyy", cultureInfo);
 
                         var studentProgramInfo = new StudentProgramInfo()
                         {
@@ -50,8 +51,8 @@ public static class Program
 
                         foreach (var weeklyInfo in studentProgram.Weeklies)
                         {
-                            var weekStartDateText = weeklyInfo.StartDate.ToString("dd MMMM", cultureInfo);
-                            var weekEndDateText = weeklyInfo.EndDate.ToString("dd MMMM / yyyy", cultureInfo);
+                            var weekStartDateText = weeklyInfo.StartDate.ToString("dd MMMM \\/ yyyy", cultureInfo);
+                            var weekEndDateText = weeklyInfo.EndDate.ToString("dd MMMM \\/ yyyy", cultureInfo);
 
                             studentProgramInfo.Weeklies.Add(new StudentProgramWeeklyInfo()
                             {
@@ -77,14 +78,14 @@ public static class Program
 
         endpoints.MapGet("me/students/{studentId}/programs-week/{weekId}",
                 async Task<Results<Ok<List<StudentProgramDailyInfo>>, ProblemHttpResult>>
-                ([FromQuery] Guid studentId, [FromQuery] Guid weekId, ClaimsPrincipal claimsPrincipal,
+                ([FromRoute] Guid studentId, [FromQuery] Guid weekId, ClaimsPrincipal claimsPrincipal,
                     [FromServices] IServiceProvider sp) =>
                 {
                     var dbContext = sp.GetRequiredService<ApplicationDbContext>();
 
                     var coachId = claimsPrincipal.GetId();
 
-                    var studentProgramDailyInfoList = dbContext.StudentProgramDaily
+                    var studentProgramDailyInfoList = await dbContext.StudentProgramDaily
                         .Where(x => x.StudentProgramWeeklyId == weekId && x.StudentId == studentId &&
                                     x.CoachId == coachId)
                         .Include(x => x.DailyTasks)
@@ -104,7 +105,7 @@ public static class Program
                                 ExamType = y.ExamType
                             }).ToList()
                         })
-                        .ToList();
+                        .ToListAsync();
                     
                     studentProgramDailyInfoList.ForEach(x =>
                     {
@@ -122,8 +123,8 @@ public static class Program
 
         endpoints.MapPost("me/students/{studentId}/programs-tasks/{taskId}",
                 async Task<Results<Ok<StudentProgramDailyTaskInfo>, ProblemHttpResult>>
-                ([FromQuery] Guid studentId, [FromQuery] Guid taskId,
-                    [FromBody] UpdateStudentProgramDailyTaskRequest request, ClaimsPrincipal claimsPrincipal,
+                ([FromRoute] Guid studentId, [FromRoute] Guid taskId,
+                    [FromBody] UpdateStudentProgramDailyTaskDetailRequest request, ClaimsPrincipal claimsPrincipal,
                     [FromServices] IServiceProvider sp) =>
                 {
                     var dbContext = sp.GetRequiredService<ApplicationDbContext>();
@@ -155,20 +156,33 @@ public static class Program
                                 $"Girilen ders bilgisi öğrencinin sınav bilgisineuygun değil. Öğrenci Sınav Tipi: {studentExamType.ToString()}"
                         };
 
-                        return errorDesscriptor.CreateProblem("Öğrenciye görev atanamadı!");
+                        return errorDesscriptor.CreateProblem("Öğrenci görevi güncellenemedi!");
                     }
 
-                    var studentProgramDailyTask = dbContext.StudentProgramDailyTasks.FirstOrDefault(x =>
-                        x.Id == taskId && x.StudentProgramDaily.StudentId == studentId);
+                    var studentProgramDailyTask = await dbContext.StudentProgramDailyTasks.FirstOrDefaultAsync(x =>
+                        x.Id == taskId && x.StudentProgramDaily.StudentId == studentId && x.StudentProgramDaily.CoachId == coachId);
+                    
+                    if (studentProgramDailyTask is null)
+                    {
+                        var errorDescriptor = new ErrorDescriptor()
+                        {
+                            Code = "TaskNotFound",
+                            Description = "Öğrenciye ait görev bulunamadı!",
+                        };
+
+                        return errorDescriptor.CreateProblem("Öğrenci görevi güncellenemedi!'");
+                    }
+
 
                     studentProgramDailyTask.Lesson = request.Lesson;
                     studentProgramDailyTask.ExamType = request.ExamType;
                     studentProgramDailyTask.TaskType = request.TaskType;
                     studentProgramDailyTask.Subject = request.Subject;
                     studentProgramDailyTask.Resource = request.Resource;
-                    studentProgramDailyTask.Minute = request.Minute;
+                    studentProgramDailyTask.EstimatedMinute = request.Minute;
                     studentProgramDailyTask.QuestionCount = request.QuestionCount;
                     studentProgramDailyTask.Not = request.Not;
+                    studentProgramDailyTask.UpdatedAt = DateTime.UtcNow.ConvertUtcToTimeZone();
                     
                     dbContext.SaveChanges();
 
@@ -183,7 +197,7 @@ public static class Program
                         TaskType = studentProgramDailyTask.TaskType,
                         Subject = studentProgramDailyTask.Subject,
                         Resource = studentProgramDailyTask.Resource,
-                        Minute = studentProgramDailyTask.Minute,
+                        EstimatedMinute = studentProgramDailyTask.EstimatedMinute,
                         QuestionCount = studentProgramDailyTask.QuestionCount,
                         State = studentProgramDailyTask.State,
                         Not = studentProgramDailyTask.Not,
@@ -197,7 +211,7 @@ public static class Program
 
         endpoints.MapPost("me/students/{studentId}/programs-daily/{dailyId}",
                 async Task<Results<Ok<StudentProgramDailyTaskInfo>, ProblemHttpResult>>
-                ([FromQuery] Guid studentId, [FromQuery] Guid dailyId,
+                ([FromRoute] Guid studentId, [FromRoute] Guid dailyId,
                     [FromBody] CreateStudentProgramDailyTaskRequest request, ClaimsPrincipal claimsPrincipal,
                     [FromServices] IServiceProvider sp) =>
                 {
@@ -205,10 +219,10 @@ public static class Program
 
                     var coachId = claimsPrincipal.GetId();
 
-                    var studentExamType = dbContext.StudentDetail
+                    var studentExamType = await dbContext.StudentDetail
                         .Where(x => x.StudentId == studentId)
                         .Select(x => x.ExamType)
-                        .FirstOrDefault();
+                        .FirstOrDefaultAsync();
 
                     if (request.ExamType == ProgramExamType.TYT)
                     {
@@ -233,11 +247,22 @@ public static class Program
                         return errorDesscriptor.CreateProblem("Öğrenciye görev atanamadı!");
                     }
 
-                    var studentProgramDailyTask = dbContext.StudentProgramDaily
+                    var studentProgramDailyTask = await dbContext.StudentProgramDaily
                         .Include(x => x.DailyTasks)
-                        .FirstOrDefault(x => x.Id == dailyId && x.StudentId == studentId);
+                        .FirstOrDefaultAsync(x => x.Id == dailyId && x.StudentId == studentId && x.CoachId == coachId);
+                    
+                    if (studentProgramDailyTask is null)
+                    {
+                        var errorDescriptor = new ErrorDescriptor()
+                        {
+                            Code = "TaskNotFound",
+                            Description = "Öğrenciye ait görev bulunamadı!",
+                        };
 
+                        return errorDescriptor.CreateProblem("Öğrenciye görev atanamadı!'");
+                    }
 
+                    
                     var dailyTask = new StudentProgramDailyTasks()
                     {
                         Lesson = request.Lesson,
@@ -245,9 +270,10 @@ public static class Program
                         TaskType = request.TaskType,
                         Subject = request.Subject,
                         Resource = request.Resource,
-                        Minute = request.Minute,
+                        EstimatedMinute = request.EstimatedMinute,
                         QuestionCount = request.QuestionCount,
                         Not = request.Not,
+                        CreatedAt = DateTime.UtcNow.ConvertUtcToTimeZone(),
                     };
                     
                     studentProgramDailyTask.DailyTasks.Add(dailyTask);
@@ -265,7 +291,7 @@ public static class Program
                         TaskType = dailyTask.TaskType,
                         Subject = dailyTask.Subject,
                         Resource = dailyTask.Resource,
-                        Minute = dailyTask.Minute,
+                        EstimatedMinute = dailyTask.EstimatedMinute,
                         QuestionCount = dailyTask.QuestionCount,
                         State = dailyTask.State,
                         Not = dailyTask.Not,
@@ -276,20 +302,30 @@ public static class Program
 
                 }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags(TagConstants.CoachMeStudentsProgram)
             .RequireAuthorization("CoachOrPdr");
-
         
-        endpoints.MapGet("me/students/{studentId}/programs-daily/{dailyId}/tasks/{taskId}",
+        endpoints.MapGet("me/students/{studentId}/programs-tasks/{taskId}",
                 async Task<Results<Ok<StudentProgramDailyTaskInfo>, ProblemHttpResult>>
-                ([FromQuery] Guid studentId, [FromQuery] Guid dailyId, [FromQuery] Guid taskId,
+                ([FromRoute] Guid studentId, [FromRoute] Guid taskId,
                     ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
                 {
                     var dbContext = sp.GetRequiredService<ApplicationDbContext>();
         
                     var coachId = claimsPrincipal.GetId();
 
-                    var studentProgramDailyTask = dbContext.StudentProgramDailyTasks.FirstOrDefault(x =>
-                        x.Id == taskId && x.StudentProgramDailyId == dailyId &&
-                        x.StudentProgramDaily.StudentId == studentId);
+                    var studentProgramDailyTask = await dbContext.StudentProgramDailyTasks.FirstOrDefaultAsync(x =>
+                        x.Id == taskId && x.StudentProgramDaily.StudentId == studentId &&
+                        x.StudentProgramDaily.CoachId == coachId);
+
+                    if (studentProgramDailyTask is null)
+                    {
+                        var errorDescriptor = new ErrorDescriptor()
+                        {
+                            Code = "TaskNotFound",
+                            Description = "Öğrenciye ait görev bulunamadı!",
+                        };
+
+                        return errorDescriptor.CreateProblem("Öğrenci görev detayı getirilemedi!'");
+                    }
         
                     var taskInfo = new StudentProgramDailyTaskInfo()
                     {
@@ -300,7 +336,8 @@ public static class Program
                         TaskType = studentProgramDailyTask.TaskType,
                         Subject = studentProgramDailyTask.Subject,
                         Resource = studentProgramDailyTask.Resource,
-                        Minute = studentProgramDailyTask.Minute,
+                        EstimatedMinute = studentProgramDailyTask.EstimatedMinute,
+                        CompletedMinute = studentProgramDailyTask.CompletedMinute,
                         QuestionCount = studentProgramDailyTask.QuestionCount,
                         State = studentProgramDailyTask.State,
                         Not = studentProgramDailyTask.Not,
@@ -314,15 +351,27 @@ public static class Program
         
         endpoints.MapDelete("me/students/{studentId}/programs-tasks/{taskId}",
                 async Task<Results<Ok, ProblemHttpResult>>
-                ([FromQuery] Guid studentId, [FromQuery] Guid taskId, ClaimsPrincipal claimsPrincipal,
+                ([FromRoute] Guid studentId, [FromRoute] Guid taskId, ClaimsPrincipal claimsPrincipal,
                     [FromServices] IServiceProvider sp) =>
                 {
                     var dbContext = sp.GetRequiredService<ApplicationDbContext>();
 
                     var coachId = claimsPrincipal.GetId();
 
-                    var studentProgramDailyTask = dbContext.StudentProgramDailyTasks.FirstOrDefault(x =>
-                        x.Id == taskId && x.StudentProgramDaily.StudentId == studentId);
+                    var studentProgramDailyTask = await dbContext.StudentProgramDailyTasks.FirstOrDefaultAsync(x =>
+                        x.Id == taskId && x.StudentProgramDaily.StudentId == studentId && x.StudentProgramDaily
+                            .CoachId == coachId);
+                    
+                    if (studentProgramDailyTask is null)
+                    {
+                        var errorDescriptor = new ErrorDescriptor()
+                        {
+                            Code = "TaskNotFound",
+                            Description = "Öğrenciye ait görev bulunamadı!",
+                        };
+
+                        return errorDescriptor.CreateProblem("Öğrenci görevi silinemedi!'");
+                    }
 
                     dbContext.Remove(studentProgramDailyTask);
                     
@@ -332,82 +381,6 @@ public static class Program
 
                 }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags(TagConstants.CoachMeStudentsProgram)
             .RequireAuthorization("CoachOrPdr");
-    }
-
-    public class StudentProgramInfo
-    {
-        public Guid Id { get; set; }
-        public DateTime StartDate { get; set; }
-        public DateTime EndDate { get; set; }
-        public string Text { get; set; }
-        public List<StudentProgramWeeklyInfo> Weeklies { get; set; } = new();
-    }
-
-    public class StudentProgramWeeklyInfo
-    {
-        public Guid Id { get; set; }
-    
-        public DateTime StartDate { get; set; }
-        
-        public DateTime EndDate { get; set; }
-        
-        public string Text { get; set; }
-    }
-    
-    public class StudentProgramDailyInfo
-    {
-        public Guid Id { get; set; }
-        public DateTime Date { get; set; }
-        
-        public string DateText { get; set; }
-        
-        public string DayText { get; set; }
-        
-        public List<StudentProgramDailyTaskSummarizedInfo> Tasks { get; set; } = new();
-    }
-
-    public class StudentProgramDailyTaskSummarizedInfo
-    {
-        public Guid Id { get; set; }
-        
-        public string Title { get; set; }
-    
-        public TaskState State { get; set; }
-        
-        public TaskType TaskType { get; set; }
-
-        public ProgramExamType ExamType { get; set; }
-    
-        public Lesson Lesson { get; set; }
-        
-        public string Subject { get; set; }
-    }
-    
-    public class StudentProgramDailyTaskInfo
-    {
-        public Guid Id { get; set; }
-        
-        public string Title { get; set; }
-    
-        public TaskState State { get; set; }
-
-        public ProgramExamType ExamType { get; set; }
-    
-        public Lesson Lesson { get; set; }
-        
-        public TaskType TaskType { get; set; }
-        
-        public string Subject { get; set; }
-        
-        public string Resource { get; set; }
-
-        public ushort? QuestionCount { get; set; }
-    
-        public byte? Minute { get; set; }
-    
-        public string Not { get; set; }
-        
-        public string Excuese { get; set; }
     }
     
     public class CreateStudentProgramDailyTaskRequest
@@ -427,12 +400,12 @@ public static class Program
 
         public ushort QuestionCount { get; set; }
     
-        public byte Minute { get; set; }
+        public ushort EstimatedMinute { get; set; }
     
         public string Not { get; set; }
     }
     
-    public class UpdateStudentProgramDailyTaskRequest
+    public class UpdateStudentProgramDailyTaskDetailRequest
     {
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public ProgramExamType ExamType { get; set; }

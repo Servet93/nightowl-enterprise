@@ -39,6 +39,7 @@ public static class StudentIdentityEndpoints
         routeGroup.MapCoachInfo();
         routeGroup.MapCallInfo();
         routeGroup.MapOnboard();
+        routeGroup.MapProgram();
         
         routeGroup.MapApprove();
         routeGroup.MapCancel();
@@ -47,7 +48,5 @@ public static class StudentIdentityEndpoints
 
         return new IdentityEndpointsConventionBuilder(routeGroup).WithDescription("Onboard formunu submit et");
     }
-
-
     
 }

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using NightOwlEnterprise.Api.Endpoints.CommonDto;
 using NightOwlEnterprise.Api.Entities.Enums;
 
 namespace NightOwlEnterprise.Api.Endpoints.Students.Me;
@@ -20,9 +21,11 @@ public static class CallInfo
 
                 var dbContext = sp.GetRequiredService<ApplicationDbContext>();
 
+                var now = DateTime.UtcNow.ConvertUtcToTimeZone();
+                
                 var invitations = dbContext.Invitations
                     .Include(x => x.ZoomMeetDetail)
-                    .Where(x => x.StudentId == studentId)
+                    .Where(x => x.StudentId == studentId && x.Date >= now)
                     .OrderBy(x => x.Date)
                     .Take(2).Select(x => new
                     {
@@ -70,42 +73,4 @@ public static class CallInfo
             }).RequireAuthorization("Student").ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi()
             .WithTags(TagConstants.StudentsMeInfo);
     }
-
-    public class CallInfoResponse
-    {
-        public VideoCall VideoCall { get; set; }
-        
-        public VoiceCall VoiceCall { get; set; }
-    }
-
-    public class VideoCall
-    {
-        public Guid Id { get; set; }
-
-        public DateTime Date { get; set; }
-
-        public TimeSpan StartTime { get; set; }
-        
-        [JsonConverter(typeof(JsonStringEnumConverter))]
-        public  InvitationState State { get; set; }
-
-        public bool Enabled { get; set; }
-        
-        public string JoinUrl { get; set; }
-    }
-    
-    public class VoiceCall
-    {
-        public Guid Id { get; set; }
-
-        public DateTime Date { get; set; }
-
-        public TimeSpan StartTime { get; set; }
-        
-        [JsonConverter(typeof(JsonStringEnumConverter))]
-        public  InvitationState State { get; set; }
-
-        public bool Enabled { get; set; }
-    }
-    
 }
