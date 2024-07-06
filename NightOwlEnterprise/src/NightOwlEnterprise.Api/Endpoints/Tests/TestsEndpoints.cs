@@ -15,6 +15,7 @@ public static class TestsEndpoints
         var routeGroup = endpoints.MapGroup("/tests").WithOpenApi().WithTags("Tests");
 
         routeGroup.MapStartVoiceCalls();
+        routeGroup.MapSystemMessage();
         
         return new IdentityEndpointsConventionBuilder(routeGroup);
     }

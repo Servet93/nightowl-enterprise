@@ -289,6 +289,22 @@ builder.Services.Configure<PdrConfig>(
 
 builder.Services.AddSignalR();
 
+builder.Services.AddSingleton<ChatClientService>(sp =>
+{
+    var um = sp.CreateScope().ServiceProvider.GetService<ApplicationDbContext>();
+    
+    var jwtHelper = sp.GetService<JwtHelper>();
+    
+    var systemUser = um.Users.FirstOrDefault(x => x.UserType == UserType.System);
+    var token = jwtHelper.CreateToken(systemUser, DateTime.UtcNow.AddYears(30));
+    
+    // var hubUrl = "https://chat.baykusmentorluk.com/chatHub"; // Hub'ın URL'sini burada belirtin
+    var hubUrl = "http://localhost:5254/chatHub?access_token=" + token.Item1; // Hub'ın URL'sini burada belirtin
+    var clientService = new ChatClientService(hubUrl);
+    clientService.StartAsync().GetAwaiter().GetResult(); // Bağlantıyı başlat
+    return clientService;
+});
+
 var smtpServerCredential = builder.Configuration.GetSection(SmtpServerCredential.SmtpServerSection).Get<SmtpServerCredential>();
 
 if (smtpServerCredential!.Enabled)
@@ -468,6 +484,20 @@ if (isPostgresEnabled)
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
     await SeedCoachs(db, userManager);
+    
+    var existSystemUser = await db.Users.AnyAsync(x => x.UserType == UserType.System);
+
+    if (!existSystemUser)
+    {
+        var x = await userManager.CreateAsync(new ApplicationUser()
+        {
+            UserType = UserType.System,
+            Email = "system@system.com",
+            Name = "System",
+            UserName = "System"
+        });
+    }
+
 }
 
 app.UseHangfireDashboard("/hangfire", new DashboardOptions()
@@ -520,7 +550,7 @@ if (isMongoEnabled && !string.IsNullOrEmpty(mongoConnectionString))
     app.MapHub<ChatHub>("/chatHub", options =>
     {
         options.Transports = HttpTransportType.WebSockets;
-    }).RequireCors("ForSignalRHub");    
+    }).RequireCors("ForSignalRHub");
 }
 else
 {

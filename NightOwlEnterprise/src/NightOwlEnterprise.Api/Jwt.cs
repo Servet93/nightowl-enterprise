@@ -36,9 +36,9 @@ public class JwtHelper
         return (Convert.ToBase64String(bytes), DateTime.UtcNow.AddHours(12));
     }
     
-    public (string, DateTime) CreateToken(ApplicationUser user)
+    public (string, DateTime) CreateToken(ApplicationUser user, DateTime? expiration = null)
     {
-        var expiration = DateTime.UtcNow.AddHours(6);
+        expiration = expiration ?? DateTime.UtcNow.AddDays(30);
         var keyBytes = Encoding.ASCII.GetBytes(jwtConfig.Key);
         var tokenDescriptor = new SecurityTokenDescriptor
         {
@@ -65,7 +65,7 @@ public class JwtHelper
         {
             var token = tokenHandler.CreateToken(tokenDescriptor);
             var stringToken = tokenHandler.WriteToken(token);
-            return (stringToken, expiration);
+            return (stringToken, expiration.Value);
         }
         catch (Exception e)
         {
@@ -74,6 +74,6 @@ public class JwtHelper
         
         // var jwtToken = tokenHandler.WriteToken(token);
         
-        return (string.Empty, expiration);
+        return (string.Empty, expiration.Value);
     }
 }

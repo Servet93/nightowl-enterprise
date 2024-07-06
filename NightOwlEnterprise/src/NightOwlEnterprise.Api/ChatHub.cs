@@ -75,6 +75,42 @@ public class ChatHub : Hub
         await Clients.Users(senderIds)
             .SendAsync("ReceiveMessage", senderId, receiverId, message, timeStamp);
     }
+    
+    public async Task SendMessageFromSystem(string senderId, string receiverId, string message)
+    {
+        // Mesajı MongoDB'ye kaydet
+        var conversation = await _conversationCollection.Find(c => c.Participants.Contains(senderId) && c.Participants.Contains(receiverId)).FirstOrDefaultAsync();
+        
+        if (conversation == null)
+        {
+            conversation = new Conversation { Participants = new List<string> { senderId, receiverId } };
+            await _conversationCollection.InsertOneAsync(conversation);
+        }
+
+        var timeStamp  = DateTime.UtcNow;
+        
+        var messageObj = new Message
+        {
+            ConversationId = conversation.Id, SenderId = senderId, ReceiverId = receiverId, Content = message,
+            Timestamp = timeStamp
+        };
+        
+        await _messageCollection.InsertOneAsync(messageObj);
+        
+        //var isReceiverIdExist = userIdentifierToConnectionIds.ContainsKey(receiverId);
+
+        var senderIds = new List<string>() { senderId, receiverId };
+        
+        // if (isReceiverIdExist)
+        // {
+        //     var receiverName = userIdentifierToConnectionIds[receiverId].name;
+        //     senderIds.Add(receiverId);
+        // }
+        
+        // Gönderen ve alıcıya mesajı gönder
+        await Clients.Users(senderIds)
+            .SendAsync("ReceiveMessage", senderId, receiverId, message, timeStamp);
+    }
 
     // public async Task<IEnumerable<Message>> GetChatHistory(string userId, string partnerId, int pageNumber, int pageSize)
     // {

@@ -53,7 +53,7 @@ public static class Students
                 .WhereIf(x => x.Student.StudentDetail.Name.Contains(filter.Search) ||
                               x.Student.Email.Contains(filter.Search) ||
                               x.Student.StudentDetail.Email.Contains(filter.Search),
-                    !string.IsNullOrEmpty(filter.Search));
+                    filter != null && !string.IsNullOrEmpty(filter.Search));
             
             if (filter is not null)
             {
