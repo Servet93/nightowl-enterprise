@@ -431,7 +431,6 @@ GoogleCredential googleCredential = GoogleCredential.FromJson(jsonString);
 // Firebase Admin SDK yapılandırması
 FirebaseApp.Create(new AppOptions()
 {
-    
     // Credential = GoogleCredential.FromFile("nightowlenterprise-7a6c9-firebase-adminsdk-59fjt-f3a979c352.json")
     Credential = googleCredential
 });
@@ -497,7 +496,6 @@ if (isPostgresEnabled)
             UserName = "System"
         });
     }
-
 }
 
 app.UseHangfireDashboard("/hangfire", new DashboardOptions()
@@ -522,8 +520,6 @@ app.UseStatusCodePages();
 // app.UseStatusCodePages(async statusCodeContext 
 //     => await Results.Problem(statusCode: statusCodeContext.HttpContext.Response.StatusCode)
 //         .ExecuteAsync(statusCodeContext.HttpContext));
-
-
 
 app.UseSwagger();
 app.UseSwaggerUI();

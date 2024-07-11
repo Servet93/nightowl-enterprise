@@ -136,16 +136,29 @@ public static class Program
                         .Select(x => x.ExamType)
                         .FirstOrDefault();
 
-                    if (request.ExamType == ProgramExamType.TYT)
+                    if (studentExamType == ExamType.TYT && request.ExamType == ProgramExamType.AYT)
                     {
-                        
+                        var errorDescriptor = new ErrorDescriptor("CouldntBeAYTForTYTStudent",
+                            "TYT öğrencisine AYT dersi atanamaz!");
+                        return errorDescriptor.CreateProblem("Görev oluşturulamadı!");
                     }
-                    else if (request.ExamType == ProgramExamType.AYT)
+
+                    var isLessonValid = false;
+
+                    //Aşağıdaki if blokları TYT öğrencisine sadece TYT dersi atanabileceğini,
+                    //AYT öğrencisine hem tyt hem ayt dersleri atanabileceğini göstermektedir.
+                    if (studentExamType != ExamType.TYT && request.ExamType == ProgramExamType.TYT)
                     {
-                        
+                        isLessonValid = LessonUtil.IsLessonValidForExamType(ExamType.TYT, request.Lesson);    
                     }
-                    
-                    var isLessonValid = LessonUtil.IsLessonValidForExamType(studentExamType, request.Lesson);
+                    else if (studentExamType != ExamType.TYT && request.ExamType == ProgramExamType.AYT)
+                    {
+                        isLessonValid = LessonUtil.IsLessonValidForExamType(studentExamType, request.Lesson);
+                    }
+                    else if (studentExamType == ExamType.TYT && request.ExamType == ProgramExamType.TYT)
+                    {
+                        isLessonValid = LessonUtil.IsLessonValidForExamType(ExamType.TYT, request.Lesson);
+                    }
 
                     if (!isLessonValid)
                     {
@@ -153,7 +166,7 @@ public static class Program
                         {
                             Code = "LessonIsNotValid",
                             Description =
-                                $"Girilen ders bilgisi öğrencinin sınav bilgisineuygun değil. Öğrenci Sınav Tipi: {studentExamType.ToString()}"
+                                $"Girilen ders bilgisi öğrencinin sınav bilgisine uygun değil. Öğrenci Sınav Tipi: {studentExamType.ToString()}"
                         };
 
                         return errorDesscriptor.CreateProblem("Öğrenci görevi güncellenemedi!");
@@ -224,16 +237,29 @@ public static class Program
                         .Select(x => x.ExamType)
                         .FirstOrDefaultAsync();
 
-                    if (request.ExamType == ProgramExamType.TYT)
+                    if (studentExamType == ExamType.TYT && request.ExamType == ProgramExamType.AYT)
                     {
-                        
+                        var errorDescriptor = new ErrorDescriptor("CouldntBeAYTForTYTStudent",
+                            "TYT öğrencisine AYT dersi atanamaz!");
+                        return errorDescriptor.CreateProblem("Görev oluşturulamadı!");
                     }
-                    else if (request.ExamType == ProgramExamType.AYT)
+
+                    var isLessonValid = false;
+
+                    //Aşağıdaki if blokları TYT öğrencisine sadece TYT dersi atanabileceğini,
+                    //AYT öğrencisine hem tyt hem ayt dersleri atanabileceğini göstermektedir.
+                    if (studentExamType != ExamType.TYT && request.ExamType == ProgramExamType.TYT)
                     {
-                        
+                        isLessonValid = LessonUtil.IsLessonValidForExamType(ExamType.TYT, request.Lesson);    
                     }
-                    
-                    var isLessonValid = LessonUtil.IsLessonValidForExamType(studentExamType, request.Lesson);
+                    else if (studentExamType != ExamType.TYT && request.ExamType == ProgramExamType.AYT)
+                    {
+                        isLessonValid = LessonUtil.IsLessonValidForExamType(studentExamType, request.Lesson);
+                    }
+                    else if (studentExamType == ExamType.TYT && request.ExamType == ProgramExamType.TYT)
+                    {
+                        isLessonValid = LessonUtil.IsLessonValidForExamType(ExamType.TYT, request.Lesson);
+                    }
 
                     if (!isLessonValid)
                     {
@@ -241,7 +267,7 @@ public static class Program
                         {
                             Code = "LessonIsNotValid",
                             Description =
-                                $"Girilen ders bilgisi öğrencinin sınav bilgisineuygun değil. Öğrenci Sınav Tipi: {studentExamType.ToString()}"
+                                $"Girilen ders bilgisi öğrencinin sınav bilgisine uygun değil. Öğrenci Sınav Tipi: {studentExamType.ToString()}"
                         };
 
                         return errorDesscriptor.CreateProblem("Öğrenciye görev atanamadı!");

@@ -88,11 +88,13 @@ public class ChatHub : Hub
         }
 
         var timeStamp  = DateTime.UtcNow;
+        var sentFromSystem = true;
         
         var messageObj = new Message
         {
             ConversationId = conversation.Id, SenderId = senderId, ReceiverId = receiverId, Content = message,
-            Timestamp = timeStamp
+            Timestamp = timeStamp,
+            SentFromSystem = sentFromSystem
         };
         
         await _messageCollection.InsertOneAsync(messageObj);
@@ -109,7 +111,7 @@ public class ChatHub : Hub
         
         // Gönderen ve alıcıya mesajı gönder
         await Clients.Users(senderIds)
-            .SendAsync("ReceiveMessage", senderId, receiverId, message, timeStamp);
+            .SendAsync("ReceiveMessage", senderId, receiverId, message, timeStamp, sentFromSystem);
     }
 
     // public async Task<IEnumerable<Message>> GetChatHistory(string userId, string partnerId, int pageNumber, int pageSize)
@@ -246,4 +248,6 @@ public class Message
     public string ReceiverId { get; set; }
     public string Content { get; set; }
     public DateTime Timestamp { get; set; }
+    
+    public bool SentFromSystem { get; set; }
 }

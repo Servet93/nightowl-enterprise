@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿using System.Globalization;
+using System.Security.Claims;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -49,6 +50,24 @@ public static class SpecifyHour
                 {
                     await dbContext.SaveChangesAsync();
                     
+                    var chatClientService = sp.GetRequiredService<ChatClientService>();
+
+                    var message = string.Empty;
+
+                    var cultureInfo = new CultureInfo("tr-TR");
+                        
+                    if (invitationEntity.Type == InvitationType.VideoCall)
+                    {
+                        message =
+                            $"{invitationEntity.Date.ToString("d MMMM dddd", cultureInfo)} saat {invitationEntity.StartTime.ToString(@"hh\:mm")} için görüntülü görüşme daveti gönderdiniz";
+                    }
+                    else if (invitationEntity.Type == InvitationType.VoiceCall)
+                    {
+                        message =
+                            $"{invitationEntity.Date.ToString("d MMMM dddd", cultureInfo)} saat {invitationEntity.StartTime.ToString(@"hh\:mm")} için sesli görüşme daveti gönderdiniz";
+                    }
+                    
+                    chatClientService.SendMessageFromSystem(coachId.ToString(), invitationEntity.StudentId.ToString(), message);
                     
                 }
                 catch (Exception e)
