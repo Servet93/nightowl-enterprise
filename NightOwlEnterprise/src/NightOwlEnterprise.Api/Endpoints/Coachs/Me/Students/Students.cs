@@ -1,26 +1,11 @@
-﻿using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
-using System.Globalization;
-using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Encodings.Web;
+﻿using System.Security.Claims;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
-using MongoDB.Driver;
 using NightOwlEnterprise.Api.Endpoints.CommonDto;
-using NightOwlEnterprise.Api.Endpoints.Students;
-using NightOwlEnterprise.Api.Entities;
 using NightOwlEnterprise.Api.Entities.Enums;
 using NightOwlEnterprise.Api.Utils;
-using Stripe;
-using Swashbuckle.AspNetCore.Annotations;
-using Swashbuckle.AspNetCore.Filters;
 using ResourcesAYT = NightOwlEnterprise.Api.Entities.ResourcesAYT;
 using ResourcesTYT = NightOwlEnterprise.Api.Entities.ResourcesTYT;
 

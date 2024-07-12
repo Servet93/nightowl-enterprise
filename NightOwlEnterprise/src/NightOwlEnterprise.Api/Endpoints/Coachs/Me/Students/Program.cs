@@ -32,8 +32,14 @@ public static class Program
                         .OrderBy(x => x.StartDate).ToListAsync();
 
                     var studentProgramInfoList = new List<StudentProgramInfo>();
-
+                    
                     var cultureInfo = new CultureInfo("tr-TR");
+
+                    bool? setCurrentProgram = null;
+                    
+                    bool? setCurrentWeekly = null;
+                    
+                    var now = DateTime.UtcNow.ConvertUtcToTimeZone();
 
                     foreach (var studentProgram in studentPrograms)
                     {
@@ -48,19 +54,41 @@ public static class Program
                             Text =
                                 $"{(mountIndex).ToString()}.Ay ({startDateText} - {endDateText})",
                         };
+                        
+                        if (!setCurrentProgram.HasValue &&
+                            (
+                                (studentProgram.StartDate <= now && studentProgram.EndDate >= now) ||
+                                (studentProgram.StartDate >= now && studentProgram.EndDate >= now)
+                            ))
+                        {
+                            setCurrentProgram = true;
+                            studentProgramInfo.IsCurrent = true;
+                        }
 
                         foreach (var weeklyInfo in studentProgram.Weeklies)
                         {
                             var weekStartDateText = weeklyInfo.StartDate.ToString("dd MMMM \\/ yyyy", cultureInfo);
                             var weekEndDateText = weeklyInfo.EndDate.ToString("dd MMMM \\/ yyyy", cultureInfo);
 
-                            studentProgramInfo.Weeklies.Add(new StudentProgramWeeklyInfo()
+                            var week = new StudentProgramWeekInfo()
                             {
                                 Id = weeklyInfo.Id,
                                 StartDate = weeklyInfo.StartDate,
                                 EndDate = weeklyInfo.EndDate,
                                 Text = $"{(weekIndex).ToString()}.Hafta ({weekStartDateText} - {weekEndDateText})",
-                            });
+                            };
+                            
+                            studentProgramInfo.Weeklies.Add(week);
+                            
+                            if (setCurrentProgram.HasValue && !setCurrentWeekly.HasValue &&
+                                (
+                                    (weeklyInfo.StartDate <= now && weeklyInfo.EndDate >= now) ||
+                                    (weeklyInfo.StartDate >= now && weeklyInfo.EndDate >= now)
+                                ))
+                            {
+                                setCurrentWeekly = true;
+                                week.IsCurrent = true;
+                            }
 
                             weekIndex++;
                         }
@@ -77,7 +105,7 @@ public static class Program
             .RequireAuthorization("CoachOrPdr");
 
         endpoints.MapGet("me/students/{studentId}/programs-week/{weekId}",
-                async Task<Results<Ok<List<StudentProgramDailyInfo>>, ProblemHttpResult>>
+                async Task<Results<Ok<List<StudentProgramDayInfo>>, ProblemHttpResult>>
                 ([FromRoute] Guid studentId, [FromQuery] Guid weekId, ClaimsPrincipal claimsPrincipal,
                     [FromServices] IServiceProvider sp) =>
                 {
@@ -90,13 +118,14 @@ public static class Program
                                     x.CoachId == coachId)
                         .Include(x => x.DailyTasks)
                         .OrderBy(x => x.Date)
-                        .Select(x => new StudentProgramDailyInfo()
+                        .Select(x => new StudentProgramDayInfo()
                         {
                             Id = x.Id,
                             Date = x.Date,
                             DateText = x.DateText,
                             DayText = x.DayText,
-                            Tasks = x.DailyTasks.Select(y => new StudentProgramDailyTaskSummarizedInfo()
+                            DayOfMonth = x.Date.Day,
+                            Tasks = x.DailyTasks.Select(y => new StudentProgramTaskSummarizedInfo()
                             {
                                 Id = y.Id,
                                 Lesson = y.Lesson,
@@ -122,7 +151,7 @@ public static class Program
             .RequireAuthorization("CoachOrPdr");
 
         endpoints.MapPost("me/students/{studentId}/programs-tasks/{taskId}",
-                async Task<Results<Ok<StudentProgramDailyTaskInfo>, ProblemHttpResult>>
+                async Task<Results<Ok<StudentProgramDayTaskInfo>, ProblemHttpResult>>
                 ([FromRoute] Guid studentId, [FromRoute] Guid taskId,
                     [FromBody] UpdateStudentProgramDailyTaskDetailRequest request, ClaimsPrincipal claimsPrincipal,
                     [FromServices] IServiceProvider sp) =>
@@ -201,7 +230,7 @@ public static class Program
 
                     // TYT-Matematik-Soru/Test
 
-                    var taskInfo = new StudentProgramDailyTaskInfo()
+                    var taskInfo = new StudentProgramDayTaskInfo()
                     {
                         Id = studentProgramDailyTask.Id,
                         Title = $"{ProgramExamTypeUtil.GetName(studentProgramDailyTask.ExamType)} - {LessonUtil.GetName(studentProgramDailyTask.Lesson)} - {TaskTypeUtil.GetName(studentProgramDailyTask.TaskType)}",
@@ -223,7 +252,7 @@ public static class Program
             .RequireAuthorization("CoachOrPdr");
 
         endpoints.MapPost("me/students/{studentId}/programs-daily/{dailyId}",
-                async Task<Results<Ok<StudentProgramDailyTaskInfo>, ProblemHttpResult>>
+                async Task<Results<Ok<StudentProgramDayTaskInfo>, ProblemHttpResult>>
                 ([FromRoute] Guid studentId, [FromRoute] Guid dailyId,
                     [FromBody] CreateStudentProgramDailyTaskRequest request, ClaimsPrincipal claimsPrincipal,
                     [FromServices] IServiceProvider sp) =>
@@ -308,7 +337,7 @@ public static class Program
 
                     // TYT-Matematik-Soru/Test
 
-                    var taskInfo = new StudentProgramDailyTaskInfo()
+                    var taskInfo = new StudentProgramDayTaskInfo()
                     {
                         Id = dailyTask.Id,
                         Title = $"{ProgramExamTypeUtil.GetName(dailyTask.ExamType)} - {LessonUtil.GetName(dailyTask.Lesson)} - {TaskTypeUtil.GetName(dailyTask.TaskType)}",
@@ -330,7 +359,7 @@ public static class Program
             .RequireAuthorization("CoachOrPdr");
         
         endpoints.MapGet("me/students/{studentId}/programs-tasks/{taskId}",
-                async Task<Results<Ok<StudentProgramDailyTaskInfo>, ProblemHttpResult>>
+                async Task<Results<Ok<StudentProgramDayTaskInfo>, ProblemHttpResult>>
                 ([FromRoute] Guid studentId, [FromRoute] Guid taskId,
                     ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
                 {
@@ -353,7 +382,7 @@ public static class Program
                         return errorDescriptor.CreateProblem("Öğrenci görev detayı getirilemedi!'");
                     }
         
-                    var taskInfo = new StudentProgramDailyTaskInfo()
+                    var taskInfo = new StudentProgramDayTaskInfo()
                     {
                         Id = studentProgramDailyTask.Id,
                         Title = $"{ProgramExamTypeUtil.GetName(studentProgramDailyTask.ExamType)} - {LessonUtil.GetName(studentProgramDailyTask.Lesson)} - {TaskTypeUtil.GetName(studentProgramDailyTask.TaskType)}",

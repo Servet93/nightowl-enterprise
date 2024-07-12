@@ -10,10 +10,10 @@ public class StudentProgramInfo
         public DateTime EndDate { get; set; }
         public bool IsCurrent { get; set; }
         public string Text { get; set; }
-        public List<StudentProgramWeeklyInfo> Weeklies { get; set; } = new();
+        public List<StudentProgramWeekInfo> Weeklies { get; set; } = new();
     }
 
-    public class StudentProgramWeeklyInfo
+    public class StudentProgramWeekInfo
     {
         public Guid Id { get; set; }
     
@@ -26,7 +26,7 @@ public class StudentProgramInfo
         public bool IsCurrent { get; set; }
     }
     
-    public class StudentProgramDailyInfo
+    public class StudentProgramDayInfo
     {
         public Guid Id { get; set; }
         public DateTime Date { get; set; }
@@ -35,10 +35,12 @@ public class StudentProgramInfo
         
         public string DayText { get; set; }
         
-        public List<StudentProgramDailyTaskSummarizedInfo> Tasks { get; set; } = new();
+        public int DayOfMonth { get; set; }
+        
+        public List<StudentProgramTaskSummarizedInfo> Tasks { get; set; } = new();
     }
 
-    public class StudentProgramDailyTaskSummarizedInfo
+    public class StudentProgramTaskSummarizedInfo
     {
         public Guid Id { get; set; }
         
@@ -59,7 +61,7 @@ public class StudentProgramInfo
         public string Subject { get; set; }
     }
     
-    public class StudentProgramDailyTaskInfo
+    public class StudentProgramDayTaskInfo
     {
         public Guid Id { get; set; }
         
@@ -92,3 +94,14 @@ public class StudentProgramInfo
         
         public string Excuese { get; set; }
     }
+
+public class StudentProgramDailyInfo
+{
+    public byte TotalTask { get; set; }
+    
+    public byte CompletedTask { get; set; }
+    
+    public byte PartialCompletedTask { get; set; }
+    
+    public List<StudentProgramTaskSummarizedInfo> DailyTaskSummarizedInfos { get; set; }
+}

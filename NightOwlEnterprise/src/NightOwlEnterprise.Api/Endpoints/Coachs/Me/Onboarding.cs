@@ -104,8 +104,12 @@ public static class Onboard
                 coach.CoachDetail.FirstAytNet = request.AcademicSummary.FirstAytNet;
                 coach.CoachDetail.LastAytNet = request.AcademicSummary.LastAytNet;
                 coach.CoachDetail.ChangedDepartmentType = request.AcademicSummary.ChangedDepartmentType;
-                coach.CoachDetail.FromDepartment = request.AcademicSummary.FromDepartment;
-                coach.CoachDetail.ToDepartment = request.AcademicSummary.ToDepartment;
+                
+                if (request.AcademicSummary.ChangedDepartmentType)
+                {
+                    coach.CoachDetail.FromDepartment = request.AcademicSummary.FromDepartment;
+                    coach.CoachDetail.ToDepartment = request.AcademicSummary.ToDepartment;    
+                }
 
                 coach.CoachDetail.GoneCramSchool = request.SupplementaryMaterials.Course;
                 coach.CoachDetail.UsedYoutube = request.SupplementaryMaterials.Youtube;
@@ -282,8 +286,6 @@ public static class Onboard
                 return TypedResults.Ok();
             }).RequireAuthorization("Coach").Produces<ProblemHttpResult>(400).WithOpenApi()
             .WithTags(TagConstants.CoachMeOnboard);
-        
-        
         
         Result RequestValidation(CoachOnboardRequest request)
         {
@@ -858,9 +860,7 @@ public static class Onboard
         public string Surname { get; set; }
         public string Mobile { get; set; }
         public string Email { get; set; }
-        
         public DateTime BirthDate { get; set; }
-        
     }
     
     //Okuduğunuz lise
@@ -882,10 +882,10 @@ public static class Onboard
         public bool ChangedDepartmentType { get; set; }
 
         [JsonConverter(typeof(JsonStringEnumConverter))]
-        public DepartmentType FromDepartment { get; set; }
+        public DepartmentType? FromDepartment { get; set; }
         
         [JsonConverter(typeof(JsonStringEnumConverter))]
-        public DepartmentType ToDepartment { get; set; }
+        public DepartmentType? ToDepartment { get; set; }
     };
     
     public class CoachOnboardRequest

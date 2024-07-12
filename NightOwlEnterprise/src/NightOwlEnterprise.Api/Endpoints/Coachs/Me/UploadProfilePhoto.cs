@@ -55,8 +55,11 @@ public static class UploadProfilePhoto
                 using (var stream = new MemoryStream())
                 {
                     await file.CopyToAsync(stream);
+                    
+                    // Bellek akışını sıfırla
+                    stream.Position = 0;
 
-                    var t = ImageProcessor.ResizeImage(stream.GetBuffer(), 500, 500);
+                    var t = ImageProcessor.ResizeImage(stream, 500, 500);
 
                     fileAsBase64 = Convert.ToBase64String(t);
                 }

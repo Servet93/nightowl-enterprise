@@ -78,7 +78,7 @@ public static class Program
                             var weekStartDateText = weeklyInfo.StartDate.ToString("dd MMMM \\/ yyyy", cultureInfo);
                             var weekEndDateText = weeklyInfo.EndDate.ToString("dd MMMM \\/ yyyy", cultureInfo);
 
-                            var week = new StudentProgramWeeklyInfo()
+                            var week = new StudentProgramWeekInfo()
                             {
                                 Id = weeklyInfo.Id,
                                 StartDate = weeklyInfo.StartDate,
@@ -113,7 +113,7 @@ public static class Program
             .RequireAuthorization("Student");
         
         endpoints.MapGet("me/programs-week/{weekId}",
-                async Task<Results<Ok<List<StudentProgramDailyInfo>>, ProblemHttpResult>>
+                async Task<Results<Ok<List<StudentProgramDayInfo>>, ProblemHttpResult>>
                 ([FromRoute] string? weekId, ClaimsPrincipal claimsPrincipal,
                     [FromServices] IServiceProvider sp) =>
                 {
@@ -143,13 +143,13 @@ public static class Program
                         .Where(x => x.StudentProgramWeeklyId == paramWeekId && x.StudentId == studentId)
                         .Include(x => x.DailyTasks)
                         .OrderBy(x => x.Date)
-                        .Select(x => new StudentProgramDailyInfo()
+                        .Select(x => new StudentProgramDayInfo()
                         {
                             Id = x.Id,
                             Date = x.Date,
                             DateText = x.DateText,
                             DayText = x.DayText,
-                            Tasks = x.DailyTasks.Select(y => new StudentProgramDailyTaskSummarizedInfo()
+                            Tasks = x.DailyTasks.Select(y => new StudentProgramTaskSummarizedInfo()
                             {
                                 Id = y.Id,
                                 Lesson = y.Lesson,
@@ -175,7 +175,7 @@ public static class Program
             .RequireAuthorization("Student");
 
         endpoints.MapPost("me/programs-tasks/{taskId}",
-                async Task<Results<Ok<StudentProgramDailyTaskInfo>, ProblemHttpResult>>
+                async Task<Results<Ok<StudentProgramDayTaskInfo>, ProblemHttpResult>>
                 ([FromRoute] Guid taskId,
                     [FromBody] UpdateStudentProgramDailyTaskStateRequest request, ClaimsPrincipal claimsPrincipal,
                     [FromServices] IServiceProvider sp) =>
@@ -229,7 +229,7 @@ public static class Program
 
                     // TYT-Matematik-Soru/Test
 
-                    var taskInfo = new StudentProgramDailyTaskInfo()
+                    var taskInfo = new StudentProgramDayTaskInfo()
                     {
                         Id = studentProgramDailyTask.Id,
                         Title = $"{ProgramExamTypeUtil.GetName(studentProgramDailyTask.ExamType)} - {LessonUtil.GetName(studentProgramDailyTask.Lesson)} - {TaskTypeUtil.GetName(studentProgramDailyTask.TaskType)}",
@@ -252,7 +252,7 @@ public static class Program
             .RequireAuthorization("Student");
         
         endpoints.MapGet("me/programs-tasks/{taskId}",
-                async Task<Results<Ok<StudentProgramDailyTaskInfo>, ProblemHttpResult>>
+                async Task<Results<Ok<StudentProgramDayTaskInfo>, ProblemHttpResult>>
                 ([FromRoute] Guid taskId, ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
                 {
                     var dbContext = sp.GetRequiredService<ApplicationDbContext>();
@@ -273,7 +273,7 @@ public static class Program
                         return errorDescriptor.CreateProblem("Görev durumu güncellenemedi!");
                     }
         
-                    var taskInfo = new StudentProgramDailyTaskInfo()
+                    var taskInfo = new StudentProgramDayTaskInfo()
                     {
                         Id = studentProgramDailyTask.Id,
                         Title = $"{ProgramExamTypeUtil.GetName(studentProgramDailyTask.ExamType)} - {LessonUtil.GetName(studentProgramDailyTask.Lesson)} - {TaskTypeUtil.GetName(studentProgramDailyTask.TaskType)}",
@@ -291,6 +291,61 @@ public static class Program
                     };
         
                     return TypedResults.Ok(taskInfo);
+        
+                }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags(TagConstants.StudentsMeProgram)
+            .RequireAuthorization("Student");
+        
+          endpoints.MapGet("me/programs-daily-tasks",
+                async Task<Results<Ok<StudentProgramDailyInfo>, ProblemHttpResult>>
+                (ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
+                {
+                    var dbContext = sp.GetRequiredService<ApplicationDbContext>();
+        
+                    var studentId = claimsPrincipal.GetId();
+
+                    var now = DateTime.UtcNow.ConvertUtcToTimeZone();
+
+                    var dailyId = await dbContext.StudentProgramDaily.Where(x => x.StudentId == studentId && x.Date.Date == now.Date)
+                        .Select(x => x.Id).FirstOrDefaultAsync();
+                    
+                    var studentProgramDailyTasks = await dbContext.StudentProgramDailyTasks
+                        .Where(x => x.StudentProgramDailyId == dailyId)
+                        .Select(x => new
+                        {
+                            Id = x.Id,
+                            ExamType = x.ExamType,
+                            Lesson = x.Lesson,
+                            TaskType = x.TaskType,
+                            State = x.State,
+                            Subject = x.Subject
+                        }).ToListAsync();
+
+                    var studentProgramDailyTaskSummarizedInfoList = new List<StudentProgramTaskSummarizedInfo>();
+                    
+                    studentProgramDailyTasks.ForEach(x =>
+                    {
+                        studentProgramDailyTaskSummarizedInfoList.Add(new StudentProgramTaskSummarizedInfo()
+                        {
+                            Id = x.Id,
+                            Title = $"{ProgramExamTypeUtil.GetName(x.ExamType)} - {LessonUtil.GetName(x.Lesson)} - {TaskTypeUtil.GetName(x.TaskType)}",
+                            Lesson = x.Lesson,
+                            State = x.State,
+                            Subject = x.Subject,
+                            ExamType = x.ExamType,
+                            TaskType = x.TaskType
+                        });
+                    });
+
+                    var dailyInfo = new StudentProgramDailyInfo()
+                    {
+                        TotalTask = (byte)studentProgramDailyTaskSummarizedInfoList.Count,
+                        CompletedTask =
+                            (byte)studentProgramDailyTaskSummarizedInfoList.Count(x => x.State == TaskState.Done),
+                        PartialCompletedTask = (byte)studentProgramDailyTaskSummarizedInfoList.Count(x => x.State == TaskState.PartiallyDone),
+                        DailyTaskSummarizedInfos = studentProgramDailyTaskSummarizedInfoList
+                    };
+                    
+                    return TypedResults.Ok(dailyInfo);
         
                 }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags(TagConstants.StudentsMeProgram)
             .RequireAuthorization("Student");
