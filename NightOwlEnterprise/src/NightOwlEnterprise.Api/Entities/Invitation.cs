@@ -19,6 +19,8 @@ public class Invitation
     public InvitationType Type { get; set; }
     
     public InvitationState State { get; set; }
+
+    public string? Excuse { get; set; }
     
     public bool IsAvailable { get; set; } // true ise görüşme aktif, false ise zamanı gelmedi // 5 dakika kala burası açılır
 

@@ -1,10 +1,12 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
+using System.Runtime.InteropServices.JavaScript;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
+using NightOwlEnterprise.Api.Entities.Enums;
 
 namespace NightOwlEnterprise.Api;
 
@@ -87,14 +89,41 @@ public class ChatHub : Hub
             await _conversationCollection.InsertOneAsync(conversation);
         }
 
-        var timeStamp  = DateTime.UtcNow;
-        var sentFromSystem = true;
-        
+        var timeStamp  = DateTime.UtcNow.ConvertUtcToTimeZone();
+
         var messageObj = new Message
         {
             ConversationId = conversation.Id, SenderId = senderId, ReceiverId = receiverId, Content = message,
             Timestamp = timeStamp,
-            SentFromSystem = sentFromSystem
+        };
+        
+        await _messageCollection.InsertOneAsync(messageObj);
+        
+        var senderIds = new List<string>() { senderId, receiverId };
+        
+        // Gönderen ve alıcıya mesajı gönder
+        await Clients.Users(senderIds)
+            .SendAsync("ReceiveMessage", senderId, receiverId, message, timeStamp);
+    }
+    
+    public async Task SendInvitationSpecifiedHourMessage(string senderId, string receiverId, string message, InvitationSpecifiedHourMessage invitationSpecifiedHourMessage)
+    {
+        // Mesajı MongoDB'ye kaydet
+        var conversation = await _conversationCollection.Find(c => c.Participants.Contains(senderId) && c.Participants.Contains(receiverId)).FirstOrDefaultAsync();
+        
+        if (conversation == null)
+        {
+            conversation = new Conversation { Participants = new List<string> { senderId, receiverId } };
+            await _conversationCollection.InsertOneAsync(conversation);
+        }
+
+        var timeStamp  = DateTime.UtcNow.ConvertUtcToTimeZone();
+
+        var messageObj = new Message
+        {
+            ConversationId = conversation.Id, SenderId = senderId, ReceiverId = receiverId, Content = message,
+            Timestamp = timeStamp,
+            SystemMessage = invitationSpecifiedHourMessage
         };
         
         await _messageCollection.InsertOneAsync(messageObj);
@@ -103,15 +132,67 @@ public class ChatHub : Hub
 
         var senderIds = new List<string>() { senderId, receiverId };
         
-        // if (isReceiverIdExist)
-        // {
-        //     var receiverName = userIdentifierToConnectionIds[receiverId].name;
-        //     senderIds.Add(receiverId);
-        // }
+        // Gönderen ve alıcıya mesajı gönder
+        await Clients.Users(senderIds)
+            .SendAsync("ReceiveMessage", senderId, receiverId, message, timeStamp, invitationSpecifiedHourMessage);
+    }
+    
+    public async Task SendInvitationApprovedMessage(string senderId, string receiverId, string message, InvitationApprovedMessage invitationApprovedMessage)
+    {
+        // Mesajı MongoDB'ye kaydet
+        var conversation = await _conversationCollection.Find(c => c.Participants.Contains(senderId) && c.Participants.Contains(receiverId)).FirstOrDefaultAsync();
+        
+        if (conversation == null)
+        {
+            conversation = new Conversation { Participants = new List<string> { senderId, receiverId } };
+            await _conversationCollection.InsertOneAsync(conversation);
+        }
+
+        var timeStamp  = DateTime.UtcNow.ConvertUtcToTimeZone();
+
+        var messageObj = new Message
+        {
+            ConversationId = conversation.Id, SenderId = senderId, ReceiverId = receiverId, Content = message,
+            Timestamp = timeStamp,
+            SystemMessage = invitationApprovedMessage
+        };
+        
+        await _messageCollection.InsertOneAsync(messageObj);
+        
+        var senderIds = new List<string>() { senderId, receiverId };
         
         // Gönderen ve alıcıya mesajı gönder
         await Clients.Users(senderIds)
-            .SendAsync("ReceiveMessage", senderId, receiverId, message, timeStamp, sentFromSystem);
+            .SendAsync("ReceiveMessage", senderId, receiverId, message, timeStamp, invitationApprovedMessage);
+    }
+    
+    public async Task SendInvitationCancelledMessage(string senderId, string receiverId, string message, InvitationCancelledMessage invitationCancelledMessage)
+    {
+        // Mesajı MongoDB'ye kaydet
+        var conversation = await _conversationCollection.Find(c => c.Participants.Contains(senderId) && c.Participants.Contains(receiverId)).FirstOrDefaultAsync();
+        
+        if (conversation == null)
+        {
+            conversation = new Conversation { Participants = new List<string> { senderId, receiverId } };
+            await _conversationCollection.InsertOneAsync(conversation);
+        }
+
+        var timeStamp  = DateTime.UtcNow.ConvertUtcToTimeZone();
+
+        var messageObj = new Message
+        {
+            ConversationId = conversation.Id, SenderId = senderId, ReceiverId = receiverId, Content = message,
+            Timestamp = timeStamp,
+            SystemMessage = invitationCancelledMessage
+        };
+        
+        await _messageCollection.InsertOneAsync(messageObj);
+
+        var senderIds = new List<string>() { senderId, receiverId };
+        
+        // Gönderen ve alıcıya mesajı gönder
+        await Clients.Users(senderIds)
+            .SendAsync("ReceiveMessage", senderId, receiverId, message, timeStamp, invitationCancelledMessage);
     }
 
     // public async Task<IEnumerable<Message>> GetChatHistory(string userId, string partnerId, int pageNumber, int pageSize)
@@ -206,8 +287,6 @@ public class ChatHub : Hub
             }
         }
 
-        
-        
         return base.OnDisconnectedAsync(exception);
     }
 }
@@ -249,5 +328,38 @@ public class Message
     public string Content { get; set; }
     public DateTime Timestamp { get; set; }
     
-    public bool SentFromSystem { get; set; }
+    public SystemMessage SystemMessage { get; set; }
+}
+
+public class SystemMessage
+{
+    public string SystemMessageType { get; set; }
+    public string TextForSender { get; set; }
+    
+    public string TextForReceiver { get; set; }
+}
+
+public class InvitationSpecifiedHourMessage : SystemMessage
+{
+    public string InvitationId { get; set; }
+    public DateTime Date { get; set; }
+    public TimeSpan Time { get; set; }
+    public string InvitationType { get; set; }
+}
+
+public class InvitationApprovedMessage : SystemMessage
+{
+    public string InvitationId { get; set; }
+    public DateTime Date { get; set; }
+    public TimeSpan Time { get; set; }
+    public string InvitationType { get; set; }
+}
+
+public class InvitationCancelledMessage : SystemMessage
+{
+    public string InvitationId { get; set; }
+    public DateTime Date { get; set; }
+    public TimeSpan Time { get; set; }
+    public string InvitationType { get; set; }
+    public string Excuse { get; set; }
 }

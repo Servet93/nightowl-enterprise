@@ -27,7 +27,7 @@ public static class SpecifyHour
                 var invitationEntity = await dbContext.Invitations.Include(x => x.Student)
                     .Where(x => x.CoachId == coachId &&
                                 x.Id == invitationId &&
-                                x.State == InvitationState.SpecifyHour)
+                                (x.State == InvitationState.SpecifyHour || x.State == InvitationState.Cancelled))
                     .FirstOrDefaultAsync();
 
                 if (invitationEntity is null)
@@ -53,21 +53,36 @@ public static class SpecifyHour
                     var chatClientService = sp.GetRequiredService<ChatClientService>();
 
                     var message = string.Empty;
-
+                    var textForSender = string.Empty;
+                    var textForReceiver = string.Empty;
+                    
                     var cultureInfo = new CultureInfo("tr-TR");
                         
                     if (invitationEntity.Type == InvitationType.VideoCall)
                     {
                         message =
                             $"{invitationEntity.Date.ToString("d MMMM dddd", cultureInfo)} saat {invitationEntity.StartTime.ToString(@"hh\:mm")} için görüntülü görüşme daveti gönderdiniz";
+                        textForSender = $"{invitationEntity.Date.ToString("d MMMM dddd", cultureInfo)} saat {invitationEntity.StartTime.ToString(@"hh\:mm")} için görüntülü görüşme daveti gönderdiniz";
+                        textForReceiver = $"{invitationEntity.Date.ToString("d MMMM dddd", cultureInfo)} saat {invitationEntity.StartTime.ToString(@"hh\:mm")} için görüntülü görüşme daveti aldınız";
                     }
                     else if (invitationEntity.Type == InvitationType.VoiceCall)
                     {
                         message =
                             $"{invitationEntity.Date.ToString("d MMMM dddd", cultureInfo)} saat {invitationEntity.StartTime.ToString(@"hh\:mm")} için sesli görüşme daveti gönderdiniz";
+                        textForSender = $"{invitationEntity.Date.ToString("d MMMM dddd", cultureInfo)} saat {invitationEntity.StartTime.ToString(@"hh\:mm")} için sesli görüşme daveti gönderdiniz";
+                        textForReceiver = $"{invitationEntity.Date.ToString("d MMMM dddd", cultureInfo)} saat {invitationEntity.StartTime.ToString(@"hh\:mm")} için sesli görüşme daveti aldınız";
                     }
                     
-                    chatClientService.SendMessageFromSystem(coachId.ToString(), invitationEntity.StudentId.ToString(), message);
+                    chatClientService.SendInvitationSpecifiedHourMessage(coachId.ToString(), invitationEntity.StudentId.ToString(), message, new InvitationSpecifiedHourMessage()
+                    {
+                        Date = invitationEntity.Date,
+                        Time = invitationEntity.StartTime,
+                        InvitationId = invitationId.ToString(),
+                        InvitationType = invitationEntity.Type.ToString(),
+                        TextForSender = textForSender,
+                        TextForReceiver = textForReceiver,
+                        SystemMessageType = SystemMessageType.SpecifiedHour.ToString()
+                    });
                     
                 }
                 catch (Exception e)

@@ -46,56 +46,96 @@ public static class Approve
                     return TypedResults.Problem("Davetiye bulunamadı!", statusCode: StatusCodes.Status400BadRequest);
                 }
 
-                invitationEntity.State = InvitationState.Approved;
-
-                if (invitationEntity.Type == InvitationType.VideoCall)
+                try
                 {
-                    var userId = await zoom.GetUserIdAsync();
+                    invitationEntity.State = InvitationState.Approved;
 
-                    var topic = $"Baykuş -> {invitationEntity.Coach.Name} & {invitationEntity.Student.Name}";
-
-                    var meetDate = invitationEntity.Date.AddTicks(invitationEntity.StartTime.Ticks);
-
-                    var zoomMeetCreationResponse = await zoom.CreateMeetingAsync(userId, topic, meetDate, 60);
-
-                    var coachMeetUser = await zoom.AddRegistrantAsync(zoomMeetCreationResponse.Id,
-                        invitationEntity.Coach.Email,
-                        invitationEntity.Coach.CoachDetail.Name, invitationEntity.Coach.CoachDetail.Surname);
-
-                    var studentMeetUser = await zoom.AddRegistrantAsync(zoomMeetCreationResponse.Id,
-                        invitationEntity.Student.Email,
-                        invitationEntity.Student.StudentDetail.Name, invitationEntity.Student.StudentDetail.Surname);
-
-                    var zoomMeetDetail = new ZoomMeetDetail()
+                    if (invitationEntity.Type == InvitationType.VideoCall)
                     {
-                        InvitationId = invitationId,
-                        MeetId = zoomMeetCreationResponse.Id,
-                        HostEmail = zoomMeetCreationResponse.HostEmail,
-                        JoinUrl = zoomMeetCreationResponse.JoinUrl,
-                        MeetingPasscode = zoomMeetCreationResponse.MeetingPasscode,
-                        RegistrationUrl = zoomMeetCreationResponse.RegistrationUrl,
-                        StartTime = zoomMeetCreationResponse.StartTime,
-                        CreatedAt = zoomMeetCreationResponse.CreatedAt,
-                        CoachRegistrantId = coachMeetUser.RegistrantId,
-                        CoachParticipantPinCode = coachMeetUser.ParticipantPinCode,
-                        StudentRegistrantId = studentMeetUser.RegistrantId,
-                        StudentParticipantPinCode = studentMeetUser.ParticipantPinCode,
-                        StudentJoinUrl = studentMeetUser.JoinUrl,
-                        CoachJoinUrl = coachMeetUser.JoinUrl,
-                    };
+                        var userId = await zoom.GetUserIdAsync();
 
-                    await dbContext.ZoomMeetDetails.AddAsync(zoomMeetDetail);
+                        var topic = $"Baykuş -> {invitationEntity.Coach.Name} & {invitationEntity.Student.Name}";
 
-                    invitationEntity.ZoomMeetDetailId = zoomMeetDetail.Id;
+                        var meetDate = invitationEntity.Date.AddTicks(invitationEntity.StartTime.Ticks);
+
+                        var zoomMeetCreationResponse = await zoom.CreateMeetingAsync(userId, topic, meetDate, 60);
+
+                        var coachMeetUser = await zoom.AddRegistrantAsync(zoomMeetCreationResponse.Id,
+                            invitationEntity.Coach.Email,
+                            invitationEntity.Coach.CoachDetail.Name, invitationEntity.Coach.CoachDetail.Surname);
+
+                        var studentMeetUser = await zoom.AddRegistrantAsync(zoomMeetCreationResponse.Id,
+                            invitationEntity.Student.Email,
+                            invitationEntity.Student.StudentDetail.Name,
+                            invitationEntity.Student.StudentDetail.Surname);
+
+                        var zoomMeetDetail = new ZoomMeetDetail()
+                        {
+                            InvitationId = invitationId,
+                            MeetId = zoomMeetCreationResponse.Id,
+                            HostEmail = zoomMeetCreationResponse.HostEmail,
+                            JoinUrl = zoomMeetCreationResponse.JoinUrl,
+                            MeetingPasscode = zoomMeetCreationResponse.MeetingPasscode,
+                            RegistrationUrl = zoomMeetCreationResponse.RegistrationUrl,
+                            StartTime = zoomMeetCreationResponse.StartTime,
+                            CreatedAt = zoomMeetCreationResponse.CreatedAt,
+                            CoachRegistrantId = coachMeetUser.RegistrantId,
+                            CoachParticipantPinCode = coachMeetUser.ParticipantPinCode,
+                            StudentRegistrantId = studentMeetUser.RegistrantId,
+                            StudentParticipantPinCode = studentMeetUser.ParticipantPinCode,
+                            StudentJoinUrl = studentMeetUser.JoinUrl,
+                            CoachJoinUrl = coachMeetUser.JoinUrl,
+                        };
+
+                        await dbContext.ZoomMeetDetails.AddAsync(zoomMeetDetail);
+
+                        invitationEntity.ZoomMeetDetailId = zoomMeetDetail.Id;
+                    }
+                    else if (invitationEntity.Type == InvitationType.VoiceCall)
+                    {
+                        var scheduledTime = invitationEntity.Date.Add(invitationEntity.StartTime).AddMinutes(-1);
+
+                        bgJobClient.Schedule<VerimorService>((v) => v.Call(invitationId), scheduledTime);
+                    }
+
+                    await dbContext.SaveChangesAsync();
+                    
+                    var chatClientService = sp.GetRequiredService<ChatClientService>();
+
+                    var message = string.Empty;
+                    var textForSender = string.Empty;
+                    var textForReceiver = string.Empty;
+                    
+                    if (invitationEntity.Type == InvitationType.VideoCall)
+                    {
+                        message = "Görüntülü görüşme kabul edildi.";
+                        textForSender = "Görüntülü görüşmeyi kabul ettiniz.";
+                        textForReceiver = "Görüntülü görüşme kabul edildi.";
+                    }
+                    else if (invitationEntity.Type == InvitationType.VoiceCall)
+                    {
+                        message = "Sesli görüşme kabul edildi.";
+                        textForSender = "Sesli görüşmeyi kabul ettiniz.";
+                        textForReceiver = "Sesli görüşme kabul edildi.";
+                    }
+                    
+                    chatClientService.SendInvitationApprovedMessage(invitationEntity.StudentId.ToString(), invitationEntity.CoachId.ToString(), message, new InvitationApprovedMessage()
+                    {
+                        Date = invitationEntity.Date,
+                        Time = invitationEntity.StartTime,
+                        InvitationId = invitationId.ToString(),
+                        InvitationType = invitationEntity.Type.ToString(),
+                        TextForSender =  textForSender,
+                        TextForReceiver = textForReceiver,
+                        SystemMessageType = SystemMessageType.Approved.ToString()
+                    });
                 }
-                else if (invitationEntity.Type == InvitationType.VoiceCall)
+                catch (Exception e)
                 {
-                    var scheduledTime = invitationEntity.Date.Add(invitationEntity.StartTime).AddMinutes(-1);
+                    var errDesc = new ErrorDescriptor("InvitationNotApproved", "Davet onaylanamadı!");
 
-                    bgJobClient.Schedule<VerimorService>((v) => v.Call(invitationId), scheduledTime);
+                    return errDesc.CreateProblem("Davet Onaylanamadı!");
                 }
-
-                await dbContext.SaveChangesAsync();
 
                 return TypedResults.Ok();
 
