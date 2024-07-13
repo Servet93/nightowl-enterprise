@@ -135,8 +135,8 @@ function startConnection(accessToken)
     //     }
     // }).build();
 
-    var connection = new signalR.HubConnectionBuilder().withUrl("https://chat.baykusmentorluk.com/chatHub?access_token=" + accessToken, {
-    // var connection = new signalR.HubConnectionBuilder().withUrl("http://localhost:5254/chatHub?access_token=" + accessToken, {
+    // var connection = new signalR.HubConnectionBuilder().withUrl("https://chat.baykusmentorluk.com/chatHub?access_token=" + accessToken, {
+    var connection = new signalR.HubConnectionBuilder().withUrl("http://localhost:5254/chatHub?access_token=" + accessToken, {
         fetchOptions: {
             credentials: 'omit',
         }

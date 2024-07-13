@@ -64,7 +64,7 @@ public static class Cancel
                     textForReceiver = "Sesli görüşme reddedildi.";
                 }
                     
-                chatClientService.SendInvitationCancelledMessage(invitationEntity.StudentId.ToString(), invitationEntity.CoachId.ToString(), message, new InvitationCancelledMessage()
+                chatClientService.SendSystemMessage(invitationEntity.StudentId.ToString(), invitationEntity.CoachId.ToString(), message, new SystemMessage()
                 {
                     Date = invitationEntity.Date,
                     Time = invitationEntity.StartTime,

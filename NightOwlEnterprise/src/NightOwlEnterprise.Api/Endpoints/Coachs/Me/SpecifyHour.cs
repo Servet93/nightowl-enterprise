@@ -73,7 +73,7 @@ public static class SpecifyHour
                         textForReceiver = $"{invitationEntity.Date.ToString("d MMMM dddd", cultureInfo)} saat {invitationEntity.StartTime.ToString(@"hh\:mm")} için sesli görüşme daveti aldınız";
                     }
                     
-                    chatClientService.SendInvitationSpecifiedHourMessage(coachId.ToString(), invitationEntity.StudentId.ToString(), message, new InvitationSpecifiedHourMessage()
+                    chatClientService.SendSystemMessage(coachId.ToString(), invitationEntity.StudentId.ToString(), message, new SystemMessage()
                     {
                         Date = invitationEntity.Date,
                         Time = invitationEntity.StartTime,

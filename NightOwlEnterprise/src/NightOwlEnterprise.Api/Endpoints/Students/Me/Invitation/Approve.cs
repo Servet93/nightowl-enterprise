@@ -119,7 +119,7 @@ public static class Approve
                         textForReceiver = "Sesli görüşme kabul edildi.";
                     }
                     
-                    chatClientService.SendInvitationApprovedMessage(invitationEntity.StudentId.ToString(), invitationEntity.CoachId.ToString(), message, new InvitationApprovedMessage()
+                    chatClientService.SendSystemMessage(invitationEntity.StudentId.ToString(), invitationEntity.CoachId.ToString(), message, new SystemMessage()
                     {
                         Date = invitationEntity.Date,
                         Time = invitationEntity.StartTime,

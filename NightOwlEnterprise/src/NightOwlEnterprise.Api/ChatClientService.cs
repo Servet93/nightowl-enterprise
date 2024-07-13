@@ -38,21 +38,11 @@ public class ChatClientService : IAsyncDisposable
         await _connection.InvokeAsync("SendMessageFromSystem", senderId, receiverId, message);
     }
 
-    public async Task SendInvitationSpecifiedHourMessage(string senderId, string receiverId, string message, InvitationSpecifiedHourMessage invitationSpecifiedHourMessage)
+    public async Task SendSystemMessage(string senderId, string receiverId, string message, SystemMessage systemMessage)
     {
-        await _connection.InvokeAsync("SendInvitationSpecifiedHourMessage", senderId, receiverId, message, invitationSpecifiedHourMessage);
+        await _connection.InvokeAsync("SendSystemMessage", senderId, receiverId, message, systemMessage);
     }
     
-    public async Task SendInvitationApprovedMessage(string senderId, string receiverId, string message, InvitationApprovedMessage invitationApprovedMessage)
-    {
-        await _connection.InvokeAsync("SendInvitationApprovedMessage", senderId, receiverId, message, invitationApprovedMessage);
-    }
-    
-    public async Task SendInvitationCancelledMessage(string senderId, string receiverId, string message, InvitationCancelledMessage invitationCancelledMessage)
-    {
-        await _connection.InvokeAsync("SendInvitationCancelledMessage", senderId, receiverId, message, invitationCancelledMessage);
-    }
-
     public async ValueTask DisposeAsync()
     {
         await _connection.DisposeAsync();
