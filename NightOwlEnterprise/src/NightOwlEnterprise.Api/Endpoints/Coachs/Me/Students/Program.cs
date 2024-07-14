@@ -65,7 +65,7 @@ public static class Program
                             studentProgramInfo.IsCurrent = true;
                         }
 
-                        foreach (var weeklyInfo in studentProgram.Weeklies)
+                        foreach (var weeklyInfo in studentProgram.Weeklies.OrderBy(x => x.StartDate))
                         {
                             var weekStartDateText = weeklyInfo.StartDate.ToString("dd MMMM \\/ yyyy", cultureInfo);
                             var weekEndDateText = weeklyInfo.EndDate.ToString("dd MMMM \\/ yyyy", cultureInfo);

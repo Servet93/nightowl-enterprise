@@ -15,9 +15,9 @@ public static class Program
 {
     public static void MapProgram(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapGet("me/programs/{programId}",
+        endpoints.MapGet("me/programs/",
                 async Task<Results<Ok<List<StudentProgramInfo>>, ProblemHttpResult>>
-                    ([FromRoute] string? programId, ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
+                    (ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
                 {
                     var dbContext = sp.GetRequiredService<ApplicationDbContext>();
 
@@ -25,19 +25,11 @@ public static class Program
 
                     var mountIndex = 1;
                     var weekIndex = 1;
-
-                    Guid? prmProgramId = null;
-
-                    if (Guid.TryParse(programId, out var tempProgramId))
-                    {
-                        prmProgramId = tempProgramId;
-                    }
                     
                     var now = DateTime.UtcNow.ConvertUtcToTimeZone();
                     
                     var studentPrograms = await dbContext.StudentPrograms
                         .Where(x => x.StudentId == studentId)
-                        .WhereIf(x => x.Id == prmProgramId.Value, prmProgramId.HasValue)
                         .Include(x => x.Weeklies)
                         .OrderBy(x => x.StartDate).ToListAsync();
 
@@ -73,7 +65,7 @@ public static class Program
                             studentProgramInfo.IsCurrent = true;
                         }
 
-                        foreach (var weeklyInfo in studentProgram.Weeklies)
+                        foreach (var weeklyInfo in studentProgram.Weeklies.OrderBy(x => x.StartDate))
                         {
                             var weekStartDateText = weeklyInfo.StartDate.ToString("dd MMMM \\/ yyyy", cultureInfo);
                             var weekEndDateText = weeklyInfo.EndDate.ToString("dd MMMM \\/ yyyy", cultureInfo);
@@ -114,33 +106,15 @@ public static class Program
         
         endpoints.MapGet("me/programs-week/{weekId}",
                 async Task<Results<Ok<List<StudentProgramDayInfo>>, ProblemHttpResult>>
-                ([FromRoute] string? weekId, ClaimsPrincipal claimsPrincipal,
+                ([FromRoute] Guid weekId, ClaimsPrincipal claimsPrincipal,
                     [FromServices] IServiceProvider sp) =>
                 {
                     var dbContext = sp.GetRequiredService<ApplicationDbContext>();
                     
                     var studentId = claimsPrincipal.GetId();
-
-                    Guid? paramWeekId = null;
-
-                    if (Guid.TryParse(weekId, out var tempWeekId))
-                    {
-                        paramWeekId = tempWeekId;
-                    }
-
-                    if (!paramWeekId.HasValue)
-                    {
-                        var now = DateTime.UtcNow.ConvertUtcToTimeZone();
-                        paramWeekId = await dbContext.StudentProgramWeekly
-                            .Where(x => x.StudentId == studentId &&
-                                        (x.StartDate >= now && now <= x.EndDate || x.StartDate <= now && now <= x.EndDate))
-                            .OrderBy(x => x.StartDate)
-                            .Select(x => x.Id)
-                            .FirstOrDefaultAsync();
-                    }
                     
                     var studentProgramDailyInfoList = await dbContext.StudentProgramDaily
-                        .Where(x => x.StudentProgramWeeklyId == paramWeekId && x.StudentId == studentId)
+                        .Where(x => x.StudentProgramWeeklyId == weekId && x.StudentId == studentId)
                         .Include(x => x.DailyTasks)
                         .OrderBy(x => x.Date)
                         .Select(x => new StudentProgramDayInfo()
@@ -149,6 +123,7 @@ public static class Program
                             Date = x.Date,
                             DateText = x.DateText,
                             DayText = x.DayText,
+                            DayOfMonth = x.Date.Day,
                             Tasks = x.DailyTasks.Select(y => new StudentProgramTaskSummarizedInfo()
                             {
                                 Id = y.Id,
