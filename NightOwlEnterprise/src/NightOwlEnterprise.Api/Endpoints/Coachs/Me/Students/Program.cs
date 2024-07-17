@@ -106,7 +106,7 @@ public static class Program
 
         endpoints.MapGet("me/students/{studentId}/programs-week/{weekId}",
                 async Task<Results<Ok<List<StudentProgramDayInfo>>, ProblemHttpResult>>
-                ([FromRoute] Guid studentId, [FromQuery] Guid weekId, ClaimsPrincipal claimsPrincipal,
+                ([FromRoute] Guid studentId, [FromRoute] Guid weekId, ClaimsPrincipal claimsPrincipal,
                     [FromServices] IServiceProvider sp) =>
                 {
                     var dbContext = sp.GetRequiredService<ApplicationDbContext>();
