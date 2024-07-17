@@ -57,7 +57,6 @@
         let currentPage = 1;
 
         function fetchConnections(userIdentifier = null) {
-            // const url = new URL('@Url.Link(null, new { controller = "Chat", action = "GetConnections" })');
             const url = new URL('https://chat.baykusmentorluk.com/chat/connectionInfo');
             url.searchParams.append('page', currentPage);
             url.searchParams.append('pageSize', pageSize);
