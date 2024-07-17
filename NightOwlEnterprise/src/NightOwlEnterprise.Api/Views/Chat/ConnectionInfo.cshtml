@@ -57,7 +57,7 @@
         let currentPage = 1;
 
         function fetchConnections(userIdentifier = null) {
-            const url = new URL('https://chat.baykusmentorluk.com/chat/connectionInfo');
+            const url = new URL('https://chat.baykusmentorluk.com/chat/getConnections');
             url.searchParams.append('page', currentPage);
             url.searchParams.append('pageSize', pageSize);
 
