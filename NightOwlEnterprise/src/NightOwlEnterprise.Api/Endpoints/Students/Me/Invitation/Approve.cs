@@ -46,11 +46,18 @@ public static class Approve
                     return TypedResults.Problem("Davetiye bulunamadı!", statusCode: StatusCodes.Status400BadRequest);
                 }
 
-                try
-                {
-                    invitationEntity.State = InvitationState.Approved;
+                // ILoggerFactory örneği al
+                var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
 
-                    if (invitationEntity.Type == InvitationType.VideoCall)
+                // ILogger örneğini oluştur
+                var logger = loggerFactory.CreateLogger("Approve");
+
+
+                invitationEntity.State = InvitationState.Approved;
+
+                if (invitationEntity.Type == InvitationType.VideoCall)
+                {
+                    try
                     {
                         var userId = await zoom.GetUserIdAsync();
 
@@ -90,22 +97,49 @@ public static class Approve
                         await dbContext.ZoomMeetDetails.AddAsync(zoomMeetDetail);
 
                         invitationEntity.ZoomMeetDetailId = zoomMeetDetail.Id;
+
                     }
-                    else if (invitationEntity.Type == InvitationType.VoiceCall)
+                    catch (Exception e)
                     {
-                        var scheduledTime = invitationEntity.Date.Add(invitationEntity.StartTime).AddMinutes(-1);
-
-                        bgJobClient.Schedule<VerimorService>((v) => v.Call(invitationId), scheduledTime);
-                    }
-
-                    await dbContext.SaveChangesAsync();
+                        logger.LogError(e,
+                            "CouldNotBeCreatedZoomMeet. CoachId: {CoachId}, StudentId: {StudentId}, InvitationId: {InvitationId}",
+                            invitationEntity.CoachId, invitationEntity.StudentId, invitationId);
                     
+                        var errDesc = new ErrorDescriptor("CouldNotBeCreatedZoomMeet", "Zoom meet oluşturulurken hata oluştuğundan davet onayı başarısız!");
+
+                        return errDesc.CreateProblem("Davet Onaylanamadı!");
+                    }
+                }
+                else if (invitationEntity.Type == InvitationType.VoiceCall)
+                {
+                    var scheduledTime = invitationEntity.Date.Add(invitationEntity.StartTime).AddMinutes(-1);
+
+                    bgJobClient.Schedule<VerimorService>((v) => v.Call(invitationId), scheduledTime);
+                }
+                
+                try
+                {
+                    await dbContext.SaveChangesAsync();
+                }
+                catch (Exception e)
+                {
+                    logger.LogError(e,
+                        "InvitationCouldNotBeApproved. CoachId: {CoachId}, StudentId: {StudentId}, InvitationId: {InvitationId}",
+                        invitationEntity.CoachId, invitationEntity.StudentId, invitationId);
+
+                    var errDesc = new ErrorDescriptor("InvitationCouldNotBeApproved", "Davet onaylanamadı!");
+
+                    return errDesc.CreateProblem("Davet Onaylanamadı!");
+                }
+
+                try
+                {
                     var chatClientService = sp.GetRequiredService<ChatClientService>();
 
                     var message = string.Empty;
                     var textForSender = string.Empty;
                     var textForReceiver = string.Empty;
-                    
+
                     if (invitationEntity.Type == InvitationType.VideoCall)
                     {
                         message = "Görüntülü görüşme kabul edildi.";
@@ -118,23 +152,29 @@ public static class Approve
                         textForSender = "Sesli görüşmeyi kabul ettiniz.";
                         textForReceiver = "Sesli görüşme kabul edildi.";
                     }
-                    
-                    chatClientService.SendSystemMessage(invitationEntity.StudentId.ToString(), invitationEntity.CoachId.ToString(), message, new SystemMessage()
-                    {
-                        Date = invitationEntity.Date,
-                        Time = invitationEntity.StartTime,
-                        InvitationId = invitationId.ToString(),
-                        InvitationType = invitationEntity.Type.ToString(),
-                        TextForSender =  textForSender,
-                        TextForReceiver = textForReceiver,
-                        SystemMessageType = SystemMessageType.Approved.ToString()
-                    });
+
+                    await chatClientService.SendSystemMessage(invitationEntity.StudentId.ToString(),
+                        invitationEntity.CoachId.ToString(), message, new SystemMessage()
+                        {
+                            Date = invitationEntity.Date,
+                            Time = invitationEntity.StartTime,
+                            InvitationId = invitationId.ToString(),
+                            InvitationType = invitationEntity.Type.ToString(),
+                            TextForSender = textForSender,
+                            TextForReceiver = textForReceiver,
+                            SystemMessageType = SystemMessageType.Approved.ToString()
+                        });
                 }
                 catch (Exception e)
                 {
-                    var errDesc = new ErrorDescriptor("InvitationNotApproved", "Davet onaylanamadı!");
+                    logger.LogError(e,
+                        "CouldNotBeSentInvitationApprovedSystemMessage. CoachId: {CoachId}, StudentId: {StudentId}, InvitationId: {InvitationId}",
+                        invitationEntity.CoachId, invitationEntity.StudentId, invitationId);
 
-                    return errDesc.CreateProblem("Davet Onaylanamadı!");
+                    var errDesc = new ErrorDescriptor("CouldNotBeSentInvitationApprovedSystemMessage",
+                        "Davet onaylandığına dair sistem mesajı kullanıcılara gönderilemedi!");
+
+                    return errDesc.CreateProblem("Davet onaylandı sistem mesajı gönderilemedi!");
                 }
 
                 return TypedResults.Ok();

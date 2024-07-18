@@ -105,3 +105,14 @@ public class StudentProgramDailyInfo
     
     public List<StudentProgramTaskSummarizedInfo> DailyTaskSummarizedInfos { get; set; }
 }
+
+public class StudentProgramDayItemInfo
+{
+    public Guid Id { get; set; }
+    
+    public DateTime Date { get; set; }
+
+    public string DateText { get; set; }
+    
+    public string DayText { get; set; }
+}

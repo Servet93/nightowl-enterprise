@@ -41,6 +41,12 @@ public static class SpecifyHour
                     var errorDescriptor = new ErrorDescriptor("InvitationDayExpired", "Randevu günü geçmiş!");
                     return errorDescriptor.CreateProblem("Görüşme saati belirlenemedi!");
                 }
+                
+                // ILoggerFactory örneği al
+                var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+
+                // ILogger örneğini oluştur
+                var logger = loggerFactory.CreateLogger("SpecifyHour");
 
                 invitationEntity.StartTime = specifyHourRequest.StartTime;
                 invitationEntity.EndTime = specifyHourRequest.StartTime.Add(TimeSpan.FromHours(1));
@@ -49,7 +55,20 @@ public static class SpecifyHour
                 try
                 {
                     await dbContext.SaveChangesAsync();
+                }
+                catch (Exception e)
+                {
+                    logger.LogError(e,
+                        "NotSpecifiedHour. CoachId: {CoachId}, StudentId: {StudentId}, InvitationId: {InvitationId}",
+                        coachId, invitationEntity.StudentId, invitationId);
                     
+                    var errorDescriptor = new ErrorDescriptor("NotSpecifiedHour", "Saat bilgisi atanamadı!");
+                    
+                    return errorDescriptor.CreateProblem("Görüşme saati belirlenemedi!");
+                }
+
+                try
+                {
                     var chatClientService = sp.GetRequiredService<ChatClientService>();
 
                     var message = string.Empty;
@@ -73,7 +92,7 @@ public static class SpecifyHour
                         textForReceiver = $"{invitationEntity.Date.ToString("d MMMM dddd", cultureInfo)} saat {invitationEntity.StartTime.ToString(@"hh\:mm")} için sesli görüşme daveti aldınız";
                     }
                     
-                    chatClientService.SendSystemMessage(coachId.ToString(), invitationEntity.StudentId.ToString(), message, new SystemMessage()
+                    await chatClientService.SendSystemMessage(coachId.ToString(), invitationEntity.StudentId.ToString(), message, new SystemMessage()
                     {
                         Date = invitationEntity.Date,
                         Time = invitationEntity.StartTime,
@@ -83,12 +102,16 @@ public static class SpecifyHour
                         TextForReceiver = textForReceiver,
                         SystemMessageType = SystemMessageType.SpecifiedHour.ToString()
                     });
-                    
                 }
                 catch (Exception e)
                 {
-                    var errorDescriptor = new ErrorDescriptor("NotSpecifiedHour", "Saat bilgisi atanamadı!");
-                    return errorDescriptor.CreateProblem("Görüşme saati belirlenemedi!");
+                    logger.LogError(e,
+                        "CouldNotSendSpecifiedHourSystemMessage. CoachId: {CoachId}, StudentId: {StudentId}, InvitationId: {InvitationId}",
+                        coachId, invitationEntity.StudentId, invitationId);
+                    
+                    var errorDescriptor = new ErrorDescriptor("CouldNotSendSpecifiedHourSystemMessage", "Görüşme saat bilgisi gönderilemedi!");
+                    
+                    return errorDescriptor.CreateProblem("Görüşme saati bilgisi sohbet ekranına aktarılamadı!");
                 }
 
                 return TypedResults.Ok();

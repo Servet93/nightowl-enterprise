@@ -36,14 +36,33 @@ public static class Cancel
 
                 return errorDescriptor.CreateProblem("Davet iptal edilemedi!");
             }
+            
+            // ILoggerFactory örneği al
+            var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+
+            // ILogger örneğini oluştur
+            var logger = loggerFactory.CreateLogger("Approve");
+
+            invitationEntity.State = InvitationState.Cancelled;
+            invitationEntity.Excuse = request.Excuse;
+            
+            try
+            { 
+                await dbContext.SaveChangesAsync();
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e,
+                    "InvitationCouldNotBeCancelled. CoachId: {CoachId}, StudentId: {StudentId}, InvitationId: {InvitationId}",
+                    invitationEntity.CoachId, invitationEntity.StudentId, invitationId);
+                    
+                var errDesc = new ErrorDescriptor("InvitationCouldNotBeCancelled", "Davet iptal edilemedi!");
+
+                return errDesc.CreateProblem("Davet iptal edilemedi!");
+            }
 
             try
             {
-                invitationEntity.State = InvitationState.Cancelled;
-                invitationEntity.Excuse = request.Excuse;
-                
-                await dbContext.SaveChangesAsync();
-                
                 var chatClientService = sp.GetRequiredService<ChatClientService>();
 
                 var message = string.Empty;
@@ -64,7 +83,7 @@ public static class Cancel
                     textForReceiver = "Sesli görüşme reddedildi.";
                 }
                     
-                chatClientService.SendSystemMessage(invitationEntity.StudentId.ToString(), invitationEntity.CoachId.ToString(), message, new SystemMessage()
+                await chatClientService.SendSystemMessage(invitationEntity.StudentId.ToString(), invitationEntity.CoachId.ToString(), message, new SystemMessage()
                 {
                     Date = invitationEntity.Date,
                     Time = invitationEntity.StartTime,
@@ -78,9 +97,14 @@ public static class Cancel
             }
             catch (Exception e)
             {
-                var errDesc = new ErrorDescriptor("InvitationNotCancelled", "Davet iptal edilemedi!");
+                logger.LogError(e,
+                    "CouldNotBeSentInvitationCancelledSystemMessage. CoachId: {CoachId}, StudentId: {StudentId}, InvitationId: {InvitationId}",
+                    invitationEntity.CoachId, invitationEntity.StudentId, invitationId);
 
-                return errDesc.CreateProblem("Davet iptal edilemedi!");
+                var errDesc = new ErrorDescriptor("CouldNotBeSentInvitationCancelledSystemMessage",
+                    "Davet iptal edildiğine dair sistem mesajı kullanıcılara gönderilemedi!");
+
+                return errDesc.CreateProblem("Davet iptal edildi sistem mesajı gönderilemedi!");
             }
             
             return TypedResults.Ok();

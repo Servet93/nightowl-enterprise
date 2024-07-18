@@ -67,7 +67,7 @@ public class ProgramAndInvitations
 
             date = date.AddDays(7);
 
-            var weeklyEndDate = date;
+            var weeklyEndDate = date.AddDays(-1);
 
             var weekly = new StudentProgramWeekly()
             {

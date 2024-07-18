@@ -298,8 +298,8 @@ builder.Services.AddSingleton<ChatClientService>(sp =>
     var systemUser = um.Users.FirstOrDefault(x => x.UserType == UserType.System);
     var token = jwtHelper.CreateToken(systemUser, DateTime.UtcNow.AddYears(30));
     
-    // var hubUrl = "https://chat.baykusmentorluk.com/chatHub"; // Hub'ın URL'sini burada belirtin
-    var hubUrl = "http://localhost:5254/chatHub?access_token=" + token.Item1; // Hub'ın URL'sini burada belirtin
+    var hubUrl = "https://chat.baykusmentorluk.com/chatHub?access_token=" + token.Item1; // Hub'ın URL'sini burada belirtin
+    // var hubUrl = "http://localhost:5254/chatHub?access_token=" + token.Item1; // Hub'ın URL'sini burada belirtin
     var clientService = new ChatClientService(hubUrl);
     clientService.StartAsync().GetAwaiter().GetResult(); // Bağlantıyı başlat
     return clientService;
@@ -915,7 +915,6 @@ public class ApplicationDbContext : Microsoft.AspNetCore.Identity.EntityFramewor
     public DbSet<StudentDetail> StudentDetail { get; set; }
     public DbSet<CoachYksRanking> CoachYksRankings { get; set; }
     public DbSet<Invitation> Invitations { get; set; }
-    
     public DbSet<SubscriptionHistory> SubscriptionHistories { get; set; }
     
     public DbSet<PrivateTutoringTYT> PrivateTutoringTYT { get; set; }

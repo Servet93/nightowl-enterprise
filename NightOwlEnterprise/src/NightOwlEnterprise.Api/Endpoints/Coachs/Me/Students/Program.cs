@@ -103,6 +103,38 @@ public static class Program
 
                 }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags(TagConstants.CoachMeStudentsProgram)
             .RequireAuthorization("CoachOrPdr");
+        
+        endpoints.MapGet("me/students/{studentId}/programs/{programId}/days",
+                async Task<Results<Ok<List<StudentProgramDayItemInfo>>, ProblemHttpResult>>
+                    ([FromRoute] Guid studentId, [FromRoute] Guid programId, ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
+                {
+                    var dbContext = sp.GetRequiredService<ApplicationDbContext>();
+
+                    var coachId = claimsPrincipal.GetId();
+
+                    var studentProgramDailies = await dbContext.StudentProgramWeekly
+                        .Where(x => x.CoachId == coachId && x.StudentId == studentId && x.StudentProgramId == programId)
+                        .Include(x => x.Dailies)
+                        .SelectMany(x => x.Dailies)
+                        .ToListAsync();
+
+                    var studentProgramDayItemInfoList = new List<StudentProgramDayItemInfo>();
+                    
+                    studentProgramDailies.ForEach(x =>
+                    {
+                        studentProgramDayItemInfoList.Add(new StudentProgramDayItemInfo()
+                        {
+                            Id = x.Id,
+                            Date = x.Date,
+                            DateText = x.DateText,
+                            DayText = x.DayText
+                        });
+                    });
+
+                    return TypedResults.Ok(studentProgramDayItemInfoList);
+
+                }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags(TagConstants.CoachMeStudentsProgram)
+            .RequireAuthorization("CoachOrPdr");
 
         endpoints.MapGet("me/students/{studentId}/programs-week/{weekId}",
                 async Task<Results<Ok<List<StudentProgramDayInfo>>, ProblemHttpResult>>
@@ -221,7 +253,7 @@ public static class Program
                     studentProgramDailyTask.TaskType = request.TaskType;
                     studentProgramDailyTask.Subject = request.Subject;
                     studentProgramDailyTask.Resource = request.Resource;
-                    studentProgramDailyTask.EstimatedMinute = request.Minute;
+                    studentProgramDailyTask.EstimatedMinute = request.EstimatedMinute;
                     studentProgramDailyTask.QuestionCount = request.QuestionCount;
                     studentProgramDailyTask.Not = request.Not;
                     studentProgramDailyTask.UpdatedAt = DateTime.UtcNow.ConvertUtcToTimeZone();
@@ -477,7 +509,7 @@ public static class Program
 
         public ushort QuestionCount { get; set; }
     
-        public byte Minute { get; set; }
+        public byte EstimatedMinute { get; set; }
     
         public string Not { get; set; }
     }
