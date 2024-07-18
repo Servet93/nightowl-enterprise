@@ -177,8 +177,10 @@ public static class ReserveCoach
                         studentProgram.Weeklies.Add(weekly);
                     }
 
-                    studentProgram.EndDate = date;
-                    studentProgram.EndDateText = date.ToString("dd MMMM yyyy, dddd", turkishCulture);
+                    var endDate = date.AddDays(-1);
+                    
+                    studentProgram.EndDate = endDate;
+                    studentProgram.EndDateText = endDate.ToString("dd MMMM yyyy, dddd", turkishCulture);
                     
                     dbContext.StudentPrograms.Add(studentProgram);
 

@@ -131,6 +131,8 @@ public static class Program
                         });
                     });
 
+                    studentProgramDayItemInfoList = studentProgramDayItemInfoList.OrderBy(x => x.Date).ToList();
+                    
                     return TypedResults.Ok(studentProgramDayItemInfoList);
 
                 }).ProducesProblem(StatusCodes.Status400BadRequest).WithOpenApi().WithTags(TagConstants.CoachMeStudentsProgram)
